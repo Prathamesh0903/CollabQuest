@@ -1,0 +1,137 @@
+.demo-instructions {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.demo-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.demo-container h2 {
+  text-align: center;
+  margin: 0 0 2rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.demo-steps {
+  margin-bottom: 2rem;
+}
+
+.step {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.step h3 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.step p {
+  margin: 0 0 1rem 0;
+  color: #6c757d;
+  line-height: 1.6;
+}
+
+.step ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #6c757d;
+  line-height: 1.8;
+}
+
+.step li {
+  margin-bottom: 0.5rem;
+}
+
+.code-block {
+  background: #2d2d30;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.code-block code {
+  display: block;
+  color: #ffffff;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.code-block code:last-child {
+  margin-bottom: 0;
+}
+
+.demo-tips,
+.demo-troubleshooting {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.demo-tips h3,
+.demo-troubleshooting h3 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.demo-tips ul,
+.demo-troubleshooting ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #6c757d;
+  line-height: 1.8;
+}
+
+.demo-tips li,
+.demo-troubleshooting li {
+  margin-bottom: 0.5rem;
+}
+
+.demo-troubleshooting strong {
+  color: #495057;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .demo-instructions {
+    padding: 1rem;
+  }
+  
+  .demo-container {
+    padding: 2rem;
+  }
+  
+  .demo-container h2 {
+    font-size: 1.5rem;
+  }
+  
+  .step {
+    padding: 1rem;
+  }
+} 

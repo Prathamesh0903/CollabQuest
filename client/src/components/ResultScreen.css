@@ -1,0 +1,165 @@
+.result-screen-vscode {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  font-family: 'Segoe UI', 'Fira Mono', 'monospace', sans-serif;
+  position: relative;
+  animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+.result-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #4fc3f7;
+  letter-spacing: 1px;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: #d4d4d4;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.close-btn:hover {
+  color: #ff5252;
+}
+
+.score-summary {
+  background: #23272e;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+}
+.score-bar {
+  width: 100%;
+  height: 12px;
+  background: #2d2d2d;
+  border-radius: 6px;
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4fc3f7 0%, #43e97b 100%);
+  border-radius: 6px;
+  transition: width 0.5s;
+}
+.score-details {
+  display: flex;
+  gap: 2rem;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.badge {
+  background: #43e97b;
+  color: #1e1e1e;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 0.2rem 0.8rem;
+  margin-left: 1rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(67,233,123,0.15);
+}
+.confetti {
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2.5rem;
+  animation: pop 0.7s;
+}
+@keyframes pop {
+  0% { transform: scale(0.5) translateX(-50%); opacity: 0; }
+  60% { transform: scale(1.2) translateX(-50%); opacity: 1; }
+  100% { transform: scale(1) translateX(-50%); opacity: 1; }
+}
+
+.test-cases-section {
+  margin-top: 1.2rem;
+}
+.test-cases-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4fc3f7;
+  margin-bottom: 0.7rem;
+}
+.test-cases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.test-case-row {
+  display: flex;
+  align-items: flex-start;
+  background: #23272e;
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  box-shadow: 0 1px 4px rgba(33,150,243,0.05);
+  gap: 1.2rem;
+  font-size: 0.98rem;
+}
+.test-case-row.pass {
+  border-left: 5px solid #43e97b;
+}
+.test-case-row.fail {
+  border-left: 5px solid #ff5252;
+}
+.test-case-index {
+  font-weight: 700;
+  color: #4fc3f7;
+  min-width: 2.2rem;
+}
+.test-case-io {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.label {
+  color: #bdbdbd;
+  font-size: 0.95em;
+  margin-right: 0.3em;
+}
+.test-case-status {
+  font-size: 1.5rem;
+  margin-left: 0.7rem;
+  margin-top: 0.2rem;
+}
+.error-msg {
+  color: #ff5252;
+  font-size: 0.95em;
+  margin-top: 0.1em;
+  font-family: 'Fira Mono', 'monospace';
+}
+
+@media (max-width: 700px) {
+  .result-screen-vscode {
+    padding: 1rem 0.5rem;
+    max-width: 98vw;
+  }
+  .score-details {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+} 
