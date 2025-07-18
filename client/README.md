@@ -55,6 +55,7 @@ A real-time collaborative code editor built with React, Monaco Editor, and Socke
 - **Frontend**: React 18 with TypeScript
 - **Editor**: Monaco Editor (same as VS Code)
 - **Real-time**: Socket.io Client
+- **Timers**: react-countdown
 - **Styling**: CSS3 with modern design patterns
 
 ## Project Structure
@@ -129,3 +130,25 @@ REACT_APP_SERVER_URL=http://localhost:5000
 ## License
 
 MIT License - see LICENSE file for details
+
+## Using Timers with react-countdown
+
+This project uses [react-countdown](https://www.npmjs.com/package/react-countdown) for timer functionality (e.g., coding challenges, quiz timers, etc.).
+
+### Installation
+
+Already included in dependencies. If you need to reinstall:
+```bash
+npm install react-countdown
+```
+
+### Basic Usage Example
+
+```tsx
+import Countdown from 'react-countdown';
+
+// 10-second countdown
+<Countdown date={Date.now() + 10000} onComplete={() => alert('Time is up!')} />
+```
+
+You can use this in any component to add a timer.

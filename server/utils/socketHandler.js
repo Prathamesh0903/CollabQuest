@@ -1,9 +1,17 @@
 const User = require('../models/User');
 const Room = require('../models/Room');
 const Team = require('../models/Team');
+const Message = require('../models/Message');
+const { calculateScore } = require('./scoring');
 
 // Store active connections
 const activeConnections = new Map();
+
+// Store room states for collaborative editing
+const roomStates = new Map();
+
+// Store user cursors for collaborative editing
+const userCursors = new Map();
 
 // In-memory battle timers and states
 const battleTimers = {};
@@ -13,22 +21,28 @@ const battleStates = {};
 const handleSocketConnection = (socket, io) => {
   console.log(`User connected: ${socket.user?.displayName || 'Unknown'}`);
   
-  // Store connection
-  if (socket.user) {
-    activeConnections.set(socket.user._id.toString(), {
-      socketId: socket.id,
-      userId: socket.user._id,
-      user: socket.user,
-      joinedAt: new Date()
-    });
-  }
+  // Store connection only if user is authenticated
+  if (socket.user && socket.user._id) {
+    try {
+      activeConnections.set(socket.user._id.toString(), {
+        socketId: socket.id,
+        userId: socket.user._id,
+        user: socket.user,
+        joinedAt: new Date()
+      });
 
-  // Join user to their personal room
-  if (socket.user) {
-    socket.join(`user:${socket.user._id}`);
-    
-    // Update user's online status
-    updateUserStatus(socket.user._id, true);
+      // Join user to their personal room
+      socket.join(`user:${socket.user._id}`);
+      
+      // Update user's online status
+      updateUserStatus(socket.user._id, true);
+      
+      console.log(`Authenticated user ${socket.user.displayName} connected successfully`);
+    } catch (error) {
+      console.error('Error setting up authenticated user connection:', error);
+    }
+  } else {
+    console.log('Unauthenticated user connected - limited functionality available');
   }
 
   // Handle room joining
@@ -110,36 +124,103 @@ const handleSocketConnection = (socket, io) => {
   // Handle chat messages
   socket.on('send-message', async (data) => {
     try {
-      const { roomId, message, type = 'text' } = data;
+      const { roomId, content, type = 'text', metadata = {} } = data;
       
       if (!socket.user) {
         socket.emit('error', { message: 'Authentication required' });
         return;
       }
 
-      const messageData = {
-        userId: socket.user._id,
-        displayName: socket.user.displayName,
-        avatar: socket.user.avatar,
-        message,
+      if (!content || content.trim().length === 0) {
+        socket.emit('error', { message: 'Message content is required' });
+        return;
+      }
+
+      if (content.length > 2000) {
+        socket.emit('error', { message: 'Message too long (max 2000 characters)' });
+        return;
+      }
+
+      // Verify room access
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      // Check if user is a participant
+      const isParticipant = room.participants.some(
+        p => p.userId.toString() === socket.user._id.toString() && p.isActive
+      );
+      
+      if (!isParticipant && room.type === 'private') {
+        socket.emit('error', { message: 'Access denied to private room' });
+        return;
+      }
+
+      // Create and save message
+      const message = new Message({
+        roomId,
+        sender: {
+          userId: socket.user._id,
+          displayName: socket.user.displayName || socket.user.email,
+          avatar: socket.user.avatar
+        },
+        content: content.trim(),
         type,
-        timestamp: new Date()
-      };
+        metadata
+      });
+
+      await message.save();
+      await message.populate('sender.userId', 'displayName avatar');
+
+      // Update room stats
+      room.stats.messagesSent += 1;
+      await room.save();
 
       // Broadcast to room
-      socket.to(`room:${roomId}`).emit('new-message', messageData);
+      socket.to(`room:${roomId}`).emit('new-message', message);
       
-      // Update room stats
-      const room = await Room.findById(roomId);
-      if (room) {
-        room.stats.messagesSent += 1;
-        await room.save();
-      }
+      // Send confirmation to sender
+      socket.emit('message-sent', message);
 
       console.log(`Message sent in room ${roomId} by ${socket.user.displayName}`);
     } catch (error) {
       console.error('Error sending message:', error);
       socket.emit('error', { message: 'Failed to send message' });
+    }
+  });
+
+  // Handle typing indicators
+  socket.on('typing-start', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) return;
+
+      socket.to(`room:${roomId}`).emit('user-typing', {
+        userId: socket.user._id,
+        displayName: socket.user.displayName,
+        isTyping: true
+      });
+    } catch (error) {
+      console.error('Error handling typing start:', error);
+    }
+  });
+
+  socket.on('typing-stop', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) return;
+
+      socket.to(`room:${roomId}`).emit('user-typing', {
+        userId: socket.user._id,
+        displayName: socket.user.displayName,
+        isTyping: false
+      });
+    } catch (error) {
+      console.error('Error handling typing stop:', error);
     }
   });
 
@@ -178,77 +259,282 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
-  // Handle collaborative editing room joining
+  // Enhanced collaborative editing room joining
   socket.on('join-collab-room', async (data) => {
     try {
-      const { roomId } = data;
+      const { roomId, language = 'javascript' } = data;
+      
       if (!socket.user) {
         socket.emit('error', { message: 'Authentication required' });
         return;
       }
+
       // Join socket to collaborative editing room
       socket.join(`collab-room:${roomId}`);
-      // Get users in the room
+      
+      // Initialize room state if it doesn't exist
+      if (!roomStates.has(roomId)) {
+        roomStates.set(roomId, {
+          code: getDefaultCode(language),
+          language: language,
+          lastModified: new Date(),
+          version: 0,
+          users: new Set()
+        });
+      }
+
+      const roomState = roomStates.get(roomId);
+      roomState.users.add(socket.user._id.toString());
+
+      // Send current room state to the joining user
+      socket.emit('room-state-sync', {
+        code: roomState.code,
+        language: roomState.language,
+        version: roomState.version,
+        lastModified: roomState.lastModified
+      });
+
+      // Get users in the room with detailed info
       const roomSockets = await io.in(`collab-room:${roomId}`).fetchSockets();
       const usersInRoom = roomSockets
         .filter(s => s.user)
-        .map(s => s.user.displayName || s.user.email || 'Anonymous');
+        .map(s => ({
+          userId: s.user._id.toString(),
+          displayName: s.user.displayName || s.user.email || 'Anonymous',
+          avatar: s.user.avatar,
+          socketId: s.id,
+          online: true
+        }));
+
       // Broadcast updated user list to all users in the room
       io.in(`collab-room:${roomId}`).emit('users-in-room', usersInRoom);
-      console.log(`User ${socket.user.displayName || socket.user.email} joined collaborative room ${roomId}`);
+
+      // Send current cursors to the new user
+      const currentCursors = Array.from(userCursors.entries())
+        .filter(([userId, cursor]) => cursor.roomId === roomId)
+        .map(([userId, cursor]) => ({
+          userId,
+          position: cursor.position,
+          color: cursor.color,
+          displayName: cursor.displayName
+        }));
+
+      socket.emit('cursors-sync', currentCursors);
+
+      console.log(`User ${socket.user.displayName} joined collaborative room ${roomId}`);
     } catch (error) {
       console.error('Error joining collaborative room:', error);
       socket.emit('error', { message: 'Failed to join collaborative room' });
     }
   });
 
-  // Handle collaborative editing code changes
+  // Enhanced collaborative editing code changes with versioning
   socket.on('code-change', async (data) => {
     try {
-      const { range, text, roomId } = data;
-      // Broadcast code change to other users in the room using roomId
+      const { range, text, roomId, version } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const roomState = roomStates.get(roomId);
+      if (!roomState) {
+        socket.emit('error', { message: 'Room state not found' });
+        return;
+      }
+
+      // Check version to ensure consistency
+      if (version !== roomState.version) {
+        socket.emit('version-mismatch', {
+          currentVersion: roomState.version,
+          currentCode: roomState.code
+        });
+        return;
+      }
+
+      // Update room state
+      roomState.version += 1;
+      roomState.lastModified = new Date();
+      roomState.lastModifiedBy = socket.user._id.toString();
+
+      // Broadcast code change to other users in the room
       socket.to(`collab-room:${roomId}`).emit('code-change', {
         range,
         text,
-        userId: socket.id,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        version: roomState.version,
         timestamp: new Date()
       });
-      console.log(`Code change by user ${socket.id}`);
+
+      console.log(`Code change by user ${socket.user.displayName} in room ${roomId}, version ${roomState.version}`);
     } catch (error) {
       console.error('Error handling code change:', error);
       socket.emit('error', { message: 'Failed to sync code change' });
     }
   });
 
-  // Handle collaborative editing cursor movement
+  // Handle full code sync (for reconnection)
+  socket.on('code-sync', async (data) => {
+    try {
+      const { roomId, code, version } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const roomState = roomStates.get(roomId);
+      if (!roomState) {
+        socket.emit('error', { message: 'Room state not found' });
+        return;
+      }
+
+      // Update room state with new code
+      roomState.code = code;
+      roomState.version = version + 1;
+      roomState.lastModified = new Date();
+      roomState.lastModifiedBy = socket.user._id.toString();
+
+      // Broadcast to all users in the room
+      io.in(`collab-room:${roomId}`).emit('code-sync', {
+        code,
+        version: roomState.version,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        timestamp: new Date()
+      });
+
+      console.log(`Code sync by user ${socket.user.displayName} in room ${roomId}`);
+    } catch (error) {
+      console.error('Error handling code sync:', error);
+      socket.emit('error', { message: 'Failed to sync code' });
+    }
+  });
+
+  // Enhanced cursor movement with user info
   socket.on('cursor-move', (data) => {
-    const { position, roomId, userId, color, displayName } = data;
-    // Broadcast cursor position to other users in the room
-    socket.to(`collab-room:${roomId}`).emit('cursor-move', {
-      position,
-      userId: userId || socket.id,
-      color,
-      displayName
-    });
+    try {
+      const { position, roomId, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store cursor position
+      userCursors.set(userId, {
+        position,
+        roomId,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        timestamp: new Date()
+      });
+
+      // Broadcast cursor position to other users in the room
+      socket.to(`collab-room:${roomId}`).emit('cursor-move', {
+        position,
+        userId,
+        color: userCursors.get(userId).color,
+        displayName: userCursors.get(userId).displayName,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error handling cursor move:', error);
+    }
+  });
+
+  // Handle language changes in collaborative editing
+  socket.on('language-change', async (data) => {
+    try {
+      const { roomId, language, code } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const roomState = roomStates.get(roomId);
+      if (!roomState) {
+        socket.emit('error', { message: 'Room state not found' });
+        return;
+      }
+
+      // Update room state with new language and code
+      roomState.language = language;
+      roomState.code = code;
+      roomState.version += 1;
+      roomState.lastModified = new Date();
+      roomState.lastModifiedBy = socket.user._id.toString();
+
+      // Broadcast language change to all users in the room
+      io.in(`collab-room:${roomId}`).emit('language-change', {
+        language,
+        code,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        timestamp: new Date()
+      });
+
+      console.log(`Language changed to ${language} by user ${socket.user.displayName} in room ${roomId}`);
+    } catch (error) {
+      console.error('Error handling language change:', error);
+      socket.emit('error', { message: 'Failed to change language' });
+    }
   });
 
   // Handle collaborative editing room leaving
   socket.on('leave-collab-room', async (data) => {
     try {
       const { roomId } = data;
+      
       if (!socket.user) {
         socket.emit('error', { message: 'Authentication required' });
         return;
       }
+
       // Leave collaborative editing room
       socket.leave(`collab-room:${roomId}`);
+      
+      // Remove user from room state
+      const roomState = roomStates.get(roomId);
+      if (roomState) {
+        roomState.users.delete(socket.user._id.toString());
+        
+        // Clean up room state if no users left
+        if (roomState.users.size === 0) {
+          roomStates.delete(roomId);
+          console.log(`Room ${roomId} state cleaned up - no users left`);
+        }
+      }
+
+      // Remove user cursor
+      userCursors.delete(socket.user._id.toString());
+
       // Get updated users in the room
       const roomSockets = await io.in(`collab-room:${roomId}`).fetchSockets();
       const usersInRoom = roomSockets
         .filter(s => s.user)
-        .map(s => s.user.displayName || s.user.email || 'Anonymous');
+        .map(s => ({
+          userId: s.user._id.toString(),
+          displayName: s.user.displayName || s.user.email || 'Anonymous',
+          avatar: s.user.avatar,
+          socketId: s.id,
+          online: true
+        }));
+
       // Broadcast updated user list to all users in the room
       io.in(`collab-room:${roomId}`).emit('users-in-room', usersInRoom);
+
+      // Notify other users that this user left
+      socket.to(`collab-room:${roomId}`).emit('user-left-collab-room', {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous'
+      });
+
       console.log(`User ${socket.user.displayName} left collaborative room ${roomId}`);
     } catch (error) {
       console.error('Error leaving collaborative room:', error);
@@ -309,6 +595,25 @@ const handleSocketConnection = (socket, io) => {
     });
   });
 
+  // Handle editing indicators
+  socket.on('editing-start', (data) => {
+    const { roomId } = data;
+    socket.to(`collab-room:${roomId}`).emit('user-editing', {
+      userId: socket.user._id,
+      displayName: socket.user.displayName,
+      isEditing: true
+    });
+  });
+
+  socket.on('editing-stop', (data) => {
+    const { roomId } = data;
+    socket.to(`collab-room:${roomId}`).emit('user-editing', {
+      userId: socket.user._id,
+      displayName: socket.user.displayName,
+      isEditing: false
+    });
+  });
+
   // Handle user status updates
   socket.on('update-status', async (data) => {
     try {
@@ -342,25 +647,68 @@ const handleSocketConnection = (socket, io) => {
 
   // Handle disconnection
   socket.on('disconnect', async () => {
-    try {
-      console.log(`User disconnected: ${socket.user?.displayName || 'Unknown'}`);
-      
-      if (socket.user) {
+    console.log(`User disconnected: ${socket.user?.displayName || 'Unknown'}`);
+    
+    if (socket.user && socket.user._id) {
+      try {
         // Remove from active connections
         activeConnections.delete(socket.user._id.toString());
         
-        // Update user's online status
-        await updateUserStatus(socket.user._id, false);
+        // Remove user cursor
+        userCursors.delete(socket.user._id.toString());
         
-        // Notify relevant rooms about user leaving
-        socket.broadcast.emit('user-offline', {
-          userId: socket.user._id,
-          displayName: socket.user.displayName,
-          leftAt: new Date()
+        // Update user's online status
+        updateUserStatus(socket.user._id, false);
+        
+        // Notify all rooms that user is offline
+        const userRooms = Array.from(socket.rooms).filter(room => room.startsWith('collab-room:'));
+        for (const room of userRooms) {
+          const roomId = room.replace('collab-room:', '');
+          const roomState = roomStates.get(roomId);
+          if (roomState) {
+            roomState.users.delete(socket.user._id.toString());
+          }
+        }
+        
+        console.log(`User ${socket.user.displayName} disconnected successfully`);
+      } catch (error) {
+        console.error('Error handling user disconnect:', error);
+      }
+    } else {
+      console.log('Unauthenticated user disconnected');
+    }
+  });
+
+  // Handle reconnection
+  socket.on('reconnect-request', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Rejoin the room
+      socket.join(`collab-room:${roomId}`);
+      
+      const roomState = roomStates.get(roomId);
+      if (roomState) {
+        roomState.users.add(socket.user._id.toString());
+        
+        // Send current state
+        socket.emit('room-state-sync', {
+          code: roomState.code,
+          language: roomState.language,
+          version: roomState.version,
+          lastModified: roomState.lastModified
         });
       }
+
+      console.log(`User ${socket.user.displayName} reconnected to room ${roomId}`);
     } catch (error) {
-      console.error('Error handling disconnect:', error);
+      console.error('Error handling reconnection:', error);
+      socket.emit('error', { message: 'Failed to reconnect' });
     }
   });
 
@@ -414,6 +762,11 @@ const handleSocketConnection = (socket, io) => {
 // Update user online status
 const updateUserStatus = async (userId, isOnline) => {
   try {
+    if (!userId) {
+      console.warn('Cannot update user status: userId is null or undefined');
+      return;
+    }
+    
     await User.findByIdAndUpdate(userId, {
       isOnline,
       lastSeenAt: isOnline ? new Date() : new Date()
@@ -450,6 +803,39 @@ const broadcastToTeam = (teamId, event, data) => {
   // Implementation would be: io.to(`team:${teamId}`).emit(event, data);
   console.log(`Broadcasting to team ${teamId}:`, event, data);
 };
+
+// Helper function to generate user color
+function generateUserColor(userId) {
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+  ];
+  const index = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  return colors[index];
+}
+
+// Helper function to get default code for language
+function getDefaultCode(language) {
+  const defaults = {
+    javascript: `// Welcome to collaborative JavaScript coding!
+console.log("Hello, World!");
+
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+
+// Start coding with your team!`,
+    python: `# Welcome to collaborative Python coding!
+print("Hello, World!")
+
+def greet(name):
+    return f"Hello, {name}!"
+
+# Start coding with your team!`
+  };
+  
+  return defaults[language] || defaults.javascript;
+}
 
 // Broadcast to room
 const broadcastToRoom = (roomId, event, data) => {

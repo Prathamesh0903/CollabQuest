@@ -3,7 +3,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Initialize Firebase Admin SDK
-const serviceAccount = require('../firebase-adminsdk.json');
+const serviceAccount = require('../firbase-adminsdk.json');
 
 // Initialize Firebase Admin
 let firebaseApp;
@@ -15,7 +15,7 @@ try {
   });
   console.log('Firebase Admin SDK initialized successfully');
 } catch (error) {
-  if (error.code === 'app/duplicate-app') {
+  if (error.code === 'app/duplicate-app') { 
     firebaseApp = admin.app();
     console.log('Firebase Admin SDK already initialized');
   } else {

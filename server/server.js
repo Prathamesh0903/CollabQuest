@@ -14,6 +14,7 @@ const teamRoutes = require('./routes/teams');
 const roomRoutes = require('./routes/rooms');
 const quizRoutes = require('./routes/quizzes');
 const leaderboardRoutes = require('./routes/leaderboards');
+const messageRoutes = require('./routes/messages');
 
 const { socketAuth } = require('./middleware/auth');
 const { handleSocketConnection } = require('./utils/socketHandler');
@@ -53,14 +54,37 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+app.get('/api/health', async (req, res) => {
+  const { checkExecutorHealth } = require('./utils/codeExecutor');
+  
+  try {
+    const executorHealth = await checkExecutorHealth();
+    
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      services: {
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        executor: executorHealth.local ? 'healthy' : 'unhealthy',
+        executorDetails: executorHealth
+      }
+    });
+  } catch (error) {
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      services: {
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        executor: 'error',
+        executorDetails: { error: error.message }
+      }
+    });
+  }
 });
 
 // Socket.io middleware

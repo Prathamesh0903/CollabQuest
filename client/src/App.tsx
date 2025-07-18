@@ -7,6 +7,9 @@ import CollaborativeEditor from './components/CollaborativeEditor';
 import DemoInstructions from './components/DemoInstructions';
 import Dashboard from './components/Dashboard';
 import Quiz from './components/Quiz';
+import BattleLobby from './components/Dashboard/BattleLobby';
+import BattleRoomPage from './components/BattleRoomPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 interface EditorState {
   roomId: string;
@@ -78,35 +81,43 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <GamifiedTransition show={showTransition} />
-      {editorState ? (
-        <div className="editor-wrapper">
-          <div className="leave-room">
-            <button onClick={handleLeaveRoom} className="leave-btn">
-              ← Back to Dashboard
-            </button>
-          </div>
-          <CollaborativeEditor
-            roomId={editorState.roomId}
-            language={editorState.language}
-          />
-        </div>
-      ) : showDemo ? (
-        <div className="demo-wrapper">
-          <div className="leave-room">
-            <button onClick={handleHideDemo} className="leave-btn">
-              ← Back to Dashboard
-            </button>
-          </div>
-          <DemoInstructions />
-        </div>
-      ) : showQuiz ? (
-        <Quiz onBack={handleHideQuiz} />
-      ) : (
-        <Dashboard onRoomSuccess={handleRoomSuccess} onStartQuiz={handleStartQuiz} onStartDemo={handleShowDemo} />
-      )}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/battle-lobby" element={<BattleLobby />} />
+        <Route path="/battle-room/:roomCode" element={<BattleRoomPage />} />
+        <Route
+          path="*"
+          element={
+            editorState ? (
+              <div className="editor-wrapper">
+                <div className="leave-room">
+                  <button onClick={handleLeaveRoom} className="leave-btn">
+                    ← Back to Dashboard
+                  </button>
+                </div>
+                <CollaborativeEditor
+                  roomId={editorState.roomId}
+                  language={editorState.language}
+                />
+              </div>
+            ) : showDemo ? (
+              <div className="demo-wrapper">
+                <div className="leave-room">
+                  <button onClick={handleHideDemo} className="leave-btn">
+                    ← Back to Dashboard
+                  </button>
+                </div>
+                <DemoInstructions />
+              </div>
+            ) : showQuiz ? (
+              <Quiz onBack={handleHideQuiz} />
+            ) : (
+              <Dashboard onRoomSuccess={handleRoomSuccess} onStartQuiz={handleStartQuiz} onStartDemo={handleShowDemo} />
+            )
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 

@@ -139,6 +139,38 @@ const roomSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // Room code for easy joining
+  roomCode: {
+    type: String,
+    unique: true,
+    required: true,
+    uppercase: true,
+    trim: true,
+    minlength: 5,
+    maxlength: 8
+  },
+  // Room code expiration (for temporary rooms)
+  codeExpiresAt: {
+    type: Date,
+    default: null
+  },
+  // Room mode (collaborative, battle, etc.)
+  mode: {
+    type: String,
+    enum: ['collaborative', 'battle', 'presentation'],
+    default: 'collaborative'
+  },
+  // Programming language
+  language: {
+    type: String,
+    enum: ['javascript', 'python', 'java', 'cpp', 'csharp'],
+    default: 'javascript'
+  },
+  // Generated problems for the room
+  problems: {
+    type: Array,
+    default: []
   }
 }, {
   timestamps: true
@@ -150,6 +182,8 @@ roomSchema.index({ status: 1, type: 1 });
 roomSchema.index({ 'schedule.startTime': 1 });
 roomSchema.index({ teamId: 1 });
 roomSchema.index({ createdBy: 1 });
+roomSchema.index({ roomCode: 1 }, { unique: true });
+roomSchema.index({ codeExpiresAt: 1 });
 
 // Virtual for current participant count
 roomSchema.virtual('currentParticipantCount').get(function() {
@@ -238,6 +272,60 @@ roomSchema.methods.endActivity = function() {
   };
   
   this.status = 'waiting';
+  return this.save();
+};
+
+// Generate a unique room code
+roomSchema.statics.generateRoomCode = async function() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  do {
+    code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    attempts++;
+    
+    // Check if code already exists
+    const existingRoom = await this.findOne({ roomCode: code });
+    if (!existingRoom) {
+      return code;
+    }
+  } while (attempts < maxAttempts);
+
+  throw new Error('Unable to generate unique room code');
+};
+
+// Find room by code
+roomSchema.statics.findByCode = function(roomCode) {
+  return this.findOne({ 
+    roomCode: roomCode.toUpperCase(),
+    isActive: true,
+    $or: [
+      { codeExpiresAt: null },
+      { codeExpiresAt: { $gt: new Date() } }
+    ]
+  });
+};
+
+// Set room code expiration
+roomSchema.methods.setCodeExpiration = function(hours = 24) {
+  this.codeExpiresAt = new Date(Date.now() + (hours * 60 * 60 * 1000));
+  return this.save();
+};
+
+// Check if room code is expired
+roomSchema.methods.isCodeExpired = function() {
+  if (!this.codeExpiresAt) return false;
+  return new Date() > this.codeExpiresAt;
+};
+
+// Regenerate room code
+roomSchema.methods.regenerateCode = async function() {
+  this.roomCode = await this.constructor.generateRoomCode();
   return this.save();
 };
 

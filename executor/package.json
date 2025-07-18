@@ -1,0 +1,25 @@
+{
+  "name": "executor-service",
+  "version": "1.0.0",
+  "description": "Secure code execution service for collaborative platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "node ../test-code-execution.js"
+  },
+  "keywords": [
+    "code-execution",
+    "sandbox",
+    "security",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

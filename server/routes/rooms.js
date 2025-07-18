@@ -1,13 +1,13 @@
 const express = require('express');
 const { auth } = require('../middleware/auth');
 const Room = require('../models/Room');
+const roomStateManager = require('../utils/roomStateManager');
 const { executeCode } = require('../utils/codeExecutor');
+const { generateProblemsWithGemini } = require('../utils/problemGenerator');
 
 const router = express.Router();
 
-// @route   GET /api/rooms
-// @desc    Get all rooms for current user
-// @access  Private
+// Get all rooms for current user
 router.get('/', auth, async (req, res) => {
   try {
     const rooms = await Room.find({
@@ -28,33 +28,26 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// @route   POST /api/rooms
-// @desc    Create a new room
-// @access  Private
-router.post('/', auth, async (req, res) => {
+// Create a new room with a generated code
+router.post('/create', auth, async (req, res) => {
   try {
-    const { name, description, type = 'collaborative' } = req.body;
-
+    const { name, description, language = 'javascript', mode = 'collaborative', isTemporary = false } = req.body;
     if (!name) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Room name is required' 
-      });
+      return res.status(400).json({ success: false, error: 'Room name is required' });
     }
-
-    const room = new Room({
+    const { room, state } = await roomStateManager.createRoom({
       name,
       description,
-      type,
+      language,
+      mode,
       createdBy: req.user._id,
-      participants: [{ userId: req.user._id, role: 'host', joinedAt: new Date() }]
+      isTemporary
     });
-
-    await room.save();
-
     res.status(201).json({
       success: true,
-      room
+      room,
+      roomCode: room.roomCode,
+      state
     });
   } catch (error) {
     console.error('Create room error:', error);
@@ -66,59 +59,112 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// POST /api/rooms/:roomId/execute
-router.post('/:roomId/execute', async (req, res) => {
+// Join a room by code
+router.post('/join', auth, async (req, res) => {
   try {
-    const { language, code, input, testCases, submissionTime, battleStartTime } = req.body;
-    if (!language || !code) {
-      return res.status(400).json({ success: false, error: 'language and code are required' });
+    const { roomCode } = req.body;
+    if (!roomCode) {
+      return res.status(400).json({ success: false, error: 'Room code is required' });
     }
-    // If no testCases, fallback to single execution
-    if (!Array.isArray(testCases) || testCases.length === 0) {
-      const result = await executeCode(language, code, input || '');
-      return res.json({ success: true, result });
-    }
-    // Run code for each test case
-    let passed = 0;
-    const testCaseResults = [];
-    for (const tc of testCases) {
-      const execResult = await executeCode(language, code, tc.input || '');
-      const output = (execResult.stdout || '').trim();
-      const expected = (tc.expectedOutput || '').trim();
-      const isPass = output === expected;
-      if (isPass) passed++;
-      testCaseResults.push({
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        actualOutput: output,
-        isPass,
-        error: execResult.stderr || execResult.compile_output || null
-      });
-    }
-    // Scoring logic
-    const maxPoints = 100;
-    const accuracyScore = Math.round((passed / testCases.length) * maxPoints);
-    // Speed bonus: max 50 points, linearly decreases over 5 minutes
-    let speedScore = 0;
-    if (battleStartTime && submissionTime) {
-      const elapsed = Math.max(0, Math.min(300, Math.floor((submissionTime - battleStartTime) / 1000)));
-      speedScore = Math.round(50 * (1 - (elapsed / 300)));
-    }
-    const totalScore = accuracyScore + speedScore;
+    const { room, state } = await roomStateManager.joinRoomByCode(roomCode, req.user._id);
     res.json({
       success: true,
-      result: {
-        passed,
-        total: testCases.length,
-        testCaseResults,
-        accuracyScore,
-        speedScore,
-        totalScore,
-        timeTaken: submissionTime && battleStartTime ? Math.floor((submissionTime - battleStartTime) / 1000) : null
-      }
+      room,
+      state
+    });
+  } catch (error) {
+    console.error('Join room error:', error);
+    res.status(404).json({ 
+      success: false, 
+      error: 'Failed to join room',
+      message: error.message 
+    });
+  }
+});
+
+// Get room state by code (for debugging/demo)
+router.get('/state/:roomCode', auth, async (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    const roomInfo = roomStateManager.getRoomByCode(roomCode);
+    if (!roomInfo) {
+      return res.status(404).json({ success: false, error: 'Room not found' });
+    }
+    res.json({
+      success: true,
+      ...roomInfo
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// (Optional) Get all active rooms (for admin/debug)
+router.get('/active', auth, (req, res) => {
+  try {
+    const rooms = roomStateManager.getActiveRooms();
+    res.json({ success: true, rooms });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Execute code in a room
+router.post('/:roomId/execute', auth, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { language, code, input = '' } = req.body;
+
+    // Validate inputs
+    if (!language || !code) {
+      return res.status(400).json({
+        success: false,
+        error: 'Language and code are required'
+      });
+    }
+
+    // Validate language
+    if (!['javascript', 'python'].includes(language)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unsupported language. Supported: javascript, python'
+      });
+    }
+
+    // Execute the code
+    const result = await executeCode(language, code, input);
+
+    res.json({
+      success: true,
+      result
+    });
+  } catch (error) {
+    console.error('Code execution error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Code execution failed'
+    });
+  }
+});
+
+// Generate and store problems for a room
+router.post('/:roomId/generate-problems', auth, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { language = 'JavaScript', difficulty = 'Easy' } = req.body;
+    const room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ success: false, error: 'Room not found' });
+    }
+    // Call Gemini API
+    const problems = await generateProblemsWithGemini(language, difficulty);
+    // Store in room document
+    room.problems = problems;
+    await room.save();
+    res.json({ success: true, problems });
+  } catch (error) {
+    console.error('Problem generation error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to generate problems' });
   }
 });
 

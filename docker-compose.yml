@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Main server
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - EXECUTOR_URL=http://executor:5001
+      - JUDGE0_API_KEY=${JUDGE0_API_KEY}
+    depends_on:
+      - executor
+    networks:
+      - app-network
+    restart: unless-stopped
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  # Code executor service
+  executor:
+    build: ./executor
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

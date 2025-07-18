@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Typewriter } from 'react-simple-typewriter';
 import { motion } from 'framer-motion';
 import '../Dashboard.css';
+import { useNavigate } from 'react-router-dom';
 
 const featureCards = [
   {
@@ -29,17 +30,17 @@ const featureCards = [
     animationClass: 'card-animate-quiz',
   },
   {
-    key: 'team-rooms',
+    key: 'Hackathons',
     icon: '👥',
-    title: 'Team Rooms',
+    title: 'Hackathons',
     desc: 'Join teams for collaborative or competitive coding.',
     button: 'Join a Team',
     animationClass: 'card-animate-team',
   },
   {
-    key: 'onboarding',
+    key: 'Weekly Contest',
     icon: '🚀',
-    title: 'Demo & Onboarding',
+    title: 'Weekly Contest',
     desc: 'Try the interactive demo and get started in minutes.',
     button: 'Start Demo',
     animationClass: 'card-animate-demo',
@@ -51,10 +52,11 @@ const featureCards = [
     desc: 'See your results, badges, and progress.',
     button: 'View Results',
     animationClass: 'card-animate-results',
-  },
+  }
 ];
 
 const MainContent: React.FC<{ onStartCoding: () => void; onStartQuiz?: () => void; onStartDemo?: () => void }> = ({ onStartCoding, onStartQuiz, onStartDemo }) => {
+  const navigate = useNavigate();
   const cardsSectionRef = useRef<HTMLDivElement>(null);
   const [showCards, setShowCards] = useState(false);
 
@@ -73,6 +75,10 @@ const MainContent: React.FC<{ onStartCoding: () => void; onStartQuiz?: () => voi
     }
     return () => observer.disconnect();
   }, []);
+
+  const handleStartBattle = () => {
+    navigate('/battle-lobby');
+  };
 
   return (
     <main className="dashboard-main-content leetcode-main-content scrollable-dashboard">
@@ -126,6 +132,8 @@ const MainContent: React.FC<{ onStartCoding: () => void; onStartQuiz?: () => voi
                   <button className="card-btn leetcode-card-btn" onClick={onStartQuiz}>{card.button}</button>
                 ) : card.button === 'Start Demo' ? (
                   <button className="card-btn leetcode-card-btn" onClick={onStartDemo}>{card.button}</button>
+                ) : card.button === 'Start Battle' ? (
+                  <button className="card-btn leetcode-card-btn" onClick={handleStartBattle}>{card.button}</button>
                 ) : (
                   <button className="card-btn leetcode-card-btn">{card.button}</button>
                 )}

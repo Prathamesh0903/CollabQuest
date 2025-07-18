@@ -1,0 +1,128 @@
+.language-switcher-demo {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.language-switcher-demo h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.demo-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.connection-toggle {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.connection-toggle.connected {
+  background: #4caf50;
+  color: white;
+}
+
+.connection-toggle.disconnected {
+  background: #f44336;
+  color: white;
+}
+
+.connection-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.demo-section {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.demo-section h3 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.demo-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.demo-info h3 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.demo-info p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+.demo-features {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.demo-features h3 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.demo-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.demo-features li {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .language-switcher-demo {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .language-switcher-demo h2 {
+    font-size: 1.5rem;
+  }
+  
+  .demo-section,
+  .demo-info,
+  .demo-features {
+    padding: 1rem;
+  }
+} 

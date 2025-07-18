@@ -1,0 +1,101 @@
+.spectator-view-root {
+  width: 100vw;
+  height: 100vh;
+  background: #181c2f;
+  display: flex;
+  flex-direction: column;
+}
+.spectator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #232946;
+  color: #fff;
+  padding: 1rem 2rem 1rem 1.5rem;
+  border-bottom: 2px solid #22253a;
+}
+.spectator-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.spectator-test-stats {
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  gap: 1.2rem;
+}
+.stat-pass {
+  color: #4caf50;
+}
+.stat-fail {
+  color: #ff4d4f;
+}
+.stat-total {
+  color: #e0e6f7;
+}
+.spectator-split-row {
+  display: flex;
+  flex: 1 1 0;
+  overflow-x: auto;
+  background: #181c2f;
+  padding: 1.2rem 0.5rem;
+  gap: 1.5rem;
+}
+.spectator-participant-col {
+  background: #232946;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 12px 0 rgba(31, 38, 135, 0.10);
+  min-width: 340px;
+  max-width: 420px;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  padding: 1rem 1rem 0.5rem 1rem;
+}
+.spectator-user-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #e0e6f7;
+  transition: background 0.2s;
+  border-radius: 0.7rem;
+  padding: 0.3rem 0.7rem;
+}
+.spectator-user-header.typing {
+  background: #f59e42;
+  color: #232946;
+}
+.spectator-avatar {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fbbf24;
+  background: #fff;
+}
+.spectator-username {
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+.typing-indicator {
+  color: #ff4d4f;
+  font-size: 1.1rem;
+  margin-left: 0.5rem;
+}
+@media (max-width: 900px) {
+  .spectator-split-row {
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 0.7rem 0.2rem;
+  }
+  .spectator-participant-col {
+    min-width: 90vw;
+    max-width: 98vw;
+    padding: 0.7rem 0.5rem 0.3rem 0.5rem;
+  }
+} 
