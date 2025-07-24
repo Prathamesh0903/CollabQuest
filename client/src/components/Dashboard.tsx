@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from './Dashboard/Navbar';
 import MainContent from './Dashboard/MainContent';
 import RoomModal from './Dashboard/RoomModal';
+import './Dashboard/Navbar.css';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -25,10 +26,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRoomSuccess, onStartQuiz, onSta
 
   return (
     <div className="dashboard-container dashboard-no-sidebar">
-      <Navbar 
-        onCreateRoom={() => handleModalOpen('create')} 
-        onJoinRoom={() => handleModalOpen('join')}
-      />
+      <Navbar />
       <div className="dashboard-main-area dashboard-main-area-nosidebar leetcode-main-content">
         <MainContent 
           onStartCoding={() => handleModalOpen('join')} 
