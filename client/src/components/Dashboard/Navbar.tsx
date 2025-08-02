@@ -1,22 +1,53 @@
-import React from 'react';
-import '../Dashboard.css';
+import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import './Navbar.css';
 
-interface NavbarProps {
-  onCreateRoom: () => void;
-  onJoinRoom: () => void;
-}
+const Navbar: React.FC = () => {
+  const { currentUser, logout } = useAuth();
+  const [isDropdownVisible, setDropdownVisible] = useState(false);
 
-const Navbar: React.FC<NavbarProps> = ({ onCreateRoom, onJoinRoom }) => (
-  <header className="dashboard-navbar dashboard-navbar-modern">
-    <div className="navbar-logo gamified-logo">
-      <span role="img" aria-label="logo">🎮</span> Collab Quest
-    </div>
-    <nav className="navbar-links navbar-links-modern">
-      <button className="navbar-action" onClick={onCreateRoom}>Create Room</button>
-      <button className="navbar-action" onClick={onJoinRoom}>Join Room</button>
-      <button className="navbar-action">Profile</button>
-    </nav>
-  </header>
-);
+  const handleProfileHover = () => {
+    setDropdownVisible(true);
+  };
+
+  const handleProfileLeave = () => {
+    setDropdownVisible(false);
+  };
+
+  return (
+    <header className="dashboard-navbar">
+      <div className="navbar-left">
+        <a href="#" className="navbar-logo">
+          <span className="logo-text">Collab Quest</span>
+        </a>
+        <ul className="nav-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Code Together</a></li>
+          <li><a href="#">Contest</a></li>
+          <li><a href="#">Discuss</a></li>
+        </ul>
+      </div>
+      <div 
+        className="navbar-right"
+        onMouseEnter={handleProfileHover}
+        onMouseLeave={handleProfileLeave}
+      >
+        <div className="user-profile">
+          <span className="profile-icon">👤</span>
+        </div>
+        {isDropdownVisible && (
+          <div className="profile-dropdown">
+            {currentUser && (
+              <div className="user-info">
+                <p>{currentUser.displayName || currentUser.email}</p>
+              </div>
+            )}
+            <button onClick={logout} className="logout-button">Logout</button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
 
 export default Navbar;
