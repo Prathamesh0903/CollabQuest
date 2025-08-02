@@ -5,9 +5,9 @@ import '../Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 
 interface MainContentProps {
-  onStartCoding: () => void;
   onStartQuiz?: () => void;
   onStartDemo?: () => void;
+  onRoomSuccess?: (roomId: string, language: 'javascript' | 'python') => void;
 }
 
 const featureCards = [
@@ -61,7 +61,7 @@ const featureCards = [
   }
 ];
 
-const MainContent: React.FC<MainContentProps> = ({ onStartCoding, onStartQuiz, onStartDemo }) => {
+const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onRoomSuccess }) => {
   const navigate = useNavigate();
 
   
@@ -107,7 +107,7 @@ const MainContent: React.FC<MainContentProps> = ({ onStartCoding, onStartQuiz, o
             <button 
               className="action-button"
               onClick={() => {
-                if (card.button === 'Start Coding') onStartCoding();
+                if (card.button === 'Start Coding') onRoomSuccess?.('new-session', 'javascript');
                 else if (card.button === 'Take a Quiz') onStartQuiz?.();
                 else if (card.button === 'Start Demo') onStartDemo?.();
                 else if (card.button === 'Start Battle') handleStartBattle();

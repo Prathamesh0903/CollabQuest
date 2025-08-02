@@ -64,56 +64,9 @@ interface RoomState {
 }
 
 // GamifiedHeader props type
-interface GamifiedHeaderProps {
-  onDiscuss: () => void;
-  unreadCount: number;
-  onThemeToggle: () => void;
-  theme: string;
-  onProfile: () => void;
-  connectionStatus: 'connected' | 'disconnected' | 'reconnecting';
-  activeUsers: UserInfo[];
-}
 
-// GamifiedHeader component
-const GamifiedHeader: React.FC<GamifiedHeaderProps> = ({ 
-  onDiscuss, 
-  unreadCount, 
-  onThemeToggle, 
-  theme, 
-  onProfile, 
-  connectionStatus,
-  activeUsers 
-}) => (
-  <header className="gamified-header">
-    <div className="header-left">
-      <div className="connection-status">
-        <span className={`status-indicator ${connectionStatus}`}>
-          {connectionStatus === 'connected' ? '🟢' : 
-           connectionStatus === 'reconnecting' ? '🟡' : '🔴'}
-        </span>
-        <span className="status-text">
-          {connectionStatus === 'connected' ? 'Connected' : 
-           connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
-        </span>
-      </div>
-      <div className="active-users-count">
-        👥 {activeUsers.length} online
-      </div>
-    </div>
-    <div className="header-right">
-      <button className="discuss-btn" onClick={onDiscuss} title="Discuss with your team">
-        💬 Discuss
-        {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-      </button>
-      <button className="theme-toggle" onClick={onThemeToggle}>
-        {theme === 'vs-dark' ? '☀️ Light' : '🌙 Dark'}
-      </button>
-      <button className="profile-btn" onClick={onProfile} title="Profile">
-        <UserProfile />
-      </button>
-    </div>
-  </header>
-);
+
+
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   roomId,
@@ -137,9 +90,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   
   const [remoteCursors, setRemoteCursors] = useState<{ [userId: string]: CursorInfo }>({});
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [showChat, setShowChat] = useState(false);
   const [showChatPanel, setShowChatPanel] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState<TerminalOutput | null>(null);
   const [outputLoading, setOutputLoading] = useState<boolean>(false);
@@ -148,7 +99,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
   // Gamification state (mocked)
   
-  const [unreadCount, setUnreadCount] = useState(0);
+  
   const [showConfetti] = useState(false);
 
   // Timer state for demo
@@ -441,15 +392,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
 
 
-  // Unread chat notification logic
-  useEffect(() => {
-    if (!showChat && chatMessages.length > 0) {
-      setUnreadCount((c) => c + 1);
-    }
-    if (showChat) {
-      setUnreadCount(0);
-    }
-  }, [chatMessages, showChat]);
+  
 
   // Helper function to show notifications
 
@@ -535,32 +478,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     return colors[index];
   };
 
-  const handleSendMessage = () => {
-    if (chatInput.trim() && socketRef.current && connectionStatus === 'connected') {
-      socketRef.current.emit('send-message', {
-        roomId,
-        content: chatInput.trim(),
-        type: 'text'
-      });
-      setChatInput('');
-      
-      // Stop typing indicator
-      socketRef.current.emit('typing-stop', { roomId });
-    }
-  };
+  
 
-  // Handle typing indicators for chat
-  const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setChatInput(e.target.value);
-    
-    if (socketRef.current && connectionStatus === 'connected') {
-      if (e.target.value.trim()) {
-        socketRef.current.emit('typing-start', { roomId });
-      } else {
-        socketRef.current.emit('typing-stop', { roomId });
-      }
-    }
-  };
+  
 
   const handleRunCode = useCallback(async () => {
     if (!code.trim()) return;
@@ -671,44 +591,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     showInfo('Language Changed', `Switched to ${newLanguage.charAt(0).toUpperCase() + newLanguage.slice(1)}`);
   };
 
-  // ChatPanel component (inline for now)
-  const ChatPanel = () => (
-    <div className="chat-panel floating-chat-panel">
-      <div className="chat-header">💬 Team Chat
-        <button className="chat-close-btn" onClick={() => setShowChat(false)} title="Close">×</button>
-      </div>
-      <div className="chat-messages">
-        {chatMessages.map((msg, idx) => (
-          <div key={idx} className={`chat-message${msg.userId === currentUser?.uid ? ' own' : ''}`}> 
-            <div className="chat-avatar">
-              {msg.avatar ? (
-                <img src={msg.avatar} alt={msg.displayName} />
-              ) : (
-                <span className="avatar-placeholder">{msg.displayName?.charAt(0) || 'U'}</span>
-              )}
-            </div>
-            <div className="chat-content">
-              <div className="chat-user">{msg.displayName}</div>
-              <div className="chat-text">{msg.message}</div>
-              <div className="chat-time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            </div>
-          </div>
-        ))}
-        <div ref={chatEndRef} />
-      </div>
-      <div className="chat-input-row">
-        <input
-          type="text"
-          className="chat-input"
-          placeholder="Type a message..."
-          value={chatInput}
-          onChange={handleChatInputChange}
-          onKeyDown={e => { if (e.key === 'Enter') handleSendMessage(); }}
-        />
-        <button className="chat-send-btn" onClick={handleSendMessage}>Send</button>
-      </div>
-    </div>
-  );
+  
 
 
 
@@ -797,116 +680,121 @@ function helloWorld() {
   );
 
   return (
-    <div className="collaborative-editor ide-layout gamified-bg">
+    <div className={`collaborative-editor ide-layout ${theme === 'vs-dark' ? 'dark-theme' : 'light-theme'}`}>
       {showConfetti && <Confetti numberOfPieces={250} recycle={false} />}
-      <GamifiedHeader
-        onDiscuss={() => setShowChat((v) => !v)}
-        unreadCount={unreadCount}
-        onThemeToggle={toggleTheme}
-        theme={theme}
-        onProfile={() => {}}
-        connectionStatus={connectionStatus}
-        activeUsers={activeUsers}
-      />
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
-      <div className="main-content-area">
-        <UserSidebar
-          users={sidebarUsers}
-          currentUserId={currentUser?.uid || ''}
-          roomId={roomId}
-          isVisible={showSidebar}
-          onToggle={() => setShowSidebar(!showSidebar)}
-          onUserClick={(user) => {
-            console.log('User clicked:', user);
-            // You can implement user profile view or direct messaging here
+
+      <UserSidebar
+        users={sidebarUsers}
+        currentUserId={currentUser?.uid || ''}
+        roomId={roomId}
+        isVisible={showSidebar}
+        onToggle={() => setShowSidebar(!showSidebar)}
+        onUserClick={(user) => {
+          console.log('User clicked:', user);
+          // You can implement user profile view or direct messaging here
+        }}
+      />
+
+      <div className={`editor-main ${showSidebar ? 'with-sidebar' : ''}`}>
+        <div className="editor-header">
+          <div className="header-left">
+            <h2>Collaborative {language.charAt(0).toUpperCase() + language.slice(1)} Editor</h2>
+            <div className="room-info">
+              <span className={`connection-status ${connectionStatus}`}>
+                {connectionStatus === 'connected' ? 'Connected' :
+                 connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
+              </span>
+              <span className="room-id">Room: {roomId}</span>
+              <span className="active-users-count">
+                👥 {activeUsers.length} online
+              </span>
+            </div>
+          </div>
+          <div className="header-right">
+            <button className="run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
+              {outputLoading ? 'Running...' : '▶ Run Code'}
+            </button>
+            <button className="discuss-btn" onClick={() => setShowChatPanel((v) => !v)} title="Toggle Chat">
+              💬 Chat
+            </button>
+            <button className="theme-toggle" onClick={toggleTheme}>
+              {theme === 'vs-dark' ? '☀️ Light' : '🌙 Dark'}
+            </button>
+            <button className="profile-btn" onClick={() => {}} title="Profile">
+              <UserProfile />
+            </button>
+            <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(!showSidebar)} title="Toggle Sidebar">
+              {showSidebar ? '◀ Hide Users' : '▶ Show Users'}
+            </button>
+          </div>
+        </div>
+        <Editor
+          height="calc(100vh - 160px)" // Adjust height based on header/footer
+          defaultLanguage={language}
+          defaultValue={code || getDefaultCode()}
+          theme={theme}
+          onMount={handleEditorDidMount}
+          options={{
+            minimap: { enabled: true },
+            fontSize: 14,
+            wordWrap: 'on',
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            roundedSelection: false,
+            readOnly: false,
+            cursorStyle: 'line',
+            contextmenu: true,
+            mouseWheelZoom: true,
+            quickSuggestions: true,
+            renderWhitespace: 'selection',
+            tabSize: 2,
+            insertSpaces: true,
+            folding: true,
+            lineNumbers: 'on',
+            glyphMargin: true,
+            foldingStrategy: 'auto',
+            showFoldingControls: 'mouseover',
+            disableLayerHinting: true,
+            renderLineHighlight: 'all',
+            selectOnLineNumbers: true,
+            scrollbar: {
+              vertical: 'visible',
+              horizontal: 'visible',
+              verticalScrollbarSize: 17,
+              horizontalScrollbarSize: 17,
+              arrowSize: 30
+            }
           }}
         />
-        <div className={`editor-main ${showSidebar ? 'with-sidebar' : ''}`}>
-          <div className="editor-header">
-            <div className="header-left">
-              <h2>Collaborative {language.charAt(0).toUpperCase() + language.slice(1)} Editor</h2>
-              <div className="room-info">
-                <span className={`connection-status ${connectionStatus}`}>
-                  {connectionStatus === 'connected' ? '🟢 Connected' : 
-                   connectionStatus === 'reconnecting' ? '🟡 Reconnecting...' : '🔴 Disconnected'}
-                </span>
-                <span className="room-id">Room: {roomId}</span>
-              </div>
-            </div>
-            <div className="header-right">
-              <button className="run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
-                {outputLoading ? 'Running...' : '▶ Run Code'}
-              </button>
-            </div>
-          </div>
-          <Editor
-            height="70vh"
-            defaultLanguage={language}
-            defaultValue={code || getDefaultCode()}
-            theme={theme}
-            onMount={handleEditorDidMount}
-            options={{
-              minimap: { enabled: true },
-              fontSize: 14,
-              wordWrap: 'on',
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-              roundedSelection: false,
-              readOnly: false,
-              cursorStyle: 'line',
-              contextmenu: true,
-              mouseWheelZoom: true,
-              quickSuggestions: true,
-              renderWhitespace: 'selection',
-              tabSize: 2,
-              insertSpaces: true,
-              folding: true,
-              lineNumbers: 'on',
-              glyphMargin: true,
-              foldingStrategy: 'auto',
-              showFoldingControls: 'mouseover',
-              disableLayerHinting: true,
-              renderLineHighlight: 'all',
-              selectOnLineNumbers: true,
-              scrollbar: {
-                vertical: 'visible',
-                horizontal: 'visible',
-                verticalScrollbarSize: 17,
-                horizontalScrollbarSize: 17,
-                arrowSize: 30
-              }
-            }}
-          />
-          <ShortcutHints />
-          <Terminal
-            isVisible={showTerminal}
-            onClose={() => setShowTerminal(false)}
-            output={terminalOutput}
-            isLoading={outputLoading}
-            customInput={customInput}
-            onCustomInputChange={setCustomInput}
-            onClear={handleClearTerminal}
-          />
-          <div className="editor-footer">
-            <LanguageSwitcher
-              currentLanguage={language}
-              onLanguageChange={handleLanguageChange}
-              disabled={connectionStatus !== 'connected'}
-            />
-            <div className="editor-stats">
-              <span>Lines: {code.split('\n').length}</span>
-              <span>Characters: {code.length}</span>
-            </div>
-          </div>
-          {showChat && <ChatPanel />}
-        </div>
-        <Chat
-          roomId={roomId}
-          socket={socketRef.current}
-          isVisible={showChatPanel}
-          onToggle={() => setShowChatPanel(!showChatPanel)}
+        <ShortcutHints />
+        <Terminal
+          isVisible={showTerminal}
+          onClose={() => setShowTerminal(false)}
+          output={terminalOutput}
+          isLoading={outputLoading}
+          customInput={customInput}
+          onCustomInputChange={setCustomInput}
+          onClear={handleClearTerminal}
         />
+        <div className="editor-footer">
+          <LanguageSwitcher
+            currentLanguage={language}
+            onLanguageChange={handleLanguageChange}
+            disabled={connectionStatus !== 'connected'}
+          />
+          <div className="editor-stats">
+            <span>Lines: {code.split('\n').length}</span>
+            <span>Characters: {code.length}</span>
+          </div>
+        </div>
       </div>
+      <Chat
+        roomId={roomId}
+        socket={socketRef.current}
+        isVisible={showChatPanel}
+        onToggle={() => setShowChatPanel(!showChatPanel)}
+      />
       <button onClick={startTimer} style={{marginBottom: 8}}>Start 10s Timer</button>
       {showTimer && (
         <Countdown

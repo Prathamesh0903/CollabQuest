@@ -149,8 +149,12 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
     </div>
   );
 
+  if (!isVisible) return null;
+
+  if (!isVisible) return null;
+
   return (
-    <div className={`user-sidebar ${isVisible ? 'visible' : ''}`}>
+    <div className="user-sidebar">
       <div className="sidebar-header">
         <div className="header-content">
           <h3>👥 Active Users</h3>
