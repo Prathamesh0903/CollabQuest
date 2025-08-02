@@ -42,6 +42,7 @@ const featureCards = [
     desc: 'Join teams for collaborative or competitive coding.',
     button: 'Join a Team',
     animationClass: 'card-animate-team',
+    isUpcoming: true,
   },
   {
     key: 'Weekly Contest',
@@ -50,6 +51,7 @@ const featureCards = [
     desc: 'Try the interactive demo and get started in minutes.',
     button: 'Start Demo',
     animationClass: 'card-animate-demo',
+    isUpcoming: true,
   },
   {
     key: 'results',
@@ -103,6 +105,7 @@ const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onR
           >
             <div className="feature-icon">{card.icon}</div>
             <h3 className="feature-title">{card.title}</h3>
+            {card.isUpcoming && <span className="upcoming-badge">Upcoming</span>}
             <p className="feature-desc">{card.desc}</p>
             <button 
               className="action-button"
