@@ -102,23 +102,6 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ level: -1, points: -1 });
 userSchema.index({ 'stats.totalScore': -1 });
 
-// Virtual for experience to level conversion
-userSchema.virtual('experienceToNextLevel').get(function() {
-  const baseExp = 100;
-  const levelMultiplier = 1.5;
-  return Math.floor(baseExp * Math.pow(levelMultiplier, this.level - 1));
-});
-
-// Virtual for progress percentage to next level
-userSchema.virtual('levelProgress').get(function() {
-  const expForCurrentLevel = this.level === 1 ? 0 : 
-    Math.floor(100 * Math.pow(1.5, this.level - 2));
-  const expForNextLevel = this.experienceToNextLevel;
-  const currentLevelExp = this.experience - expForCurrentLevel;
-  const expNeeded = expForNextLevel - expForCurrentLevel;
-  return Math.min(100, Math.max(0, (currentLevelExp / expNeeded) * 100));
-});
-
 // Methods
 userSchema.methods.addExperience = function(amount) {
   this.experience += amount;
@@ -186,4 +169,4 @@ userSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

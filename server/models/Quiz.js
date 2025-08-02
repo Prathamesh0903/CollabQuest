@@ -169,23 +169,17 @@ quizSchema.index({ 'stats.averageScore': -1 });
 quizSchema.index({ createdBy: 1 });
 quizSchema.index({ status: 1, 'availability.isActive': 1 });
 
-// Virtual for total points
+// Replace incomplete virtuals with proper implementations
 quizSchema.virtual('totalPoints').get(function() {
-  return this.questions.reduce((total, question) => total + question.points, 0);
+  return this.questions.reduce((total, q) => total + q.points, 0);
 });
 
-// Virtual for question count
 quizSchema.virtual('questionCount').get(function() {
   return this.questions.length;
 });
 
-// Virtual for estimated duration
 quizSchema.virtual('estimatedDuration').get(function() {
-  if (this.settings.timeLimit > 0) {
-    return this.settings.timeLimit;
-  }
-  const totalTime = this.questions.reduce((total, question) => total + question.timeLimit, 0);
-  return Math.ceil(totalTime / 60); // Convert to minutes
+  return this.questions.reduce((total, q) => total + q.timeLimit, 0);
 });
 
 // Methods
@@ -304,4 +298,4 @@ quizSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('Quiz', quizSchema); 
+module.exports = mongoose.model('Quiz', quizSchema);

@@ -54,14 +54,40 @@ const Chat: React.FC<ChatProps> = ({ roomId, socket, isVisible, onToggle }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastMessageRef = useRef<HTMLDivElement>(null);
+
+  const loadMessages = useCallback(async () => {
+    if (!roomId) return;
+    
+    setIsLoading(true);
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/messages/room/${roomId}?limit=50`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages);
+        setHasMoreMessages(data.hasMore);
+      } else {
+        console.error('Failed to load messages');
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentUser, roomId]);
 
   // Load initial messages
   useEffect(() => {
     if (roomId && isVisible) {
       loadMessages();
     }
-  }, [roomId, isVisible]);
+  }, [roomId, isVisible, loadMessages]);
 
   // Socket event listeners
   useEffect(() => {
@@ -103,32 +129,7 @@ const Chat: React.FC<ChatProps> = ({ roomId, socket, isVisible, onToggle }) => {
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = async () => {
-    if (!roomId) return;
-    
-    setIsLoading(true);
-    try {
-      const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/messages/room/${roomId}?limit=50`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.messages);
-        setHasMoreMessages(data.hasMore);
-      } else {
-        console.error('Failed to load messages');
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  
 
   const loadMoreMessages = async () => {
     if (!roomId || loadingMore || !hasMoreMessages) return;

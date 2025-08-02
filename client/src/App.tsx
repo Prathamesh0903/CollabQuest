@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
-import RoomSelector from './components/RoomSelector';
+ 
 import CollaborativeEditor from './components/CollaborativeEditor';
 import DemoInstructions from './components/DemoInstructions';
 import Dashboard from './components/Dashboard';
@@ -16,25 +16,14 @@ interface EditorState {
   language: 'javascript' | 'python';
 }
 
-// Placeholder for the animation overlay
-const GamifiedTransition: React.FC<{ show: boolean }> = ({ show }) => (
-  show ? (
-    <div className="gamified-transition-overlay">
-      <div className="gamified-animation">🎉 Entering the Coding Arena! 🎮</div>
-    </div>
-  ) : null
-);
+
 
 function App() {
   const { currentUser, loading } = useAuth();
   const [editorState, setEditorState] = useState<EditorState | null>(null);
   const [showDemo, setShowDemo] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [showTransition, setShowTransition] = useState(false);
-
-  const handleJoinRoom = (roomId: string, language: 'javascript' | 'python') => {
-    setEditorState({ roomId, language });
-  };
+  
 
   const handleLeaveRoom = () => {
     setEditorState(null);
@@ -58,11 +47,7 @@ function App() {
 
   // Handles room join/create from Dashboard
   const handleRoomSuccess = (roomId: string, language: 'javascript' | 'python') => {
-    setShowTransition(true);
-    setTimeout(() => {
-      setShowTransition(false);
-      setEditorState({ roomId, language });
-    }, 1200); // 1.2s animation
+    setEditorState({ roomId, language });
   };
 
   if (loading) {

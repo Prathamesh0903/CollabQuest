@@ -48,7 +48,9 @@ const BattleSplitView: React.FC<BattleSplitViewProps> = ({
   // Show terminal only after user clicks Run Code
   const handleRunCode = () => {
     setShowTerminal(true);
+    setOutputLoading(true); // Set loading to true when code execution starts
     onRunCode(code);
+    // Assuming onRunCode will eventually trigger a state change that sets outputLoading to false
   };
 
   return (

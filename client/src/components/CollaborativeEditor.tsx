@@ -147,8 +147,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [customInput, setCustomInput] = useState<string>('');
 
   // Gamification state (mocked)
-  const [showConfetti, setShowConfetti] = useState(false);
+  
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showConfetti] = useState(false);
 
   // Timer state for demo
   const [timerKey, setTimerKey] = useState(0);
@@ -163,13 +164,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
 
-  // Helper function to show user activity
-  const showUserActivity = (userName: string, action: string) => {
-    showInfo('User Activity', `${userName} ${action}`, 3000);
-  };
-
   // Initialize socket connection with reconnection logic
   const initializeSocket = useCallback(async () => {
+    // Helper function to show user activity
+    const showUserActivity = (userName: string, action: string) => {
+      showInfo('User Activity', `${userName} ${action}`, 3000);
+    };
     if (!currentUser) return;
 
     try {
@@ -416,7 +416,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       console.error('Failed to initialize socket connection:', error);
       setConnectionStatus('disconnected');
     }
-  }, [currentUser, roomId, language, showSuccess, showError, showInfo, showUserActivity]);
+  }, [currentUser, roomId, language, showSuccess, showError, showInfo]);
 
   // Initialize socket on mount
   useEffect(() => {
@@ -562,7 +562,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     }
   };
 
-  const handleRunCode = async () => {
+  const handleRunCode = useCallback(async () => {
     if (!code.trim()) return;
 
     setOutputLoading(true);
@@ -633,7 +633,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     } finally {
       setOutputLoading(false);
     }
-  };
+  }, [code, customInput, currentUser, language, roomId]);
 
   const handleClearTerminal = () => {
     setTerminalOutput(null);
