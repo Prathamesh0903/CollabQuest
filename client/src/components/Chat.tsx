@@ -328,15 +328,15 @@ const Chat: React.FC<ChatProps> = ({ roomId, socket, isVisible, onToggle }) => {
           
           {isOwnMessage && (
             <div className="message-actions">
-              <button className="action-button" onClick={() => handleReaction(message._id, '👍')}>
-                👍
-              </button>
-              <button className="action-button" onClick={() => handleReaction(message._id, '❤️')}>
-                ❤️
-              </button>
-              <button className="action-button" onClick={() => handleReaction(message._id, '😂')}>
-                😂
-              </button>
+                              <button className="chat-action-button" onClick={() => handleReaction(message._id, '👍')}>
+                  👍
+                </button>
+                <button className="chat-action-button" onClick={() => handleReaction(message._id, '❤️')}>
+                  ❤️
+                </button>
+                <button className="chat-action-button" onClick={() => handleReaction(message._id, '😂')}>
+                  😂
+                </button>
             </div>
           )}
         </div>

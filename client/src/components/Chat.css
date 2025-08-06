@@ -238,7 +238,7 @@
   opacity: 1;
 }
 
-.action-button {
+.chat-action-button {
   background: none;
   border: none;
   font-size: 14px;
@@ -249,7 +249,7 @@
   color: #888;
 }
 
-.action-button:hover {
+.chat-action-button:hover {
   background: #333;
   color: white;
 }

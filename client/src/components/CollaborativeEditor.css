@@ -1,431 +1,249 @@
 :root {
-  --editor-bg: #1a1a1a;
-  --editor-primary: #282828;
-  --editor-secondary: #3a3a3a;
-  --editor-border: #4a4a4a;
-  --editor-text: #e0e0e0;
-  --editor-text-light: #b0b0b0;
-  --editor-accent: #61dafb; /* React blue */
-  --editor-success: #4caf50;
-  --editor-error: #f44336;
-  --editor-warning: #ffc107;
-  --editor-info: #2196f3;
-  --editor-shadow: rgba(0, 0, 0, 0.3);
+  --vscode-bg: #1e1e1e;
+  --vscode-sidebar-bg: #252526;
+  --vscode-editor-bg: #1e1e1e;
+  --vscode-header-bg: #2d2d30;
+  --vscode-status-bg: #007acc;
+  --vscode-border: #3e3e42;
+  --vscode-text: #cccccc;
+  --vscode-text-light: #969696;
+  --vscode-accent: #007acc;
+  --vscode-success: #4caf50;
+  --vscode-error: #f44336;
+  --vscode-warning: #ffc107;
+  --vscode-info: #2196f3;
+  --vscode-shadow: rgba(0, 0, 0, 0.4);
+  --vscode-focus: #0078d4;
 }
 
+/* VS Code Layout */
 .collaborative-editor {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--editor-bg);
-  color: var(--editor-text);
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--vscode-bg);
+  color: var(--vscode-text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
 }
 
-.ide-layout {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background: var(--editor-bg);
-}
-
-.main-content-area {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-}
-
-/* Header */
-.editor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 1.5rem;
-  background: var(--editor-primary);
-  border-bottom: 1px solid var(--editor-border);
-  box-shadow: 0 2px 8px var(--editor-shadow);
-  z-index: 10;
-}
-
-.editor-header .header-left {
+.vscode-layout {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--vscode-bg);
 }
 
-.editor-header .header-right {
+.vscode-header {
+  background: var(--vscode-header-bg);
+  border-bottom: 1px solid var(--vscode-border);
+  height: 35px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-shrink: 0;
 }
 
-.header-left h2 {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--editor-text);
-}
-
-.room-info {
+.header-section {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  margin-top: 0.4rem;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 12px;
+  height: 100%;
 }
 
-.connection-status {
+.header-left {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
+  gap: 12px;
 }
 
-.connection-status.connected {
-  background: rgba(var(--editor-success), 0.15);
-  color: var(--editor-success);
-  border: 1px solid rgba(var(--editor-success), 0.3);
-}
-
-.connection-status.disconnected {
-  background: rgba(var(--editor-error), 0.15);
-  color: var(--editor-error);
-  border: 1px solid rgba(var(--editor-error), 0.3);
-}
-
-.connection-status.reconnecting {
-  background: rgba(var(--editor-warning), 0.15);
-  color: var(--editor-warning);
-  border: 1px solid rgba(var(--editor-warning), 0.3);
-}
-
-.room-id {
-  font-size: 0.8rem;
-  color: var(--editor-text-light);
-  background: var(--editor-secondary);
-  padding: 0.2rem 0.6rem;
-  border-radius: 10px;
-  border: 1px solid var(--editor-border);
-}
-
-.active-users-count {
+.header-center {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: var(--editor-secondary);
-  padding: 0.2rem 0.6rem;
-  border-radius: 10px;
-  color: var(--editor-text-light);
-  border: 1px solid var(--editor-border);
+  gap: 16px;
 }
 
-.run-btn {
-  background: var(--editor-accent);
-  color: #1a1a1a;
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-btn {
+  background: transparent;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--vscode-text);
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(var(--editor-accent), 0.3);
+  transition: background-color 0.2s;
 }
 
-.run-btn:hover:not(:disabled) {
-  background: #4ac0e0;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--editor-accent), 0.4);
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.run-btn:disabled {
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vscode-text);
+}
+
+.file-path {
+  font-size: 11px;
+  color: var(--vscode-text-light);
+}
+
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--vscode-text-light);
+}
+
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-error);
+}
+
+.connection-indicator.connected .connection-dot {
+  background: var(--vscode-success);
+}
+
+.connection-indicator.reconnecting .connection-dot {
+  background: var(--vscode-warning);
+  animation: pulse 1.5s infinite;
+}
+
+.users-indicator {
+  font-size: 12px;
+  color: var(--vscode-text-light);
+}
+
+.header-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-text);
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.header-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header-btn.run-btn {
+  background: var(--vscode-accent);
+  color: white;
+  font-weight: 500;
+  padding: 4px 12px;
+}
+
+.header-btn.run-btn:hover:not(:disabled) {
+  background: #106ebe;
+}
+
+.header-btn.run-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Editor Area */
-.editor-main {
-  background: var(--editor-bg);
-  position: relative;
+.vscode-main-area {
+  display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-.editor-main.with-sidebar {
-  margin-left: 250px; /* Adjust based on sidebar width */
+.vscode-editor-container {
+  flex: 1;
+  background: var(--vscode-editor-bg);
+  overflow: hidden;
 }
 
-.editor-container .monaco-editor {
-  border: none;
+.vscode-editor-container.with-sidebar {
+  /* No additional margin needed as sidebar is in flex layout */
 }
 
-/* Footer */
-.editor-footer {
+.vscode-status-bar {
+  background: var(--vscode-status-bg);
+  color: white;
+  height: 22px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 1.5rem;
-  background: var(--editor-primary);
-  border-top: 1px solid var(--editor-border);
-  font-size: 0.8rem;
-  color: var(--editor-text-light);
-  gap: 1rem;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
-.editor-stats {
+.status-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
 }
 
-.editor-stats span {
-  background: var(--editor-secondary);
-  padding: 0.2rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid var(--editor-border);
-}
-
-/* User Sidebar */
-.userlist-panel {
-  width: 250px;
-  min-width: 200px;
-  max-width: 300px;
-  background: var(--editor-primary);
-  color: var(--editor-text);
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--editor-border);
-  box-shadow: 2px 0 8px var(--editor-shadow);
-  height: 100vh;
-  z-index: 2;
-  transition: transform 0.3s ease;
-}
-
-.userlist-panel.hidden {
-  transform: translateX(-100%);
-}
-
-.userlist-header {
-  padding: 1rem 1.2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  background: var(--editor-secondary);
-  border-bottom: 1px solid var(--editor-border);
-  letter-spacing: 0.5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.userlist-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem 0.7rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.userlist-user {
+.status-right {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  background: var(--editor-secondary);
-  border-radius: 8px;
-  padding: 0.4rem 0.8rem;
-  min-width: 0;
-  transition: background 0.2s;
-  border: 1px solid var(--editor-border);
+  gap: 12px;
 }
 
-.userlist-user:hover {
-  background: rgba(var(--editor-accent), 0.1);
+.status-item {
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.userlist-user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--editor-accent);
-}
-
-.userlist-user-name {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--editor-text);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Chat Panel */
-.chat-panel {
-  width: 350px;
-  min-width: 300px;
-  max-width: 400px;
-  background: var(--editor-primary);
-  color: var(--editor-text);
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--editor-border);
-  box-shadow: -2px 0 8px var(--editor-shadow);
-  height: 100vh;
-  z-index: 2;
-  transition: transform 0.3s ease;
-}
-
-.chat-panel.hidden {
-  transform: translateX(100%);
-}
-
-.chat-header {
-  padding: 1rem 1.2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  background: var(--editor-secondary);
-  border-bottom: 1px solid var(--editor-border);
-  letter-spacing: 0.5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  background: var(--editor-bg);
-}
-
-.chat-message {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.8rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 10px;
-  background: var(--editor-secondary);
-  transition: background 0.2s;
-}
-
-.chat-message.own {
-  background: rgba(var(--editor-accent), 0.15);
-  align-self: flex-end;
-}
-
-.chat-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--editor-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.chat-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.avatar-placeholder {
-  color: var(--editor-text-light);
-  font-weight: bold;
-}
-
-.chat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.chat-user {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--editor-accent);
-}
-
-.chat-text {
-  font-size: 0.95rem;
-  color: var(--editor-text);
-  word-break: break-word;
-}
-
-.chat-time {
-  font-size: 0.75rem;
-  color: var(--editor-text-light);
-  margin-top: 2px;
-}
-
-.chat-input-row {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem 1rem;
-  background: var(--editor-secondary);
-  border-top: 1px solid var(--editor-border);
-  gap: 0.6rem;
-}
-
-.chat-input {
-  flex: 1;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--editor-border);
-  font-size: 0.95rem;
-  background: var(--editor-bg);
-  color: var(--editor-text);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.chat-input:focus {
-  border-color: var(--editor-accent);
-}
-
-.chat-send-btn {
-  background: var(--editor-accent);
-  color: #1a1a1a;
+.status-btn {
+  background: transparent;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s;
 }
 
-.chat-send-btn:hover {
-  background: #4ac0e0;
-  transform: translateY(-1px);
+.status-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Terminal Panel */
+.status-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.shortcuts-hint {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+/* Legacy styles - keeping minimal for compatibility */
+
+/* Removed unused sidebar and chat styles */
+
+/* Terminal Panel - VS Code Style */
 .terminal-panel {
-  background: var(--editor-primary);
-  color: var(--editor-text);
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 -4px 24px var(--editor-shadow);
+  background: var(--vscode-header-bg);
+  color: var(--vscode-text);
+  border-top: 1px solid var(--vscode-border);
   margin: 0;
   padding: 0;
   border: none;
-  border-top: 2.5px solid var(--editor-border);
   max-width: 100%;
   min-width: 0;
   position: fixed;
@@ -433,9 +251,9 @@
   left: 0;
   right: 0;
   transform: translateY(100%);
-  transition: transform 0.4s ease-in-out;
+  transition: transform 0.3s ease-in-out;
   z-index: 1001;
-  font-family: 'Fira Code', 'Consolas', 'Menlo', monospace;
+  font-family: 'Consolas', 'Courier New', monospace;
 }
 
 .terminal-panel.visible {
@@ -446,24 +264,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 1rem;
-  font-weight: 600;
-  background: var(--editor-secondary);
-  border-bottom: 1px solid var(--editor-border);
-  padding: 0.7rem 1.2rem;
-  border-radius: 12px 12px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  background: var(--vscode-header-bg);
+  border-bottom: 1px solid var(--vscode-border);
+  padding: 8px 12px;
+  height: 35px;
 }
 
 .terminal-content {
-  background: var(--editor-bg);
-  padding: 1rem 1.2rem;
-  min-height: 150px;
-  max-height: 300px;
+  background: #0c0c0c;
+  padding: 12px;
+  min-height: 200px;
+  max-height: 400px;
   overflow-y: auto;
-  font-size: 0.95rem;
-  color: var(--editor-text);
+  font-size: 14px;
+  color: #cccccc;
   white-space: pre-wrap;
   word-break: break-all;
+  font-family: 'Consolas', 'Courier New', monospace;
 }
 
 .terminal-result {
@@ -527,112 +346,84 @@
   background: var(--editor-border);
 }
 
-/* Shortcut Hints */
-.shortcut-hints {
-  margin: 0.7rem 1.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--editor-secondary);
-  color: var(--editor-text-light);
-  font-size: 0.85rem;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 2px 8px var(--editor-shadow);
-  font-family: 'Inter', sans-serif;
-}
-
-.shortcut-hints b {
-  color: var(--editor-text);
-}
+/* Removed shortcut hints - now integrated in status bar */
 
 /* Light Theme */
 .collaborative-editor.light-theme {
-  --editor-bg: #f0f2f5;
-  --editor-primary: #ffffff;
-  --editor-secondary: #e0e2e5;
-  --editor-border: #d0d2d5;
-  --editor-text: #333333;
-  --editor-text-light: #666666;
-  --editor-accent: #007bff;
-  --editor-shadow: rgba(0, 0, 0, 0.1);
+  --vscode-bg: #ffffff;
+  --vscode-sidebar-bg: #f3f3f3;
+  --vscode-editor-bg: #ffffff;
+  --vscode-header-bg: #f3f3f3;
+  --vscode-status-bg: #007acc;
+  --vscode-border: #e1e1e1;
+  --vscode-text: #333333;
+  --vscode-text-light: #6c6c6c;
+  --vscode-accent: #007acc;
+  --vscode-shadow: rgba(0, 0, 0, 0.1);
+  --vscode-focus: #0078d4;
 }
 
-.collaborative-editor.light-theme .run-btn {
-  color: #ffffff;
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.collaborative-editor.light-theme .chat-send-btn {
-  color: #ffffff;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .userlist-panel {
-    width: 200px;
-  }
-  .editor-main.with-sidebar {
-    margin-left: 200px;
-  }
-  .chat-panel {
-    width: 300px;
-  }
-}
-
+/* Responsive Design for VS Code Layout */
 @media (max-width: 768px) {
-  .ide-layout {
-    flex-direction: column;
-  }
-  .userlist-panel {
-    width: 100%;
+  .vscode-header {
     height: auto;
-    max-height: 100px;
-    flex-direction: row;
-    border-right: none;
-    border-bottom: 1px solid var(--editor-border);
-    box-shadow: 0 2px 8px var(--editor-shadow);
-    position: relative;
-    transform: translateX(0) !important; /* Override hidden transform */
+    min-height: 35px;
   }
-  .userlist-list {
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 0.5rem 1rem;
-  }
-  .userlist-header {
-    display: none; /* Hide header on small screens */
-  }
-  .editor-main {
-    margin-left: 0 !important; /* Remove sidebar margin */
-    min-height: 50vh;
-  }
-  .editor-header {
+  
+  .header-section {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.8rem 1rem;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 12px;
   }
-  .editor-header .header-right {
-    width: 100%;
-    justify-content: flex-end;
+  
+  .header-left, .header-center, .header-right {
+    justify-content: space-between;
   }
-  .room-info {
-    flex-wrap: wrap;
+  
+  .header-center {
+    order: 2;
   }
-  .chat-panel {
-    width: 100%;
+  
+  .header-right {
+    order: 1;
+  }
+  
+  .file-info {
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .vscode-main-area {
+    flex-direction: row; /* Keep sidebar and editor side by side on mobile */
+  }
+  
+  .vscode-status-bar {
+    flex-direction: column;
     height: auto;
-    max-height: 40vh;
-    position: relative;
-    transform: translateX(0) !important; /* Override hidden transform */
-    border-left: none;
-    border-top: 1px solid var(--editor-border);
-    box-shadow: 0 -2px 8px var(--editor-shadow);
+    gap: 4px;
+    padding: 8px 12px;
   }
-  .terminal-panel {
+  
+  .status-left, .status-right {
     width: 100%;
-    border-radius: 0;
+    justify-content: space-between;
   }
-  .shortcut-hints {
-    margin: 0.5rem 1rem;
+  
+  .shortcuts-hint {
+    display: none; /* Hide on mobile */
+  }
+  
+  .terminal-content {
+    min-height: 150px;
+    max-height: 250px;
   }
 }
 

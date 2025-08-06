@@ -75,11 +75,6 @@ function App() {
           element={
             editorState ? (
               <div className="editor-wrapper">
-                <div className="leave-room">
-                  <button onClick={handleLeaveRoom} className="leave-btn">
-                    ← Back to Dashboard
-                  </button>
-                </div>
                 <CollaborativeEditor
                   roomId={editorState.roomId}
                   language={editorState.language}

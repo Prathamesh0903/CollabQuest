@@ -2,15 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import io from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
-import UserProfile from './UserProfile';
 import ToastContainer, { useToast } from './ToastContainer';
 import Terminal, { TerminalOutput } from './Terminal';
-import UserSidebar, { UserInfo as SidebarUserInfo } from './UserSidebar';
-import Chat from './Chat';
 import LanguageSwitcher from './LanguageSwitcher';
+import VSCodeSidebar from './VSCodeSidebar';
 import './CollaborativeEditor.css';
-import Confetti from 'react-confetti';
-import Countdown from 'react-countdown';
 
 interface EditorChange {
   range: {
@@ -35,15 +31,6 @@ interface UserInfo {
   avatar?: string;
   socketId: string;
   online: boolean;
-}
-
-// Chat message type
-interface ChatMessage {
-  userId: string;
-  displayName: string;
-  avatar?: string;
-  message: string;
-  timestamp: string;
 }
 
 // Cursor info type
@@ -79,8 +66,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [theme, setTheme] = useState<'vs-dark' | 'vs-light'>('vs-dark');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
   const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
-  const [sidebarUsers, setSidebarUsers] = useState<SidebarUserInfo[]>([]);
-  const [showSidebar, setShowSidebar] = useState(true);
   
   const socketRef = useRef<any>(null);
   const editorRef = useRef<any>(null);
@@ -89,28 +74,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const maxReconnectAttempts = 5;
   
   const [remoteCursors, setRemoteCursors] = useState<{ [userId: string]: CursorInfo }>({});
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const [showChatPanel, setShowChatPanel] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState<TerminalOutput | null>(null);
   const [outputLoading, setOutputLoading] = useState<boolean>(false);
   const [showTerminal, setShowTerminal] = useState<boolean>(false);
   const [customInput, setCustomInput] = useState<string>('');
-
-  // Gamification state (mocked)
-  
-  
-  const [showConfetti] = useState(false);
-
-  // Timer state for demo
-  const [timerKey, setTimerKey] = useState(0);
-  const [showTimer, setShowTimer] = useState(false);
-
-  // Handler to start a 10-second timer
-  const startTimer = () => {
-    setTimerKey(prev => prev + 1); // Reset timer
-    setShowTimer(true);
-  };
+  const [showSidebar, setShowSidebar] = useState<boolean>(true);
+  const [currentFile, setCurrentFile] = useState<string>('main.js');
 
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
@@ -281,15 +250,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socket.on('users-in-room', (users: UserInfo[]) => {
         console.log('Users in room updated:', users);
         setActiveUsers(users);
-        
-        // Update sidebar users with additional properties
-        const sidebarUsersData: SidebarUserInfo[] = users.map(user => ({
-          ...user,
-          isTyping: false,
-          isEditing: false,
-          color: generateUserColor(user.userId)
-        }));
-        setSidebarUsers(sidebarUsersData);
       });
 
       // Cursor synchronization
@@ -325,38 +285,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         showUserActivity(userData.displayName, 'left the room');
       });
 
-      // Chat events
-      socket.on('new-message', (msg: ChatMessage) => {
-        setChatMessages(prev => [...prev, msg]);
-      });
-
-      // Typing indicators
-      socket.on('user-typing', (data: { userId: string; displayName: string; isTyping: boolean }) => {
-        setSidebarUsers(prev => prev.map(user => 
-          user.userId === data.userId 
-            ? { ...user, isTyping: data.isTyping }
-            : user
-        ));
-      });
-
-      // Editing indicators
-      socket.on('user-editing', (data: { userId: string; displayName: string; isEditing: boolean }) => {
-        setSidebarUsers(prev => prev.map(user => 
-          user.userId === data.userId 
-            ? { ...user, isEditing: data.isEditing }
-            : user
-        ));
-      });
-
-      // User status updates
-      socket.on('user-status-updated', (data: { userId: string; displayName: string; status: string; customMessage?: string }) => {
-        setSidebarUsers(prev => prev.map(user => 
-          user.userId === data.userId 
-            ? { ...user, status: data.status as any, customMessage: data.customMessage }
-            : user
-        ));
-      });
-
       // Error handling
       socket.on('error', (error: { message: string }) => {
         console.error('Socket error:', error);
@@ -382,13 +310,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       }
     };
   }, [initializeSocket]);
-
-  // Scroll chat to bottom on new message
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages]);
 
 
 
@@ -672,139 +593,165 @@ function helloWorld() {
 
   // Remove handleStartBattle and formatTime
 
-  // Keyboard shortcut hints
-  const ShortcutHints = () => (
-    <div className="shortcut-hints">
-      <span>💡 <b>Shortcuts:</b> Ctrl+Enter = Run Code | Ctrl+` = Toggle Terminal | Esc = Close Terminal</span>
-    </div>
-  );
+  // File selection handler
+  const handleFileSelect = (file: any) => {
+    setCurrentFile(file.id);
+    if (file.name.endsWith('.js')) {
+      setLanguage('javascript');
+    } else if (file.name.endsWith('.py')) {
+      setLanguage('python');
+    }
+    showInfo('File Selected', `Switched to ${file.name}`);
+  };
+
+  // Shortcuts are now displayed in the status bar
 
   return (
-    <div className={`collaborative-editor ide-layout ${theme === 'vs-dark' ? 'dark-theme' : 'light-theme'}`}>
-      {showConfetti && <Confetti numberOfPieces={250} recycle={false} />}
+    <div className={`collaborative-editor vscode-layout ${theme === 'vs-dark' ? 'dark-theme' : 'light-theme'}`}>
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
-      <UserSidebar
-        users={sidebarUsers}
-        currentUserId={currentUser?.uid || ''}
-        roomId={roomId}
-        isVisible={showSidebar}
-        onToggle={() => setShowSidebar(!showSidebar)}
-        onUserClick={(user) => {
-          console.log('User clicked:', user);
-          // You can implement user profile view or direct messaging here
-        }}
-      />
-
-      <div className={`editor-main ${showSidebar ? 'with-sidebar' : ''}`}>
-        <div className="editor-header">
+      {/* VS Code Style Header */}
+      <div className="vscode-header">
+        <div className="header-section">
           <div className="header-left">
-            <h2>Collaborative {language.charAt(0).toUpperCase() + language.slice(1)} Editor</h2>
-            <div className="room-info">
-              <span className={`connection-status ${connectionStatus}`}>
-                {connectionStatus === 'connected' ? 'Connected' :
-                 connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
-              </span>
-              <span className="room-id">Room: {roomId}</span>
-              <span className="active-users-count">
-                👥 {activeUsers.length} online
-              </span>
+            <button 
+              className="back-btn" 
+              onClick={() => {
+                // Notify server we're leaving the room
+                if (socketRef.current && connectionStatus === 'connected') {
+                  socketRef.current.emit('leave-collab-room', { roomId });
+                }
+                // Navigate back to dashboard
+                window.location.href = '/';
+              }} 
+              title="Back to Dashboard"
+            >
+              ← Dashboard
+            </button>
+            <div className="file-info">
+              <span className="file-name">{currentFile}</span>
+              <span className="file-path">Room: {roomId}</span>
             </div>
           </div>
+          <div className="header-center">
+            <span className={`connection-indicator ${connectionStatus}`}>
+              <span className="connection-dot"></span>
+              {connectionStatus === 'connected' ? 'Connected' :
+               connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
+            </span>
+            <span className="users-indicator">
+              {activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}
+            </span>
+          </div>
           <div className="header-right">
-            <button className="run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
-              {outputLoading ? 'Running...' : '▶ Run Code'}
+            <button className="header-btn" onClick={toggleTheme} title="Toggle Theme">
+              {theme === 'vs-dark' ? '☀️' : '🌙'}
             </button>
-            <button className="discuss-btn" onClick={() => setShowChatPanel((v) => !v)} title="Toggle Chat">
-              💬 Chat
-            </button>
-            <button className="theme-toggle" onClick={toggleTheme}>
-              {theme === 'vs-dark' ? '☀️ Light' : '🌙 Dark'}
-            </button>
-            <button className="profile-btn" onClick={() => {}} title="Profile">
-              <UserProfile />
-            </button>
-            <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(!showSidebar)} title="Toggle Sidebar">
-              {showSidebar ? '◀ Hide Users' : '▶ Show Users'}
+            <button className="header-btn run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
+              ▶️ {outputLoading ? 'Running...' : 'Run'}
             </button>
           </div>
         </div>
-        <Editor
-          height="calc(100vh - 160px)" // Adjust height based on header/footer
-          defaultLanguage={language}
-          defaultValue={code || getDefaultCode()}
-          theme={theme}
-          onMount={handleEditorDidMount}
-          options={{
-            minimap: { enabled: true },
-            fontSize: 14,
-            wordWrap: 'on',
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            roundedSelection: false,
-            readOnly: false,
-            cursorStyle: 'line',
-            contextmenu: true,
-            mouseWheelZoom: true,
-            quickSuggestions: true,
-            renderWhitespace: 'selection',
-            tabSize: 2,
-            insertSpaces: true,
-            folding: true,
-            lineNumbers: 'on',
-            glyphMargin: true,
-            foldingStrategy: 'auto',
-            showFoldingControls: 'mouseover',
-            disableLayerHinting: true,
-            renderLineHighlight: 'all',
-            selectOnLineNumbers: true,
-            scrollbar: {
-              vertical: 'visible',
-              horizontal: 'visible',
-              verticalScrollbarSize: 17,
-              horizontalScrollbarSize: 17,
-              arrowSize: 30
-            }
-          }}
+      </div>
+
+      {/* VS Code Layout with Sidebar */}
+      <div className="vscode-main-area">
+        <VSCodeSidebar
+          isVisible={showSidebar}
+          onToggle={() => setShowSidebar(!showSidebar)}
+          currentFile={currentFile}
+          onFileSelect={handleFileSelect}
         />
-        <ShortcutHints />
-        <Terminal
-          isVisible={showTerminal}
-          onClose={() => setShowTerminal(false)}
-          output={terminalOutput}
-          isLoading={outputLoading}
-          customInput={customInput}
-          onCustomInputChange={setCustomInput}
-          onClear={handleClearTerminal}
-        />
-        <div className="editor-footer">
+        
+        {/* VS Code Style Editor Area */}
+        <div className={`vscode-editor-container ${showSidebar ? 'with-sidebar' : ''}`}>
+          <Editor
+            height="100%"
+            defaultLanguage={language}
+            defaultValue={code || getDefaultCode()}
+            theme={theme}
+            onMount={handleEditorDidMount}
+            options={{
+              minimap: { enabled: true },
+              fontSize: 14,
+              fontFamily: "'Fira Code', 'Consolas', 'Courier New', monospace",
+              wordWrap: 'on',
+              automaticLayout: true,
+              scrollBeyondLastLine: false,
+              roundedSelection: false,
+              readOnly: false,
+              cursorStyle: 'line',
+              contextmenu: true,
+              mouseWheelZoom: true,
+              quickSuggestions: true,
+              renderWhitespace: 'selection',
+              tabSize: 2,
+              insertSpaces: true,
+              folding: true,
+              lineNumbers: 'on',
+              glyphMargin: true,
+              foldingStrategy: 'auto',
+              showFoldingControls: 'mouseover',
+              disableLayerHinting: true,
+              renderLineHighlight: 'all',
+              selectOnLineNumbers: true,
+              bracketPairColorization: { enabled: true },
+              guides: {
+                bracketPairs: true,
+                indentation: true
+              },
+              scrollbar: {
+                vertical: 'visible',
+                horizontal: 'visible',
+                verticalScrollbarSize: 14,
+                horizontalScrollbarSize: 14
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* VS Code Style Status Bar */}
+      <div className="vscode-status-bar">
+        <div className="status-left">
           <LanguageSwitcher
             currentLanguage={language}
             onLanguageChange={handleLanguageChange}
             disabled={connectionStatus !== 'connected'}
           />
-          <div className="editor-stats">
-            <span>Lines: {code.split('\n').length}</span>
-            <span>Characters: {code.length}</span>
-          </div>
+          <span className="status-item">
+            Lines: {code.split('\n').length}
+          </span>
+          <span className="status-item">
+            Characters: {code.length}
+          </span>
+        </div>
+        <div className="status-right">
+          <button 
+            className={`status-btn ${showTerminal ? 'active' : ''}`}
+            onClick={() => setShowTerminal(!showTerminal)}
+            title="Toggle Terminal (Ctrl+`)"
+          >
+            Terminal
+          </button>
+          <span className="shortcuts-hint">
+            Ctrl+Enter: Run • Ctrl+`: Terminal • Esc: Close
+          </span>
         </div>
       </div>
-      <Chat
-        roomId={roomId}
-        socket={socketRef.current}
-        isVisible={showChatPanel}
-        onToggle={() => setShowChatPanel(!showChatPanel)}
+
+      {/* Terminal */}
+      <Terminal
+        isVisible={showTerminal}
+        onClose={() => setShowTerminal(false)}
+        output={terminalOutput}
+        isLoading={outputLoading}
+        customInput={customInput}
+        onCustomInputChange={setCustomInput}
+        onClear={handleClearTerminal}
       />
-      <button onClick={startTimer} style={{marginBottom: 8}}>Start 10s Timer</button>
-      {showTimer && (
-        <Countdown
-          key={timerKey}
-          date={Date.now() + 10000}
-          onComplete={() => setShowTimer(false)}
-        />
-      )}
     </div>
   );
 };
 
-export default CollaborativeEditor; 
+export default CollaborativeEditor;

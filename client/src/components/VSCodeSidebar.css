@@ -1,0 +1,408 @@
+/* VS Code Sidebar Styles */
+.vscode-sidebar {
+  width: 240px;
+  background: var(--vscode-sidebar-bg, #252526);
+  border-right: 1px solid var(--vscode-border, #3e3e42);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--vscode-text, #cccccc);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+}
+
+.vscode-sidebar-collapsed {
+  width: 48px;
+  background: var(--vscode-sidebar-bg, #252526);
+  border-right: 1px solid var(--vscode-border, #3e3e42);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--vscode-text, #cccccc);
+  align-items: center;
+  padding-top: 8px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid var(--vscode-border, #3e3e42);
+  background: var(--vscode-header-bg, #2d2d30);
+  height: 35px;
+  flex-shrink: 0;
+}
+
+.sidebar-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.sidebar-tab {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.sidebar-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-tab.active {
+  background: var(--vscode-accent, #007acc);
+  color: white;
+}
+
+.sidebar-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-text, #cccccc);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.sidebar-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.sidebar-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-icon.active {
+  background: var(--vscode-accent, #007acc);
+  position: relative;
+}
+
+.sidebar-icon.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 16px;
+  background: white;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--vscode-header-bg, #2d2d30);
+  border-bottom: 1px solid var(--vscode-border, #3e3e42);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vscode-text-light, #969696);
+}
+
+.panel-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.panel-actions button {
+  background: transparent;
+  border: none;
+  color: var(--vscode-text-light, #969696);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.panel-actions button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vscode-text, #cccccc);
+}
+
+/* Explorer Panel */
+.explorer-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.file-explorer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.file-tree-item {
+  margin: 0;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.file-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.file-item.active {
+  background: var(--vscode-accent, #007acc);
+  color: white;
+}
+
+.folder-arrow {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  transition: transform 0.2s;
+  color: var(--vscode-text-light, #969696);
+}
+
+.folder-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.file-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Search Panel */
+.search-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.search-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-input {
+  background: var(--vscode-bg, #1e1e1e);
+  border: 1px solid var(--vscode-border, #3e3e42);
+  color: var(--vscode-text, #cccccc);
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--vscode-accent, #007acc);
+}
+
+.search-options {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.search-option {
+  background: transparent;
+  border: 1px solid var(--vscode-border, #3e3e42);
+  color: var(--vscode-text-light, #969696);
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vscode-text, #cccccc);
+}
+
+.search-option.active {
+  background: var(--vscode-accent, #007acc);
+  border-color: var(--vscode-accent, #007acc);
+  color: white;
+}
+
+/* Extensions Panel */
+.extensions-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.extensions-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.extension-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.extension-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.extension-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-bg, #1e1e1e);
+  border-radius: 4px;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.extension-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.extension-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vscode-text, #cccccc);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extension-desc {
+  font-size: 11px;
+  color: var(--vscode-text-light, #969696);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Scrollbar Styling */
+.file-explorer::-webkit-scrollbar,
+.extensions-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.file-explorer::-webkit-scrollbar-track,
+.extensions-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-explorer::-webkit-scrollbar-thumb,
+.extensions-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.file-explorer::-webkit-scrollbar-thumb:hover,
+.extensions-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Light Theme Overrides */
+.collaborative-editor.light-theme .vscode-sidebar,
+.collaborative-editor.light-theme .vscode-sidebar-collapsed {
+  --vscode-sidebar-bg: #f3f3f3;
+  --vscode-header-bg: #e8e8e8;
+  --vscode-border: #e1e1e1;
+  --vscode-text: #333333;
+  --vscode-text-light: #6c6c6c;
+  --vscode-bg: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .vscode-sidebar {
+    width: 100%;
+    max-width: 280px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .vscode-sidebar-collapsed {
+    width: 40px;
+  }
+  
+  .sidebar-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+}
