@@ -6,6 +6,7 @@ import ToastContainer, { useToast } from './ToastContainer';
 import Terminal, { TerminalOutput } from './Terminal';
 import LanguageSwitcher from './LanguageSwitcher';
 import VSCodeSidebar from './VSCodeSidebar';
+import UserAvatar from './UserAvatar';
 import './CollaborativeEditor.css';
 
 interface EditorChange {
@@ -39,6 +40,17 @@ interface CursorInfo {
   userId: string;
   color: string;
   displayName: string;
+  avatar?: string;
+  timestamp: Date;
+}
+
+// Selection info type
+interface SelectionInfo {
+  selection: any;
+  userId: string;
+  color: string;
+  displayName: string;
+  avatar?: string;
   timestamp: Date;
 }
 
@@ -48,6 +60,7 @@ interface RoomState {
   language: string;
   version: number;
   lastModified: Date;
+  lastExecution?: any;
 }
 
 // GamifiedHeader props type
@@ -74,12 +87,15 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const maxReconnectAttempts = 5;
   
   const [remoteCursors, setRemoteCursors] = useState<{ [userId: string]: CursorInfo }>({});
+  const [remoteSelections, setRemoteSelections] = useState<{ [userId: string]: SelectionInfo }>({});
   const [terminalOutput, setTerminalOutput] = useState<TerminalOutput | null>(null);
   const [outputLoading, setOutputLoading] = useState<boolean>(false);
   const [showTerminal, setShowTerminal] = useState<boolean>(false);
   const [customInput, setCustomInput] = useState<string>('');
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [currentFile, setCurrentFile] = useState<string>('main.js');
+  const [executionHistory, setExecutionHistory] = useState<any[]>([]);
+  const [isExecuting, setIsExecuting] = useState<boolean>(false);
 
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
@@ -273,14 +289,75 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         }
       });
 
+      // Selection synchronization
+      socket.on('selections-sync', (selections: SelectionInfo[]) => {
+        console.log('Received selections sync:', selections);
+        const selectionsMap: { [userId: string]: SelectionInfo } = {};
+        selections.forEach(selection => {
+          if (selection.userId !== currentUser?.uid) {
+            selectionsMap[selection.userId] = selection;
+          }
+        });
+        setRemoteSelections(selectionsMap);
+      });
+
+      socket.on('selection-change', (selectionData: SelectionInfo) => {
+        if (selectionData.userId !== currentUser?.uid) {
+          setRemoteSelections(prev => ({
+            ...prev,
+            [selectionData.userId]: selectionData
+          }));
+        }
+      });
+
+      // Code execution events
+      socket.on('code-execution-started', (data: { userId: string; displayName: string; avatar?: string; timestamp: Date }) => {
+        if (data.userId !== currentUser?.uid) {
+          setIsExecuting(true);
+          showInfo('Code Execution', `${data.displayName} is running code...`);
+        }
+      });
+
+      socket.on('code-execution-completed', (data: { success: boolean; result: any; executedBy: string; displayName: string; avatar?: string; timestamp: Date }) => {
+        setIsExecuting(false);
+        if (data.executedBy !== currentUser?.uid) {
+          setTerminalOutput({
+            stdout: data.result.stdout || '',
+            stderr: data.result.stderr || '',
+            compile_output: data.result.compile_output || '',
+            status: data.result.status || 'success',
+            executionTime: data.result.executionTime
+          });
+          setShowTerminal(true);
+          showSuccess('Code Executed', `${data.displayName} ran the code successfully`);
+        }
+        setExecutionHistory(prev => [...prev.slice(-9), data]);
+      });
+
+      socket.on('code-execution-error', (data: { error: string; executedBy: string; displayName: string; avatar?: string; timestamp: Date }) => {
+        setIsExecuting(false);
+        if (data.executedBy !== currentUser?.uid) {
+          setTerminalOutput({
+            error: data.error
+          });
+          setShowTerminal(true);
+          showError('Code Execution Failed', `${data.displayName}: ${data.error}`);
+        }
+      });
+
       // User left room
-      socket.on('user-left-collab-room', (userData: { userId: string; displayName: string }) => {
+      socket.on('user-left-collab-room', (userData: { userId: string; displayName: string; avatar?: string }) => {
         console.log('User left room:', userData);
         setActiveUsers(prev => prev.filter(user => user.userId !== userData.userId));
         setRemoteCursors(prev => {
           const newCursors = { ...prev };
           delete newCursors[userData.userId];
           return newCursors;
+        });
+        setRemoteSelections(prev => {
+          const newSelections = { ...prev };
+          delete newSelections[userData.userId];
+          return newSelections;
         });
         showUserActivity(userData.displayName, 'left the room');
       });
@@ -385,7 +462,15 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
     // Set up selection change listener
     editor.onDidChangeCursorSelection((event: any) => {
-      // You can implement selection sharing here if needed
+      if (socketRef.current && connectionStatus === 'connected') {
+        const selection = event.selection;
+        socketRef.current.emit('selection-change', {
+          selection,
+          roomId,
+          color: generateUserColor(currentUser?.uid || ''),
+          displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
+        });
+      }
     });
   };
 
@@ -408,8 +493,20 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
     setOutputLoading(true);
     setShowTerminal(true);
+    setIsExecuting(true);
 
     try {
+      // Use socket to broadcast code execution to all collaborators
+      if (socketRef.current && connectionStatus === 'connected') {
+        socketRef.current.emit('execute-code', {
+          roomId,
+          language,
+          code,
+          input: customInput
+        });
+      }
+
+      // Also execute locally for immediate feedback
       const response = await fetch(`http://localhost:5000/api/rooms/${roomId}/execute`, {
         method: 'POST',
         headers: {
@@ -473,8 +570,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       });
     } finally {
       setOutputLoading(false);
+      setIsExecuting(false);
     }
-  }, [code, customInput, currentUser, language, roomId]);
+  }, [code, customInput, currentUser, language, roomId, socketRef, connectionStatus]);
 
   const handleClearTerminal = () => {
     setTerminalOutput(null);
@@ -544,11 +642,13 @@ function helloWorld() {
 `;
   };
 
-  // Apply remote cursor decorations
+  // Apply remote cursor and selection decorations
   useEffect(() => {
     if (!editorRef.current) return;
     const editor = editorRef.current;
-    const decorations = Object.values(remoteCursors).map((cursor: CursorInfo) => ({
+    
+    // Create cursor decorations
+    const cursorDecorations = Object.values(remoteCursors).map((cursor: CursorInfo) => ({
       range: new (window as any).monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),
       options: {
         className: 'remote-cursor',
@@ -562,8 +662,29 @@ function helloWorld() {
         }
       }
     }));
-    editor.deltaDecorations([], decorations);
-  }, [remoteCursors]);
+
+    // Create selection decorations
+    const selectionDecorations = Object.values(remoteSelections).map((selection: SelectionInfo) => ({
+      range: new (window as any).monaco.Range(
+        selection.selection.startLineNumber,
+        selection.selection.startColumn,
+        selection.selection.endLineNumber,
+        selection.selection.endColumn
+      ),
+      options: {
+        className: 'remote-selection',
+        stickiness: 1,
+        overviewRuler: {
+          color: selection.color || '#ff00ff',
+          position: 1
+        }
+      }
+    }));
+
+    // Apply all decorations
+    const allDecorations = [...cursorDecorations, ...selectionDecorations];
+    editor.deltaDecorations([], allDecorations);
+  }, [remoteCursors, remoteSelections]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -639,9 +760,30 @@ function helloWorld() {
               {connectionStatus === 'connected' ? 'Connected' :
                connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
             </span>
-            <span className="users-indicator">
-              {activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}
-            </span>
+            <div className="users-indicator">
+              <span className="users-count">{activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}</span>
+              <div className="users-list">
+                {activeUsers.slice(0, 3).map(user => (
+                  <UserAvatar
+                    key={user.userId}
+                    user={user}
+                    size="small"
+                    showStatus={true}
+                    showName={false}
+                    className="header-user-avatar"
+                  />
+                ))}
+                {activeUsers.length > 3 && (
+                  <span className="more-users">+{activeUsers.length - 3}</span>
+                )}
+              </div>
+            </div>
+            {isExecuting && (
+              <div className="execution-status executing">
+                <span className="execution-icon">⚡</span>
+                <span>Executing...</span>
+              </div>
+            )}
           </div>
           <div className="header-right">
             <button className="header-btn" onClick={toggleTheme} title="Toggle Theme">
@@ -725,6 +867,11 @@ function helloWorld() {
           <span className="status-item">
             Characters: {code.length}
           </span>
+          {executionHistory.length > 0 && (
+            <span className="status-item">
+              Last run: {new Date(executionHistory[executionHistory.length - 1]?.timestamp).toLocaleTimeString()}
+            </span>
+          )}
         </div>
         <div className="status-right">
           <button 

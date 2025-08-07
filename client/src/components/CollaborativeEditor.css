@@ -466,3 +466,465 @@
   pointer-events: none;
   z-index: 20;
 }
+
+/* Remote Cursor and Selection Styles */
+.remote-cursor {
+  background-color: transparent !important;
+  border-left: 2px solid;
+  border-left-color: var(--cursor-color, #ff00ff);
+  position: relative;
+  z-index: 10;
+}
+
+.remote-cursor-label::after {
+  content: attr(data-user);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  background: var(--cursor-color, #ff00ff);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  opacity: 0.9;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.remote-cursor-label::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--cursor-color, #ff00ff);
+  z-index: 1000;
+}
+
+.remote-selection {
+  background-color: rgba(255, 0, 255, 0.1) !important;
+  border: 1px solid rgba(255, 0, 255, 0.3) !important;
+  position: relative;
+  z-index: 5;
+}
+
+/* User Avatar Styles */
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.user-avatar.small {
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Enhanced User Indicators */
+.users-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--vscode-text-light);
+}
+
+.users-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  color: var(--vscode-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-indicator.editing {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.3);
+  animation: pulse 2s infinite;
+}
+
+.user-indicator.executing {
+  background: rgba(255, 193, 7, 0.2);
+  border-color: rgba(255, 193, 7, 0.3);
+  animation: pulse 1s infinite;
+}
+
+/* Execution Status Indicators */
+.execution-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.execution-status.executing {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.execution-status.success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.execution-status.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+/* Enhanced Terminal Styles */
+.terminal-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: var(--vscode-bg);
+  border-top: 1px solid var(--vscode-border);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-panel.visible {
+  transform: translateY(0);
+}
+
+.terminal-header {
+  background: var(--vscode-header-bg);
+  border-bottom: 1px solid var(--vscode-border);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.terminal-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vscode-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-close {
+  background: transparent;
+  border: none;
+  color: var(--vscode-text-light);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.terminal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.terminal-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.terminal-result {
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid var(--vscode-accent);
+}
+
+.terminal-result.success {
+  border-left-color: var(--vscode-success);
+}
+
+.terminal-result.error {
+  border-left-color: var(--vscode-error);
+}
+
+.terminal-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--vscode-text-light);
+}
+
+.terminal-output {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--vscode-text);
+}
+
+.terminal-output.stdout {
+  color: #4caf50;
+}
+
+.terminal-output.stderr {
+  color: #f44336;
+}
+
+.terminal-output.compile {
+  color: #ff9800;
+}
+
+/* Enhanced Status Bar */
+.vscode-status-bar {
+  background: var(--vscode-status-bg);
+  border-top: 1px solid var(--vscode-border);
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--vscode-text);
+  flex-shrink: 0;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-item:first-child {
+  color: var(--vscode-text);
+  font-weight: 500;
+}
+
+.status-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-text);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.status-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.shortcuts-hint {
+  font-size: 11px;
+  color: var(--vscode-text-light);
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .users-indicator {
+    display: none;
+  }
+  
+  .header-center {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .shortcuts-hint {
+    display: none;
+  }
+  
+  .terminal-panel {
+    height: 250px;
+  }
+  
+  .terminal-content {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
+/* Animation for user activity */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Enhanced scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--vscode-sidebar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-text-light);
+}
+
+/* Enhanced Header Styles */
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+.users-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--vscode-text-light);
+}
+
+.users-count {
+  font-weight: 500;
+  color: var(--vscode-text);
+}
+
+.users-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-user-avatar {
+  transition: transform 0.2s ease;
+}
+
+.header-user-avatar:hover {
+  transform: scale(1.1);
+}
+
+.more-users {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vscode-text-light);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.execution-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  animation: pulse 1s infinite;
+}
+
+.execution-status.executing {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.execution-icon {
+  font-size: 12px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

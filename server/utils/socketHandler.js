@@ -13,6 +13,12 @@ const roomStates = new Map();
 // Store user cursors for collaborative editing
 const userCursors = new Map();
 
+// Store user selections for collaborative editing
+const userSelections = new Map();
+
+// Store code execution results for broadcasting
+const executionResults = new Map();
+
 // In-memory battle timers and states
 const battleTimers = {};
 const battleStates = {};
@@ -279,7 +285,9 @@ const handleSocketConnection = (socket, io) => {
           language: language,
           lastModified: new Date(),
           version: 0,
-          users: new Set()
+          users: new Set(),
+          executionHistory: [],
+          lastExecution: null
         });
       }
 
@@ -291,7 +299,8 @@ const handleSocketConnection = (socket, io) => {
         code: roomState.code,
         language: roomState.language,
         version: roomState.version,
-        lastModified: roomState.lastModified
+        lastModified: roomState.lastModified,
+        lastExecution: roomState.lastExecution
       });
 
       // Get users in the room with detailed info
@@ -303,7 +312,9 @@ const handleSocketConnection = (socket, io) => {
           displayName: s.user.displayName || s.user.email || 'Anonymous',
           avatar: s.user.avatar,
           socketId: s.id,
-          online: true
+          online: true,
+          isEditing: false,
+          lastActivity: new Date()
         }));
 
       // Broadcast updated user list to all users in the room
@@ -316,10 +327,26 @@ const handleSocketConnection = (socket, io) => {
           userId,
           position: cursor.position,
           color: cursor.color,
-          displayName: cursor.displayName
+          displayName: cursor.displayName,
+          avatar: cursor.avatar,
+          timestamp: cursor.timestamp
         }));
 
       socket.emit('cursors-sync', currentCursors);
+
+      // Send current selections to the new user
+      const currentSelections = Array.from(userSelections.entries())
+        .filter(([userId, selection]) => selection.roomId === roomId)
+        .map(([userId, selection]) => ({
+          userId,
+          selection: selection.selection,
+          color: selection.color,
+          displayName: selection.displayName,
+          avatar: selection.avatar,
+          timestamp: selection.timestamp
+        }));
+
+      socket.emit('selections-sync', currentSelections);
 
       console.log(`User ${socket.user.displayName} joined collaborative room ${roomId}`);
     } catch (error) {
@@ -364,6 +391,7 @@ const handleSocketConnection = (socket, io) => {
         text,
         userId: socket.user._id.toString(),
         displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
         version: roomState.version,
         timestamp: new Date()
       });
@@ -403,6 +431,7 @@ const handleSocketConnection = (socket, io) => {
         version: roomState.version,
         userId: socket.user._id.toString(),
         displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
         timestamp: new Date()
       });
 
@@ -413,7 +442,7 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
-  // Enhanced cursor movement with user info
+  // Enhanced cursor movement with user info and avatar
   socket.on('cursor-move', (data) => {
     try {
       const { position, roomId, color, displayName } = data;
@@ -431,6 +460,7 @@ const handleSocketConnection = (socket, io) => {
         roomId,
         color: color || generateUserColor(userId),
         displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
         timestamp: new Date()
       });
 
@@ -440,10 +470,116 @@ const handleSocketConnection = (socket, io) => {
         userId,
         color: userCursors.get(userId).color,
         displayName: userCursors.get(userId).displayName,
+        avatar: userCursors.get(userId).avatar,
         timestamp: new Date()
       });
     } catch (error) {
       console.error('Error handling cursor move:', error);
+    }
+  });
+
+  // Handle selection changes
+  socket.on('selection-change', (data) => {
+    try {
+      const { selection, roomId, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store selection
+      userSelections.set(userId, {
+        selection,
+        roomId,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast selection to other users in the room
+      socket.to(`collab-room:${roomId}`).emit('selection-change', {
+        selection,
+        userId,
+        color: userSelections.get(userId).color,
+        displayName: userSelections.get(userId).displayName,
+        avatar: userSelections.get(userId).avatar,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error handling selection change:', error);
+    }
+  });
+
+  // Handle code execution requests
+  socket.on('execute-code', async (data) => {
+    try {
+      const { roomId, language, code, input = '' } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const roomState = roomStates.get(roomId);
+      if (!roomState) {
+        socket.emit('error', { message: 'Room state not found' });
+        return;
+      }
+
+      // Notify all users that code is being executed
+      io.in(`collab-room:${roomId}`).emit('code-execution-started', {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      try {
+        // Execute the code using the code executor
+        const { executeCode } = require('./codeExecutor');
+        const result = await executeCode(language, code, input);
+
+        // Store execution result
+        const executionResult = {
+          success: true,
+          result,
+          executedBy: socket.user._id.toString(),
+          displayName: socket.user.displayName,
+          avatar: socket.user.avatar,
+          timestamp: new Date()
+        };
+
+        roomState.lastExecution = executionResult;
+        roomState.executionHistory.push(executionResult);
+
+        // Keep only last 10 executions
+        if (roomState.executionHistory.length > 10) {
+          roomState.executionHistory = roomState.executionHistory.slice(-10);
+        }
+
+        // Broadcast execution result to all users in the room
+        io.in(`collab-room:${roomId}`).emit('code-execution-completed', executionResult);
+
+        console.log(`Code executed successfully by ${socket.user.displayName} in room ${roomId}`);
+      } catch (executionError) {
+        // Broadcast execution error to all users in the room
+        io.in(`collab-room:${roomId}`).emit('code-execution-error', {
+          error: executionError.message,
+          executedBy: socket.user._id.toString(),
+          displayName: socket.user.displayName,
+          avatar: socket.user.avatar,
+          timestamp: new Date()
+        });
+
+        console.error(`Code execution failed by ${socket.user.displayName} in room ${roomId}:`, executionError.message);
+      }
+    } catch (error) {
+      console.error('Error handling code execution:', error);
+      socket.emit('error', { message: 'Failed to execute code' });
     }
   });
 
@@ -475,7 +611,8 @@ const handleSocketConnection = (socket, io) => {
         language,
         code,
         userId: socket.user._id.toString(),
-        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
         timestamp: new Date()
       });
 
@@ -511,8 +648,9 @@ const handleSocketConnection = (socket, io) => {
         }
       }
 
-      // Remove user cursor
+      // Remove user cursor and selection
       userCursors.delete(socket.user._id.toString());
+      userSelections.delete(socket.user._id.toString());
 
       // Get updated users in the room
       const roomSockets = await io.in(`collab-room:${roomId}`).fetchSockets();
@@ -523,7 +661,9 @@ const handleSocketConnection = (socket, io) => {
           displayName: s.user.displayName || s.user.email || 'Anonymous',
           avatar: s.user.avatar,
           socketId: s.id,
-          online: true
+          online: true,
+          isEditing: false,
+          lastActivity: new Date()
         }));
 
       // Broadcast updated user list to all users in the room
@@ -532,7 +672,8 @@ const handleSocketConnection = (socket, io) => {
       // Notify other users that this user left
       socket.to(`collab-room:${roomId}`).emit('user-left-collab-room', {
         userId: socket.user._id.toString(),
-        displayName: socket.user.displayName || socket.user.email || 'Anonymous'
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar
       });
 
       console.log(`User ${socket.user.displayName} left collaborative room ${roomId}`);
@@ -654,8 +795,9 @@ const handleSocketConnection = (socket, io) => {
         // Remove from active connections
         activeConnections.delete(socket.user._id.toString());
         
-        // Remove user cursor
+        // Remove user cursor and selection
         userCursors.delete(socket.user._id.toString());
+        userSelections.delete(socket.user._id.toString());
         
         // Update user's online status
         updateUserStatus(socket.user._id, false);
@@ -679,7 +821,7 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
-  // Handle reconnection
+  // Handle reconnection requests
   socket.on('reconnect-request', async (data) => {
     try {
       const { roomId } = data;
@@ -689,23 +831,41 @@ const handleSocketConnection = (socket, io) => {
         return;
       }
 
-      // Rejoin the room
+      // Rejoin the collaborative room
       socket.join(`collab-room:${roomId}`);
       
       const roomState = roomStates.get(roomId);
       if (roomState) {
         roomState.users.add(socket.user._id.toString());
-        
-        // Send current state
+
+        // Send current room state to the reconnecting user
         socket.emit('room-state-sync', {
           code: roomState.code,
           language: roomState.language,
           version: roomState.version,
-          lastModified: roomState.lastModified
+          lastModified: roomState.lastModified,
+          lastExecution: roomState.lastExecution
         });
-      }
 
-      console.log(`User ${socket.user.displayName} reconnected to room ${roomId}`);
+        // Get updated users in the room
+        const roomSockets = await io.in(`collab-room:${roomId}`).fetchSockets();
+        const usersInRoom = roomSockets
+          .filter(s => s.user)
+          .map(s => ({
+            userId: s.user._id.toString(),
+            displayName: s.user.displayName || s.user.email || 'Anonymous',
+            avatar: s.user.avatar,
+            socketId: s.id,
+            online: true,
+            isEditing: false,
+            lastActivity: new Date()
+          }));
+
+        // Broadcast updated user list to all users in the room
+        io.in(`collab-room:${roomId}`).emit('users-in-room', usersInRoom);
+
+        console.log(`User ${socket.user.displayName} reconnected to room ${roomId}`);
+      }
     } catch (error) {
       console.error('Error handling reconnection:', error);
       socket.emit('error', { message: 'Failed to reconnect' });
