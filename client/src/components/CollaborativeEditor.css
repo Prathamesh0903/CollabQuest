@@ -35,13 +35,15 @@
   background: var(--vscode-bg);
 }
 
+/* Professional VS Code Header Styles */
 .vscode-header {
   background: var(--vscode-header-bg);
   border-bottom: 1px solid var(--vscode-border);
-  height: 35px;
+  height: 38px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .header-section {
@@ -49,43 +51,65 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0 12px;
+  padding: 0 16px;
   height: 100%;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  flex: 1;
 }
 
 .header-center {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  flex: 1;
+  justify-content: center;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
 }
 
+/* FORCEFUL OVERRIDE - BACK BUTTON STYLES */
 .back-btn {
-  background: transparent;
-  border: none;
-  color: var(--vscode-text);
-  font-size: 13px;
-  padding: 4px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--vscode-border) !important;
+  color: var(--vscode-text) !important;
+  font-size: 13px !important;
+  padding: 6px 12px 6px 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) !important;
+  margin-right: 8px !important;
 }
 
 .back-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--vscode-accent) !important;
 }
 
+.back-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  transition: transform 0.2s ease !important;
+}
+
+.back-btn:hover svg {
+  transform: translateX(-2px) !important;
+}
 .file-info {
   display: flex;
   flex-direction: column;
@@ -94,7 +118,7 @@
 
 .file-name {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--vscode-text);
 }
 
@@ -103,33 +127,76 @@
   color: var(--vscode-text-light);
 }
 
+.connection-status {
+  display: flex;
+  align-items: center;
+}
+
 .connection-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: var(--vscode-text-light);
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .connection-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--vscode-error);
+  animation: pulse 2s infinite;
 }
 
 .connection-indicator.connected .connection-dot {
   background: var(--vscode-success);
+  animation: none;
 }
 
 .connection-indicator.reconnecting .connection-dot {
   background: var(--vscode-warning);
-  animation: pulse 1.5s infinite;
+  animation: pulse 1s infinite;
 }
 
-.users-indicator {
+.collaborators-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   color: var(--vscode-text-light);
+}
+
+.collaborators-count {
+  font-weight: 500;
+  color: var(--vscode-text);
+}
+
+.collaborators-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-user-avatar {
+  transition: transform 0.2s ease;
+}
+
+.header-user-avatar:hover {
+  transform: scale(1.1);
+}
+
+.more-collaborators {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vscode-text-light);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-btn {
@@ -137,30 +204,56 @@
   border: none;
   color: var(--vscode-text);
   font-size: 13px;
-  padding: 4px 8px;
-  border-radius: 3px;
+  padding: 6px 10px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
 }
 
 .header-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: var(--vscode-text);
+}
+
+.header-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.header-btn.share-btn {
+  background: rgba(0, 122, 204, 0.1);
+  border: 1px solid rgba(0, 122, 204, 0.3);
+  color: var(--vscode-accent);
+}
+
+.header-btn.share-btn:hover {
+  background: rgba(0, 122, 204, 0.2);
+  border-color: rgba(0, 122, 204, 0.5);
 }
 
 .header-btn.run-btn {
   background: var(--vscode-accent);
   color: white;
-  font-weight: 500;
-  padding: 4px 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-btn.run-btn:hover:not(:disabled) {
   background: #106ebe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .header-btn.run-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .vscode-main-area {
@@ -175,9 +268,6 @@
   overflow: hidden;
 }
 
-.vscode-editor-container.with-sidebar {
-  /* No additional margin needed as sidebar is in flex layout */
-}
 
 .vscode-status-bar {
   background: var(--vscode-status-bg);
@@ -373,14 +463,14 @@
 @media (max-width: 768px) {
   .vscode-header {
     height: auto;
-    min-height: 35px;
+    min-height: 38px;
   }
   
   .header-section {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 8px 16px;
   }
   
   .header-left, .header-center, .header-right {
@@ -401,24 +491,12 @@
     align-items: center;
   }
   
-  .vscode-main-area {
-    flex-direction: row; /* Keep sidebar and editor side by side on mobile */
-  }
-  
-  .vscode-status-bar {
-    flex-direction: column;
-    height: auto;
-    gap: 4px;
-    padding: 8px 12px;
-  }
-  
-  .status-left, .status-right {
-    width: 100%;
-    justify-content: space-between;
+  .collaborators-info {
+    display: none;
   }
   
   .shortcuts-hint {
-    display: none; /* Hide on mobile */
+    display: none;
   }
   
   .terminal-content {
@@ -726,9 +804,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 16px;
   font-size: 12px;
-  color: var(--vscode-text);
+  color: white;
   flex-shrink: 0;
 }
 
@@ -745,9 +823,8 @@
 }
 
 .status-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
 }
 
 .status-item:first-child {
@@ -758,7 +835,7 @@
 .status-btn {
   background: transparent;
   border: none;
-  color: var(--vscode-text);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 3px;
@@ -778,10 +855,14 @@
   color: white;
 }
 
+.status-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
 .shortcuts-hint {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 11px;
-  color: var(--vscode-text-light);
-  opacity: 0.8;
 }
 
 /* Responsive Design */

@@ -20,7 +20,7 @@ interface EditorChange {
 }
 
 interface CollaborativeEditorProps {
-  roomId: string;
+  sessionId?: string;
   language?: 'javascript' | 'python';
   initialCode?: string;
 }
@@ -54,8 +54,8 @@ interface SelectionInfo {
   timestamp: Date;
 }
 
-// Room state type
-interface RoomState {
+// Session state type
+interface SessionState {
   code: string;
   language: string;
   version: number;
@@ -63,13 +63,8 @@ interface RoomState {
   lastExecution?: any;
 }
 
-// GamifiedHeader props type
-
-
-
-
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
-  roomId,
+  sessionId,
   language: initialLanguage = 'javascript',
   initialCode = ''
 }) => {
@@ -96,9 +91,34 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [currentFile, setCurrentFile] = useState<string>('main.js');
   const [executionHistory, setExecutionHistory] = useState<any[]>([]);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
+  const [shareableLink, setShareableLink] = useState<string>('');
 
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
+
+  // Generate or use session ID
+  const currentSessionId = sessionId || generateSessionId();
+
+  // Generate a unique session ID
+  function generateSessionId(): string {
+    return 'session_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  // Generate shareable link
+  useEffect(() => {
+    const link = `${window.location.origin}/collab/${currentSessionId}`;
+    setShareableLink(link);
+  }, [currentSessionId]);
+
+  // Copy shareable link to clipboard
+  const copyShareableLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareableLink);
+      showSuccess('Link Copied', 'Shareable link copied to clipboard!');
+    } catch (err) {
+      showError('Copy Failed', 'Failed to copy link to clipboard');
+    }
+  };
 
   // Initialize socket connection with reconnection logic
   const initializeSocket = useCallback(async () => {
@@ -117,7 +137,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       }
 
       socketRef.current = io('http://localhost:5000', {
-        query: { roomId },
+        query: { sessionId: currentSessionId },
         auth: { token },
         reconnection: true,
         reconnectionAttempts: maxReconnectAttempts,
@@ -134,8 +154,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         reconnectAttemptsRef.current = 0;
         showSuccess('Connected', 'Successfully connected to the server');
         
-        // Join the collaborative room
-        socket.emit('join-collab-room', { roomId, language });
+        // Join the collaborative session
+        socket.emit('join-collab-session', { sessionId: currentSessionId, language });
       });
 
       socket.on('disconnect', (reason: string) => {
@@ -165,8 +185,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         reconnectAttemptsRef.current = 0;
         showSuccess('Reconnected', `Successfully reconnected after ${attemptNumber} attempts`);
         
-        // Rejoin the room after reconnection
-        socket.emit('reconnect-request', { roomId });
+        // Rejoin the session after reconnection
+        socket.emit('reconnect-request', { sessionId: currentSessionId });
       });
 
       socket.on('reconnect_failed', () => {
@@ -174,9 +194,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         setConnectionStatus('disconnected');
       });
 
-      // Room state synchronization
-      socket.on('room-state-sync', (state: RoomState) => {
-        console.log('Received room state sync:', state);
+      // Session state synchronization
+      socket.on('session-state-sync', (state: SessionState) => {
+        console.log('Received session state sync:', state);
         setCode(state.code);
         
         // Update editor if mounted
@@ -262,9 +282,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         }
       });
 
-      // Users in room updates
-      socket.on('users-in-room', (users: UserInfo[]) => {
-        console.log('Users in room updated:', users);
+      // Users in session updates
+      socket.on('users-in-session', (users: UserInfo[]) => {
+        console.log('Users in session updated:', users);
         setActiveUsers(users);
       });
 
@@ -345,9 +365,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         }
       });
 
-      // User left room
-      socket.on('user-left-collab-room', (userData: { userId: string; displayName: string; avatar?: string }) => {
-        console.log('User left room:', userData);
+      // User left session
+      socket.on('user-left-collab-session', (userData: { userId: string; displayName: string; avatar?: string }) => {
+        console.log('User left session:', userData);
         setActiveUsers(prev => prev.filter(user => user.userId !== userData.userId));
         setRemoteCursors(prev => {
           const newCursors = { ...prev };
@@ -359,7 +379,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           delete newSelections[userData.userId];
           return newSelections;
         });
-        showUserActivity(userData.displayName, 'left the room');
+        showUserActivity(userData.displayName, 'left the session');
       });
 
       // Error handling
@@ -372,7 +392,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       console.error('Failed to initialize socket connection:', error);
       setConnectionStatus('disconnected');
     }
-  }, [currentUser, roomId, language, showSuccess, showError, showInfo]);
+  }, [currentUser, currentSessionId, language, showSuccess, showError, showInfo]);
 
   // Initialize socket on mount
   useEffect(() => {
@@ -388,13 +408,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     };
   }, [initializeSocket]);
 
-
-
-  
-
-  // Helper function to show notifications
-
-
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
     
@@ -408,7 +421,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       
       // Set editing indicator
       if (socketRef.current && connectionStatus === 'connected') {
-        socketRef.current.emit('editing-start', { roomId });
+        socketRef.current.emit('editing-start', { sessionId: currentSessionId });
       }
       
       changeTimeout = setTimeout(() => {
@@ -425,7 +438,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                 endColumn: change.range.endColumn,
               },
               text: change.text,
-              roomId,
+              sessionId: currentSessionId,
               version: 0
             });
           }
@@ -437,7 +450,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Clear editing indicator after 2 seconds of inactivity
       editingTimeout = setTimeout(() => {
         if (socketRef.current && connectionStatus === 'connected') {
-          socketRef.current.emit('editing-stop', { roomId });
+          socketRef.current.emit('editing-stop', { sessionId: currentSessionId });
         }
       }, 2000);
     });
@@ -452,7 +465,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           const position = event.position;
           socketRef.current.emit('cursor-move', {
             position,
-            roomId,
+            sessionId: currentSessionId,
             color: generateUserColor(currentUser?.uid || ''),
             displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
           });
@@ -466,7 +479,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         const selection = event.selection;
         socketRef.current.emit('selection-change', {
           selection,
-          roomId,
+          sessionId: currentSessionId,
           color: generateUserColor(currentUser?.uid || ''),
           displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
         });
@@ -484,10 +497,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     return colors[index];
   };
 
-  
-
-  
-
   const handleRunCode = useCallback(async () => {
     if (!code.trim()) return;
 
@@ -499,7 +508,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Use socket to broadcast code execution to all collaborators
       if (socketRef.current && connectionStatus === 'connected') {
         socketRef.current.emit('execute-code', {
-          roomId,
+          sessionId: currentSessionId,
           language,
           code,
           input: customInput
@@ -507,7 +516,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       }
 
       // Also execute locally for immediate feedback
-      const response = await fetch(`http://localhost:5000/api/rooms/${roomId}/execute`, {
+      const response = await fetch(`http://localhost:5000/api/sessions/${currentSessionId}/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -572,7 +581,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       setOutputLoading(false);
       setIsExecuting(false);
     }
-  }, [code, customInput, currentUser, language, roomId, socketRef, connectionStatus]);
+  }, [code, customInput, currentUser, language, currentSessionId, socketRef, connectionStatus]);
 
   const handleClearTerminal = () => {
     setTerminalOutput(null);
@@ -598,7 +607,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         // Notify other users about language change
         if (socketRef.current && connectionStatus === 'connected') {
           socketRef.current.emit('language-change', {
-            roomId,
+            sessionId: currentSessionId,
             language: newLanguage,
             code: newDefaultCode
           });
@@ -609,12 +618,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     // Show notification
     showInfo('Language Changed', `Switched to ${newLanguage.charAt(0).toUpperCase() + newLanguage.slice(1)}`);
   };
-
-  
-
-
-
-
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'vs-dark' ? 'vs-light' : 'vs-dark');
@@ -712,8 +715,6 @@ function helloWorld() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showTerminal, handleRunCode]);
 
-  // Remove handleStartBattle and formatTime
-
   // File selection handler
   const handleFileSelect = (file: any) => {
     setCurrentFile(file.id);
@@ -725,44 +726,48 @@ function helloWorld() {
     showInfo('File Selected', `Switched to ${file.name}`);
   };
 
-  // Shortcuts are now displayed in the status bar
-
   return (
     <div className={`collaborative-editor vscode-layout ${theme === 'vs-dark' ? 'dark-theme' : 'light-theme'}`}>
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
-      {/* VS Code Style Header */}
+      {/* Professional VS Code Style Header */}
       <div className="vscode-header">
         <div className="header-section">
           <div className="header-left">
-            <button 
+            <button  
               className="back-btn" 
               onClick={() => {
-                // Notify server we're leaving the room
+                // Notify server we're leaving the session
                 if (socketRef.current && connectionStatus === 'connected') {
-                  socketRef.current.emit('leave-collab-room', { roomId });
+                  socketRef.current.emit('leave-collab-session', { sessionId: currentSessionId });
                 }
                 // Navigate back to dashboard
                 window.location.href = '/';
               }} 
-              title="Back to Dashboard"
             >
-              ← Dashboard
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              Dashboard
             </button>
             <div className="file-info">
               <span className="file-name">{currentFile}</span>
-              <span className="file-path">Room: {roomId}</span>
+              <span className="file-path">Session: {currentSessionId}</span>
             </div>
           </div>
+          
           <div className="header-center">
-            <span className={`connection-indicator ${connectionStatus}`}>
-              <span className="connection-dot"></span>
-              {connectionStatus === 'connected' ? 'Connected' :
-               connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
-            </span>
-            <div className="users-indicator">
-              <span className="users-count">{activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}</span>
-              <div className="users-list">
+            <div className="connection-status">
+              <span className={`connection-indicator ${connectionStatus}`}>
+                <span className="connection-dot"></span>
+                {connectionStatus === 'connected' ? 'Connected' :
+                 connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
+              </span>
+            </div>
+            
+            <div className="collaborators-info">
+              <span className="collaborators-count">{activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}</span>
+              <div className="collaborators-list">
                 {activeUsers.slice(0, 3).map(user => (
                   <UserAvatar
                     key={user.userId}
@@ -774,10 +779,11 @@ function helloWorld() {
                   />
                 ))}
                 {activeUsers.length > 3 && (
-                  <span className="more-users">+{activeUsers.length - 3}</span>
+                  <span className="more-collaborators">+{activeUsers.length - 3}</span>
                 )}
               </div>
             </div>
+            
             {isExecuting && (
               <div className="execution-status executing">
                 <span className="execution-icon">⚡</span>
@@ -785,12 +791,38 @@ function helloWorld() {
               </div>
             )}
           </div>
+          
           <div className="header-right">
-            <button className="header-btn" onClick={toggleTheme} title="Toggle Theme">
-              {theme === 'vs-dark' ? '☀️' : '🌙'}
+            <button 
+              className="header-btn share-btn" 
+              onClick={copyShareableLink}
+              title="Copy Shareable Link"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              Share
             </button>
+            
+            <button className="header-btn" onClick={toggleTheme} title="Toggle Theme">
+              {theme === 'vs-dark' ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              )}
+            </button>
+            
             <button className="header-btn run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
-              ▶️ {outputLoading ? 'Running...' : 'Run'}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              {outputLoading ? 'Running...' : 'Run'}
             </button>
           </div>
         </div>
@@ -879,6 +911,10 @@ function helloWorld() {
             onClick={() => setShowTerminal(!showTerminal)}
             title="Toggle Terminal (Ctrl+`)"
           >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 17l6-6-6-6"/>
+              <path d="M12 19h8"/>
+            </svg>
             Terminal
           </button>
           <span className="shortcuts-hint">
@@ -887,7 +923,7 @@ function helloWorld() {
         </div>
       </div>
 
-      {/* Terminal */}
+      {/* VS Code Style Terminal */}
       <Terminal
         isVisible={showTerminal}
         onClose={() => setShowTerminal(false)}

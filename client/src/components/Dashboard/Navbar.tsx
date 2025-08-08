@@ -17,14 +17,14 @@ const Navbar: React.FC = () => {
   return (
     <header className="dashboard-navbar">
       <div className="navbar-left">
-        <a href="#" className="navbar-logo">
+        <span role="button" className="navbar-logo">
           <span className="logo-text">Collab Quest</span>
-        </a>
+        </span>
         <ul className="nav-links">
-          <li><a href="#">About</a></li>
-          <li><a href="#">Code Together</a></li>
-          <li><a href="#">Contest</a></li>
-          <li><a href="#">Discuss</a></li>
+          <li><span role="button">About</span></li>
+          <li><span role="button">Code Together</span></li>
+          <li><span role="button">Contest</span></li>
+          <li><span role="button">Discuss</span></li>
         </ul>
       </div>
       <div 

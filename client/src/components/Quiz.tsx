@@ -30,8 +30,8 @@ interface QuizState {
 }
 
 // Quiz Navbar Component
-const QuizNavbar: React.FC<{ onBack: () => void; currentState: string; settings?: QuizSettings; quizData?: QuizState; questions?: QuizQuestion[] }> = ({ 
-  onBack, 
+const QuizNavbar: React.FC<{ onComplete: (score: number, totalQuestions: number) => void; currentState: string; settings?: QuizSettings; quizData?: QuizState; questions?: QuizQuestion[] }> = ({ 
+  onComplete, 
   currentState, 
   settings, 
   quizData, 
@@ -46,7 +46,7 @@ const QuizNavbar: React.FC<{ onBack: () => void; currentState: string; settings?
   return (
     <header className="quiz-navbar">
       <div className="navbar-left">
-        <button className="back-btn" onClick={onBack}>← Back to Dashboard</button>
+        <button className="back-btn" onClick={() => onComplete(quizData?.score ?? 0, questions?.length ?? 0)}>← Back to Dashboard</button>
         <div className="navbar-logo">
           🎯 Quiz <span style={{fontSize: '1.1rem', color: '#eebbc3', marginLeft: '0.5rem'}}>Challenge</span>
         </div>
@@ -85,7 +85,7 @@ const QuizNavbar: React.FC<{ onBack: () => void; currentState: string; settings?
   );
 };
 
-const Quiz: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => void }> = ({ onComplete }) => {
   const [quizState, setQuizState] = useState<'start' | 'setup' | 'loading' | 'quiz' | 'results'>('start');
   const [settings, setSettings] = useState<QuizSettings>({
     topic: '',
@@ -685,7 +685,6 @@ const Quiz: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const renderResultsContent = () => {
     const performance = getPerformanceMessage();
-    const isPerfect = questions.length > 0 && quizData.score === questions.length;
 
     return (
       <div className="quiz-results">
@@ -739,7 +738,7 @@ const Quiz: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <button className="retry-btn" onClick={() => window.location.reload()}>
             🔄 Try Again
           </button>
-          <button className="back-btn" onClick={onBack}>
+          <button className="back-btn" onClick={() => onComplete(quizData.score, questions.length)}>
             🏠 Back to Dashboard
           </button>
         </div>
@@ -750,7 +749,7 @@ const Quiz: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="quiz-container">
       <QuizNavbar 
-        onBack={onBack} 
+        onComplete={onComplete} 
         currentState={quizState}
         settings={settings}
         quizData={quizData}

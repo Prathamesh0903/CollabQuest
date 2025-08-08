@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 interface MainContentProps {
   onStartQuiz?: () => void;
   onStartDemo?: () => void;
-  onRoomSuccess?: (roomId: string, language: 'javascript' | 'python') => void;
+  onSessionSuccess?: (sessionId: string, language: 'javascript' | 'python') => void;
 }
 
 const featureCards = [
@@ -63,10 +63,13 @@ const featureCards = [
   }
 ];
 
-const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onRoomSuccess }) => {
+const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onSessionSuccess }) => {
   const navigate = useNavigate();
 
-  
+  // Generate a unique session ID
+  const generateSessionId = (): string => {
+    return 'session_' + Math.random().toString(36).substr(2, 9);
+  };
 
   const handleStartBattle = () => {
     navigate('/battle-lobby');
@@ -110,7 +113,10 @@ const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onR
             <button 
               className="action-button"
               onClick={() => {
-                if (card.button === 'Start Coding') onRoomSuccess?.('new-session', 'javascript');
+                if (card.button === 'Start Coding') {
+                  const sessionId = generateSessionId();
+                  onSessionSuccess?.(sessionId, 'javascript');
+                }
                 else if (card.button === 'Take a Quiz') onStartQuiz?.();
                 else if (card.button === 'Start Demo') onStartDemo?.();
                 else if (card.button === 'Start Battle') handleStartBattle();

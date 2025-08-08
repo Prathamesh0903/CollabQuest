@@ -1,11 +1,14 @@
 import React from 'react';
 import './DemoInstructions.css';
 
-const DemoInstructions: React.FC = () => {
+const DemoInstructions: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div className="demo-instructions">
       <div className="demo-container">
-        <h2>🎯 How to Test the Collaborative Editor</h2>
+        <div className="demo-header">
+          <h2>🎯 How to Test the Collaborative Editor</h2>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
         
         <div className="demo-steps">
           <div className="step">

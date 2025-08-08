@@ -5,12 +5,12 @@ import './Dashboard/Navbar.css';
 import './Dashboard.css';
 
 interface DashboardProps {
-  onRoomSuccess?: (roomId: string, language: 'javascript' | 'python') => void;
+  onSessionSuccess?: (sessionId: string, language: 'javascript' | 'python') => void;
   onStartQuiz?: () => void; 
   onStartDemo?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onRoomSuccess, onStartQuiz, onStartDemo }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onSessionSuccess, onStartQuiz, onStartDemo }) => {
 
   return (
     <div className="dashboard-container dashboard-no-sidebar">
@@ -19,7 +19,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRoomSuccess, onStartQuiz, onSta
         <MainContent 
           onStartQuiz={onStartQuiz} 
           onStartDemo={onStartDemo} 
-          onRoomSuccess={onRoomSuccess}
+          onSessionSuccess={onSessionSuccess}
         />
       </div>
     </div>

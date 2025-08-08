@@ -1,104 +1,148 @@
 import React, { useState } from 'react';
-import './App.css';
-import { useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
- 
-import CollaborativeEditor from './components/CollaborativeEditor';
-import DemoInstructions from './components/DemoInstructions';
+import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
-import BattleLobby from './components/Dashboard/BattleLobby';
-import BattleRoomPage from './components/BattleRoomPage';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ResultScreen from './components/ResultScreen';
+import DemoInstructions from './components/DemoInstructions';
+import { AuthProvider } from './contexts/AuthContext';
+import './App.css';
 
-interface EditorState {
-  roomId: string;
-  language: 'javascript' | 'python';
-}
+// Session-based editor component
+const SessionEditor: React.FC = () => {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  return <CollaborativeEditor sessionId={sessionId} />;
+};
 
-
-
-function App() {
-  const { currentUser, loading } = useAuth();
-  const [editorState, setEditorState] = useState<EditorState | null>(null);
-  const [showDemo, setShowDemo] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
+// Main App component
+const App: React.FC = () => {
+  const [editorState, setEditorState] = useState<{
+    sessionId: string;
+    language: 'javascript' | 'python';
+  } | null>(null);
   
+  const [quizState, setQuizState] = useState<{
+    isActive: boolean;
+    score: number;
+    totalQuestions: number;
+  }>({
+    isActive: false,
+    score: 0,
+    totalQuestions: 0
+  });
+  
+  const [showDemo, setShowDemo] = useState(false);
 
-  const handleLeaveRoom = () => {
+  const handleLeaveSession = () => {
     setEditorState(null);
+  };
+
+  // Handles session join/create from Dashboard
+  const handleSessionSuccess = (sessionId: string, language: 'javascript' | 'python') => {
+    setEditorState({ sessionId, language });
+  };
+
+  const handleStartQuiz = () => {
+    setQuizState({
+      isActive: true,
+      score: 0,
+      totalQuestions: 0
+    });
   };
 
   const handleShowDemo = () => {
     setShowDemo(true);
   };
 
-  const handleHideDemo = () => {
+  const handleCloseDemo = () => {
     setShowDemo(false);
   };
 
-  const handleStartQuiz = () => {
-    setShowQuiz(true);
+  const handleQuizComplete = (score: number, totalQuestions: number) => {
+    setQuizState({
+      isActive: false,
+      score,
+      totalQuestions
+    });
   };
 
-  const handleHideQuiz = () => {
-    setShowQuiz(false);
-  };
-
-  // Handles room join/create from Dashboard
-  const handleRoomSuccess = (roomId: string, language: 'javascript' | 'python') => {
-    setEditorState({ roomId, language });
-  };
-
-  if (loading) {
+  // If editor is active, show it
+  if (editorState) {
     return (
-      <div className="App">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-        </div>
+      <div className="app">
+        <CollaborativeEditor
+          sessionId={editorState.sessionId}
+          language={editorState.language}
+        />
+       
       </div>
     );
   }
 
-  if (!currentUser) {
-    return <Login />;
+  // If quiz is active, show it
+  if (quizState.isActive) {
+    return (
+      <div className="app">
+        <Quiz onComplete={handleQuizComplete} />
+      </div>
+    );
   }
 
-  return (
-    <Router>
-      <Routes>
-        <Route path="/battle-lobby" element={<BattleLobby />} />
-        <Route path="/battle-room/:roomCode" element={<BattleRoomPage />} />
-        <Route
-          path="*"
-          element={
-            editorState ? (
-              <div className="editor-wrapper">
-                <CollaborativeEditor
-                  roomId={editorState.roomId}
-                  language={editorState.language}
-                />
-              </div>
-            ) : showDemo ? (
-              <div className="demo-wrapper">
-                <div className="leave-room">
-                  <button onClick={handleHideDemo} className="leave-btn">
-                    ← Back to Dashboard
-                  </button>
-                </div>
-                <DemoInstructions />
-              </div>
-            ) : showQuiz ? (
-              <Quiz onBack={handleHideQuiz} />
-            ) : (
-              <Dashboard onRoomSuccess={handleRoomSuccess} onStartQuiz={handleStartQuiz} onStartDemo={handleShowDemo} />
-            )
-          }
-        />
-      </Routes>
-    </Router>
-  );
-}
+  // If demo is active, show it
+  if (showDemo) {
+    return (
+      <div className="app">
+        <DemoInstructions onClose={handleCloseDemo} />
+      </div>
+    );
+  }
 
-export default App;
+  // If quiz results are available, show them
+  if (quizState.score > 0 || quizState.totalQuestions > 0) { // Show if quiz has been attempted
+    const result = {
+      passed: quizState.score,
+      total: quizState.totalQuestions,
+      testCaseResults: [], // No test cases for quiz
+      accuracyScore: quizState.totalQuestions > 0 ? (quizState.score / quizState.totalQuestions) * 100 : 0,
+      speedScore: 0, // No speed score for quiz
+      totalScore: quizState.totalQuestions > 0 ? (quizState.score / quizState.totalQuestions) * 100 : 0,
+      timeTaken: null // No time taken for quiz
+    };
+
+    return (
+      <div className="app">
+        <ResultScreen
+          result={result}
+          onClose={() => setQuizState({ isActive: false, score: 0, totalQuestions: 0 })}
+        />
+      </div>
+    );
+  }
+
+  // Default: show dashboard
+  return (
+    <div className="app">
+      <Dashboard 
+        onSessionSuccess={handleSessionSuccess} 
+        onStartQuiz={handleStartQuiz} 
+        onStartDemo={handleShowDemo} 
+      />
+    </div>
+  );
+};
+
+// Wrapper with AuthProvider
+const AppWithAuth: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/collab/:sessionId" element={<SessionEditor />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
+
+export default AppWithAuth;
