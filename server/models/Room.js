@@ -164,7 +164,7 @@ const roomSchema = new mongoose.Schema({
   // Programming language
   language: {
     type: String,
-    enum: ['javascript', 'python', 'java', 'cpp', 'csharp'],
+    enum: ['javascript', 'python', 'java', 'cpp', 'csharp', 'typescript', 'go', 'rust', 'php', 'ruby'],
     default: 'javascript'
   },
   // Generated problems for the room

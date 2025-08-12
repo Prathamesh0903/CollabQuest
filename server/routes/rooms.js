@@ -124,10 +124,10 @@ router.post('/:roomId/execute', auth, async (req, res) => {
     }
 
     // Validate language
-    if (!['javascript', 'python'].includes(language)) {
+    if (!['javascript', 'python', 'java', 'cpp', 'csharp'].includes(language)) {
       return res.status(400).json({
         success: false,
-        error: 'Unsupported language. Supported: javascript, python'
+        error: 'Unsupported language. Supported: javascript, python, java, cpp, csharp'
       });
     }
 

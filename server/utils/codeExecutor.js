@@ -1,16 +1,21 @@
 const axios = require('axios');
+const DockerExecutor = require('./dockerExecutor');
 
 // Configuration for code execution services
 const EXECUTOR_CONFIG = {
   local: {
     url: process.env.EXECUTOR_URL || 'http://localhost:5001',
     timeout: 5000, // 5 seconds for HTTP timeout
-    fallback: 'judge0'
+    fallback: 'docker'
   },
   judge0: {
     url: 'https://judge0-ce.p.rapidapi.com',
     timeout: 10000,
     apiKey: process.env.JUDGE0_API_KEY
+  },
+  docker: {
+    enabled: process.env.DOCKER_ENABLED !== 'false',
+    timeout: 30000 // 30 seconds for Docker execution
   }
 };
 
@@ -18,6 +23,9 @@ const EXECUTOR_CONFIG = {
 const JUDGE0_LANGUAGES = {
   javascript: 63, // Node.js
   python: 71,     // Python 3
+  java: 62,       // Java (OpenJDK 13.0.1)
+  cpp: 54,        // C++ (GCC 9.2.0)
+  csharp: 51,     // C# (Mono 6.6.0.161)
 };
 
 async function executeCode(language, sourceCode, input = '') {
@@ -26,8 +34,8 @@ async function executeCode(language, sourceCode, input = '') {
     throw new Error('Language and source code are required');
   }
 
-  if (!['javascript', 'python'].includes(language)) {
-    throw new Error('Unsupported language. Supported: javascript, python');
+  if (!['javascript', 'python', 'java', 'cpp', 'csharp', 'typescript', 'go', 'rust', 'php', 'ruby'].includes(language)) {
+    throw new Error('Unsupported language. Supported: javascript, python, java, cpp, csharp, typescript, go, rust, php, ruby');
   }
 
   // Try local executor first
@@ -37,6 +45,18 @@ async function executeCode(language, sourceCode, input = '') {
     return result;
   } catch (error) {
     console.error('Local executor failed:', error.message);
+    
+    // Try Docker executor if enabled
+    if (EXECUTOR_CONFIG.docker.enabled) {
+      try {
+        console.log(`Trying Docker executor for ${language} code`);
+        const dockerExecutor = new DockerExecutor();
+        const result = await dockerExecutor.executeCode(language, sourceCode, input);
+        return result;
+      } catch (dockerError) {
+        console.error('Docker executor failed:', dockerError.message);
+      }
+    }
     
     // Fallback to Judge0 if configured
     if (EXECUTOR_CONFIG.judge0.apiKey) {

@@ -15,6 +15,7 @@ const roomRoutes = require('./routes/rooms');
 const quizRoutes = require('./routes/quizzes');
 const leaderboardRoutes = require('./routes/leaderboards');
 const messageRoutes = require('./routes/messages');
+const fileRoutes = require('./routes/files');
 
 const { socketAuth } = require('./middleware/auth');
 const { handleSocketConnection } = require('./utils/socketHandler');
@@ -55,6 +56,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/files', fileRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {

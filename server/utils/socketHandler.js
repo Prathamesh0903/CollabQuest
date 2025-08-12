@@ -991,7 +991,84 @@ print("Hello, World!")
 def greet(name):
     return f"Hello, {name}!"
 
-# Start coding with your team!`
+# Start coding with your team!`,
+    java: `// Welcome to collaborative Java coding!
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+    
+    public static String greet(String name) {
+        return "Hello, " + name + "!";
+    }
+}`,
+    cpp: `// Welcome to collaborative C++ coding!
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+int main() {
+    cout << "Hello, World!" << endl;
+    return 0;
+}`,
+    csharp: `// Welcome to collaborative C# coding!
+using System;
+
+class Program {
+    static void Main() {
+        Console.WriteLine("Hello, World!");
+    }
+}`,
+    typescript: `// Welcome to collaborative TypeScript coding!
+interface Greeting {
+    name: string;
+    message: string;
+}
+
+function greet(name: string): Greeting {
+    return {
+        name,
+        message: \`Hello, \${name}!\`
+    };
+}
+
+console.log(greet("World"));
+`,
+    go: `// Welcome to collaborative Go coding!
+package main
+
+import "fmt"
+
+func greet(name string) string {
+    return fmt.Sprintf("Hello, %s!", name)
+}
+
+func main() {
+    fmt.Println(greet("World"))
+}`,
+    rust: `// Welcome to collaborative Rust coding!
+fn greet(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+
+fn main() {
+    println!("{}", greet("World"));
+}`,
+    php: `<?php
+// Welcome to collaborative PHP coding!
+function greet($name) {
+    return "Hello, " . $name . "!";
+}
+
+echo greet("World");
+?>`,
+    ruby: `# Welcome to collaborative Ruby coding!
+def greet(name)
+  "Hello, #{name}!"
+end
+
+puts greet("World")`
   };
   
   return defaults[language] || defaults.javascript;

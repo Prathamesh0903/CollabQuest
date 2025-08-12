@@ -4,10 +4,13 @@ import './VSCodeSidebar.css';
 interface FileItem {
   id: string;
   name: string;
+  path: string;
   type: 'file' | 'folder';
-  icon: string;
-  isExpanded?: boolean;
+  language?: string;
+  size?: number;
   children?: FileItem[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface VSCodeSidebarProps {
@@ -15,92 +18,89 @@ interface VSCodeSidebarProps {
   onToggle: () => void;
   currentFile?: string;
   onFileSelect?: (file: FileItem) => void;
+  files?: FileItem[];
+  onNewFileClick?: () => void;
+  onNewFolderClick?: () => void;
+  onOpenLocalFolder?: () => void;
 }
 
 const VSCodeSidebar: React.FC<VSCodeSidebarProps> = ({
   isVisible,
   onToggle,
   currentFile,
-  onFileSelect
+  onFileSelect,
+  files = [],
+  onNewFileClick,
+  onNewFolderClick,
+  onOpenLocalFolder
 }) => {
   const [activeTab, setActiveTab] = useState<'explorer' | 'search' | 'extensions'>('explorer');
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['project-root']));
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
-  // Mock file structure
-  const fileStructure: FileItem[] = [
-    {
-      id: 'project-root',
-      name: 'Collaborative Project',
-      type: 'folder',
-      icon: '📁',
-      isExpanded: true,
-      children: [
-        {
-          id: 'src',
-          name: 'src',
-          type: 'folder',
-          icon: '📁',
-          isExpanded: false,
-          children: [
-            { id: 'main.js', name: 'main.js', type: 'file', icon: '📄' },
-            { id: 'main.py', name: 'main.py', type: 'file', icon: '🐍' },
-            { id: 'utils.js', name: 'utils.js', type: 'file', icon: '📄' },
-            { id: 'config.json', name: 'config.json', type: 'file', icon: '⚙️' }
-          ]
-        },
-        {
-          id: 'components',
-          name: 'components',
-          type: 'folder',
-          icon: '📁',
-          isExpanded: false,
-          children: [
-            { id: 'Header.js', name: 'Header.js', type: 'file', icon: '⚛️' },
-            { id: 'Footer.js', name: 'Footer.js', type: 'file', icon: '⚛️' },
-            { id: 'Sidebar.js', name: 'Sidebar.js', type: 'file', icon: '⚛️' }
-          ]
-        },
-        { id: 'package.json', name: 'package.json', type: 'file', icon: '📦' },
-        { id: 'README.md', name: 'README.md', type: 'file', icon: '📖' },
-        { id: '.gitignore', name: '.gitignore', type: 'file', icon: '🚫' }
-      ]
-    }
-  ];
-
-  const toggleFolder = (folderId: string) => {
+  const toggleFolder = (folderPath: string) => {
     const newExpanded = new Set(expandedFolders);
-    if (newExpanded.has(folderId)) {
-      newExpanded.delete(folderId);
+    if (newExpanded.has(folderPath)) {
+      newExpanded.delete(folderPath);
     } else {
-      newExpanded.add(folderId);
+      newExpanded.add(folderPath);
     }
     setExpandedFolders(newExpanded);
+  };
+
+  const getFileIcon = (file: FileItem): string => {
+    if (file.type === 'folder') return '📁';
+    
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const iconMap: { [key: string]: string } = {
+      'js': '📄',
+      'ts': '📘',
+      'py': '🐍',
+      'java': '☕',
+      'cpp': '⚡',
+      'c': '⚡',
+      'cs': '🔷',
+      'go': '🐹',
+      'rs': '🦀',
+      'php': '🐘',
+      'rb': '💎',
+      'json': '⚙️',
+      'md': '📖',
+      'txt': '📝',
+      'html': '🌐',
+      'css': '🎨',
+      'xml': '📋',
+      'yml': '⚙️',
+      'yaml': '⚙️'
+    };
+    
+    return iconMap[ext || ''] || '📄';
   };
 
   const renderFileTree = (items: FileItem[], depth = 0) => {
     return items.map((item) => (
       <div key={item.id} className="file-tree-item">
         <div
-          className={`file-item ${item.id === currentFile ? 'active' : ''}`}
+          className={`file-item ${item.path === currentFile ? 'active' : ''}`}
           style={{ paddingLeft: `${12 + depth * 16}px` }}
           onClick={() => {
             if (item.type === 'folder') {
-              toggleFolder(item.id);
+              toggleFolder(item.path);
             } else if (onFileSelect) {
               onFileSelect(item);
             }
           }}
         >
           {item.type === 'folder' && (
-            <span className={`folder-arrow ${expandedFolders.has(item.id) ? 'expanded' : ''}`}>
+            <span className={`folder-arrow ${expandedFolders.has(item.path) ? 'expanded' : ''}`}>
               ▶
             </span>
           )}
-          <span className="file-icon">{item.icon}</span>
+          <span className="file-icon">{getFileIcon(item)}</span>
           <span className="file-name">{item.name}</span>
         </div>
-        {item.type === 'folder' && expandedFolders.has(item.id) && item.children && (
-          <div className="folder-children">
+        
+        {item.type === 'folder' && expandedFolders.has(item.path) && item.children && (
+          <div className="folder-contents">
             {renderFileTree(item.children, depth + 1)}
           </div>
         )}
@@ -108,72 +108,42 @@ const VSCodeSidebar: React.FC<VSCodeSidebarProps> = ({
     ));
   };
 
-  if (!isVisible) {
-    return (
-      <div className="vscode-sidebar-collapsed">
-        <button className="sidebar-toggle-btn" onClick={onToggle} title="Show Sidebar">
-          ▶
-        </button>
-        <div className="sidebar-icons">
-          <div className="sidebar-icon active" title="Explorer">
-            📁
-          </div>
-          <div className="sidebar-icon" title="Search">
-            🔍
-          </div>
-          <div className="sidebar-icon" title="Extensions">
-            🧩
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="vscode-sidebar">
+    <div className={`vscode-sidebar ${!isVisible ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <div className="sidebar-tabs">
-          <div
-            className={`sidebar-tab ${activeTab === 'explorer' ? 'active' : ''}`}
-            onClick={() => setActiveTab('explorer')}
-            title="Explorer"
-          >
-            📁
-          </div>
-          <div
-            className={`sidebar-tab ${activeTab === 'search' ? 'active' : ''}`}
-            onClick={() => setActiveTab('search')}
-            title="Search"
-          >
-            🔍
-          </div>
-          <div
-            className={`sidebar-tab ${activeTab === 'extensions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('extensions')}
-            title="Extensions"
-          >
-            🧩
-          </div>
-        </div>
-        <button className="sidebar-toggle-btn" onClick={onToggle} title="Hide Sidebar">
-          ◀
+        <button className={`sidebar-toggle ${!isVisible ? 'collapsed' : ''}`} onClick={onToggle}>
+          {isVisible ? '◀' : '▶'}
         </button>
       </div>
 
-      <div className="sidebar-content">
+      <div className={`sidebar-content ${!isVisible ? 'hidden' : ''}`}>
         {activeTab === 'explorer' && (
           <div className="explorer-panel">
             <div className="panel-header">
               <h3>EXPLORER</h3>
               <div className="panel-actions">
-                <button title="New File">📄</button>
-                <button title="New Folder">📁</button>
+                {onOpenLocalFolder && (
+                  <button title="Open Local Folder" onClick={onOpenLocalFolder}>📂</button>
+                )}
+                {onNewFileClick && (
+                  <button title="New File" onClick={onNewFileClick}>📄</button>
+                )}
+                {onNewFolderClick && (
+                  <button title="New Folder" onClick={onNewFolderClick}>📁</button>
+                )}
                 <button title="Refresh">🔄</button>
                 <button title="Collapse All">📋</button>
               </div>
             </div>
             <div className="file-explorer">
-              {renderFileTree(fileStructure)}
+              {files.length > 0 ? (
+                renderFileTree(files)
+              ) : (
+                <div className="empty-state">
+                  <p>No files yet</p>
+                  <p>Create your first file to get started!</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -209,30 +179,63 @@ const VSCodeSidebar: React.FC<VSCodeSidebarProps> = ({
               <h3>EXTENSIONS</h3>
             </div>
             <div className="extensions-content">
-              <div className="extension-item">
-                <div className="extension-icon">🎨</div>
-                <div className="extension-info">
-                  <div className="extension-name">Theme - Dark+</div>
-                  <div className="extension-desc">Default dark theme</div>
-                </div>
-              </div>
-              <div className="extension-item">
-                <div className="extension-icon">📝</div>
-                <div className="extension-info">
-                  <div className="extension-name">Code Formatter</div>
-                  <div className="extension-desc">Auto format code</div>
-                </div>
-              </div>
-              <div className="extension-item">
-                <div className="extension-icon">🔧</div>
-                <div className="extension-info">
-                  <div className="extension-name">Collaborative Tools</div>
-                  <div className="extension-desc">Real-time collaboration</div>
-                </div>
-              </div>
+              <p>Extensions panel coming soon...</p>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Show tab icons when sidebar is collapsed */}
+      {!isVisible && (
+        <div className="sidebar-icons">
+          <button
+            className={`sidebar-icon ${activeTab === 'explorer' ? 'active' : ''}`}
+            onClick={() => setActiveTab('explorer')}
+            title="Explorer"
+          >
+            📁
+          </button>
+          <button
+            className={`sidebar-icon ${activeTab === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveTab('search')}
+            title="Search"
+          >
+            🔍
+          </button>
+          <button
+            className={`sidebar-icon ${activeTab === 'extensions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('extensions')}
+            title="Extensions"
+          >
+            🧩
+          </button>
+        </div>
+      )}
+
+      <div className={`sidebar-footer ${!isVisible ? 'hidden' : ''}`}>
+        <div className="tab-bar">
+          <button
+            className={`tab ${activeTab === 'explorer' ? 'active' : ''}`}
+            onClick={() => setActiveTab('explorer')}
+            title="Explorer"
+          >
+            📁
+          </button>
+          <button
+            className={`tab ${activeTab === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveTab('search')}
+            title="Search"
+          >
+            🔍
+          </button>
+          <button
+            className={`tab ${activeTab === 'extensions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('extensions')}
+            title="Extensions"
+          >
+            🧩
+          </button>
+        </div>
       </div>
     </div>
   );

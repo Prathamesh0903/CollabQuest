@@ -17,7 +17,8 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2"
+    "dockerode": "^4.0.7",
+    "express": "^4.21.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

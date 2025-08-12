@@ -9,6 +9,20 @@ import VSCodeSidebar from './VSCodeSidebar';
 import UserAvatar from './UserAvatar';
 import './CollaborativeEditor.css';
 
+// Extend HTMLInputElement interface for webkitdirectory
+declare global {
+  interface HTMLInputElement {
+    webkitdirectory: boolean;
+  }
+}
+
+// Extend React's InputHTMLAttributes
+declare module 'react' {
+  interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
+    webkitdirectory?: boolean;
+  }
+}
+
 interface EditorChange {
   range: {
     startLineNumber: number;
@@ -21,7 +35,7 @@ interface EditorChange {
 
 interface CollaborativeEditorProps {
   sessionId?: string;
-  language?: 'javascript' | 'python';
+  language?: 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby';
   initialCode?: string;
 }
 
@@ -30,37 +44,44 @@ interface UserInfo {
   userId: string;
   displayName: string;
   avatar?: string;
-  socketId: string;
-  online: boolean;
+  isTyping?: boolean;
+  isEditing?: boolean;
+  lastSeen?: Date;
 }
 
-// Cursor info type
 interface CursorInfo {
-  position: any;
-  userId: string;
+  position: { lineNumber: number; column: number };
   color: string;
   displayName: string;
   avatar?: string;
-  timestamp: Date;
 }
 
-// Selection info type
 interface SelectionInfo {
-  selection: any;
-  userId: string;
+  range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number };
   color: string;
   displayName: string;
   avatar?: string;
-  timestamp: Date;
 }
 
-// Session state type
+interface FileItem {
+  id: string;
+  name: string;
+  path: string;
+  type: 'file' | 'folder';
+  language?: string;
+  size?: number;
+  children?: FileItem[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 interface SessionState {
   code: string;
   language: string;
   version: number;
-  lastModified: Date;
   lastExecution?: any;
+  files: FileItem[];
+  currentFile?: string;
 }
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
@@ -69,7 +90,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   initialCode = ''
 }) => {
   const { currentUser } = useAuth();
-  const [language, setLanguage] = useState<'javascript' | 'python'>(initialLanguage);
+  const [language, setLanguage] = useState<'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby'>(initialLanguage);
   const [code, setCode] = useState(initialCode);
   const [theme, setTheme] = useState<'vs-dark' | 'vs-light'>('vs-dark');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
@@ -92,6 +113,15 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [executionHistory, setExecutionHistory] = useState<any[]>([]);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [shareableLink, setShareableLink] = useState<string>('');
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [showNewFileModal, setShowNewFileModal] = useState<boolean>(false);
+  const [newFileName, setNewFileName] = useState<string>('');
+  const [newFileLanguage, setNewFileLanguage] = useState<string>('javascript');
+  const [showNewFolderModal, setShowNewFolderModal] = useState<boolean>(false);
+  const [newFolderName, setNewFolderName] = useState<string>('');
+  const [showLocalFolderModal, setShowLocalFolderModal] = useState<boolean>(false);
+  const [localFolderPath, setLocalFolderPath] = useState<string>('');
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
@@ -110,12 +140,331 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     setShareableLink(link);
   }, [currentSessionId]);
 
+  // Load files for the session
+  useEffect(() => {
+    if (currentSessionId && currentUser) {
+      loadFiles();
+    }
+  }, [currentSessionId, currentUser]);
+
+  // Load files from backend
+  const loadFiles = async () => {
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files || []);
+        
+        // If no files exist, create a default file
+        if (data.files.length === 0) {
+          await createDefaultFile();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load files:', error);
+    }
+  };
+
+  // Create default file for the session
+  const createDefaultFile = async () => {
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          filename: `main.${getFileExtension(language)}`,
+          language: language
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles([data.file]);
+        setCurrentFile(data.file.path);
+        setCode(getDefaultCode(language));
+      }
+    } catch (error) {
+      console.error('Failed to create default file:', error);
+    }
+  };
+
+  // Get file extension from language
+  const getFileExtension = (lang: string): string => {
+    const extensions: { [key: string]: string } = {
+      javascript: 'js',
+      typescript: 'ts',
+      python: 'py',
+      java: 'java',
+      cpp: 'cpp',
+      csharp: 'cs',
+      go: 'go',
+      rust: 'rs',
+      php: 'php',
+      ruby: 'rb'
+    };
+    return extensions[lang] || 'js';
+  };
+
+  // Get default code for language
+  const getDefaultCode = (lang: string): string => {
+    const defaults: { [key: string]: string } = {
+      javascript: `// Welcome to collaborative JavaScript coding!
+console.log("Hello, World!");
+
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+
+// Start coding with your team!`,
+      python: `# Welcome to collaborative Python coding!
+print("Hello, World!")
+
+def greet(name):
+    return f"Hello, {name}!"
+
+# Start coding with your team!`,
+      java: `// Welcome to collaborative Java coding!
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+    
+    public static String greet(String name) {
+        return "Hello, " + name + "!";
+    }
+}`,
+      cpp: `// Welcome to collaborative C++ coding!
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+int main() {
+    cout << "Hello, World!" << endl;
+    return 0;
+}`,
+      csharp: `// Welcome to collaborative C# coding!
+using System;
+
+class Program {
+    static void Main() {
+        Console.WriteLine("Hello, World!");
+    }
+}`,
+      typescript: `// Welcome to collaborative TypeScript coding!
+interface Greeting {
+    name: string;
+    message: string;
+}
+
+function greet(name: string): Greeting {
+    return {
+        name,
+        message: \`Hello, \${name}!\`
+    };
+}
+
+console.log(greet("World"));
+`,
+      go: `// Welcome to collaborative Go coding!
+package main
+
+import "fmt"
+
+func greet(name string) string {
+    return fmt.Sprintf("Hello, %s!", name)
+}
+
+func main() {
+    fmt.Println(greet("World"))
+}`,
+      rust: `// Welcome to collaborative Rust coding!
+fn greet(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+
+fn main() {
+    println!("{}", greet("World"));
+}`,
+      php: `<?php
+// Welcome to collaborative PHP coding!
+function greet($name) {
+    return "Hello, " . $name . "!";
+}
+
+echo greet("World");
+?>`,
+      ruby: `# Welcome to collaborative Ruby coding!
+def greet(name)
+  "Hello, #{name}!"
+end
+
+puts greet("World")`
+    };
+    
+    return defaults[lang] || defaults.javascript;
+  };
+
+  // Create new file
+  const createNewFile = async () => {
+    if (!newFileName.trim()) {
+      showError('Error', 'File name is required');
+      return;
+    }
+    
+    // Validate file name
+    const invalidChars = /[<>:"/\\|?*]/;
+    if (invalidChars.test(newFileName)) {
+      showError('Error', 'File name contains invalid characters');
+      return;
+    }
+    
+    // Add file extension if not provided
+    let fileName = newFileName;
+    if (!fileName.includes('.')) {
+      const extension = getFileExtension(newFileLanguage);
+      fileName = `${fileName}.${extension}`;
+    }
+    
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fileName,
+          language: newFileLanguage
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        setShowNewFileModal(false);
+        setNewFileName('');
+        showSuccess('Success', `File "${fileName}" created successfully`);
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.error || 'Failed to create file');
+      }
+    } catch (error) {
+      console.error('Error creating file:', error);
+      showError('Error', 'Failed to create file');
+    }
+  };
+
+  // Create new folder
+  const createNewFolder = async () => {
+    if (!newFolderName.trim()) {
+      showError('Error', 'Folder name is required');
+      return;
+    }
+    
+    // Validate folder name
+    const invalidChars = /[<>:"/\\|?*]/;
+    if (invalidChars.test(newFolderName)) {
+      showError('Error', 'Folder name contains invalid characters');
+      return;
+    }
+    
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/folder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          folderName: newFolderName
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        setShowNewFolderModal(false);
+        setNewFolderName('');
+        showSuccess('Success', `Folder "${newFolderName}" created successfully`);
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.error || 'Failed to create folder');
+      }
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      showError('Error', 'Failed to create folder');
+    }
+  };
+
+  // Open file
+  const openFile = async (file: FileItem) => {
+    if (file.type === 'folder') return;
+    
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/file/${file.path}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentFile(file.path);
+        setCode(data.content);
+        setLanguage((file.language || 'javascript') as any);
+      }
+    } catch (error) {
+      console.error('Failed to open file:', error);
+      showError('Error', 'Failed to open file');
+    }
+  };
+
+  // Save current file
+  const saveCurrentFile = async () => {
+    if (!currentFile) return;
+    
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/file/${currentFile}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: code
+        })
+      });
+      
+      if (response.ok) {
+        showSuccess('File Saved', 'File saved successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      showError('Error', 'Failed to save file');
+    }
+  };
+
   // Copy shareable link to clipboard
   const copyShareableLink = async () => {
     try {
       await navigator.clipboard.writeText(shareableLink);
       showSuccess('Link Copied', 'Shareable link copied to clipboard!');
-    } catch (err) {
+    } catch (error) {
       showError('Copy Failed', 'Failed to copy link to clipboard');
     }
   };
@@ -155,7 +504,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         showSuccess('Connected', 'Successfully connected to the server');
         
         // Join the collaborative session
-        socket.emit('join-collab-session', { sessionId: currentSessionId, language });
+        socket.emit('join-collab-room', { roomId: currentSessionId, language });
       });
 
       socket.on('disconnect', (reason: string) => {
@@ -186,7 +535,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         showSuccess('Reconnected', `Successfully reconnected after ${attemptNumber} attempts`);
         
         // Rejoin the session after reconnection
-        socket.emit('reconnect-request', { sessionId: currentSessionId });
+        socket.emit('reconnect-request', { roomId: currentSessionId });
       });
 
       socket.on('reconnect_failed', () => {
@@ -283,49 +632,75 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       });
 
       // Users in session updates
-      socket.on('users-in-session', (users: UserInfo[]) => {
+      socket.on('users-in-room', (users: UserInfo[]) => {
         console.log('Users in session updated:', users);
         setActiveUsers(users);
       });
 
       // Cursor synchronization
-      socket.on('cursors-sync', (cursors: CursorInfo[]) => {
+      socket.on('cursors-sync', (cursors: any[]) => {
         console.log('Received cursors sync:', cursors);
         const cursorsMap: { [userId: string]: CursorInfo } = {};
         cursors.forEach(cursor => {
-          if (cursor.userId !== currentUser?.uid) {
-            cursorsMap[cursor.userId] = cursor;
+          if (cursor.userId && cursor.userId !== currentUser?.uid) {
+            cursorsMap[cursor.userId] = {
+              position: cursor.position,
+              color: cursor.color,
+              displayName: cursor.displayName,
+              avatar: cursor.avatar
+            };
           }
         });
         setRemoteCursors(cursorsMap);
       });
 
-      socket.on('cursor-move', (cursorData: CursorInfo) => {
-        if (cursorData.userId !== currentUser?.uid) {
+      // Cursor change events
+      socket.on('cursor-change', (change: any) => {
+        console.log('Received cursor change:', change);
+        
+        if (change.userId && change.userId !== currentUser?.uid) {
           setRemoteCursors(prev => ({
             ...prev,
-            [cursorData.userId]: cursorData
+            [change.userId]: {
+              position: change.position,
+              color: change.color,
+              displayName: change.displayName,
+              avatar: change.avatar
+            }
           }));
         }
       });
 
       // Selection synchronization
-      socket.on('selections-sync', (selections: SelectionInfo[]) => {
+      socket.on('selections-sync', (selections: any[]) => {
         console.log('Received selections sync:', selections);
         const selectionsMap: { [userId: string]: SelectionInfo } = {};
         selections.forEach(selection => {
-          if (selection.userId !== currentUser?.uid) {
-            selectionsMap[selection.userId] = selection;
+          if (selection.userId && selection.userId !== currentUser?.uid) {
+            selectionsMap[selection.userId] = {
+              range: selection.range,
+              color: selection.color,
+              displayName: selection.displayName,
+              avatar: selection.avatar
+            };
           }
         });
         setRemoteSelections(selectionsMap);
       });
 
-      socket.on('selection-change', (selectionData: SelectionInfo) => {
-        if (selectionData.userId !== currentUser?.uid) {
+      // Selection change events
+      socket.on('selection-change', (change: any) => {
+        console.log('Received selection change:', change);
+        
+        if (change.userId && change.userId !== currentUser?.uid) {
           setRemoteSelections(prev => ({
             ...prev,
-            [selectionData.userId]: selectionData
+            [change.userId]: {
+              range: change.range,
+              color: change.color,
+              displayName: change.displayName,
+              avatar: change.avatar
+            }
           }));
         }
       });
@@ -366,7 +741,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       });
 
       // User left session
-      socket.on('user-left-collab-session', (userData: { userId: string; displayName: string; avatar?: string }) => {
+      socket.on('user-left-collab-room', (userData: { userId: string; displayName: string; avatar?: string }) => {
         console.log('User left session:', userData);
         setActiveUsers(prev => prev.filter(user => user.userId !== userData.userId));
         setRemoteCursors(prev => {
@@ -421,7 +796,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       
       // Set editing indicator
       if (socketRef.current && connectionStatus === 'connected') {
-        socketRef.current.emit('editing-start', { sessionId: currentSessionId });
+        socketRef.current.emit('editing-start', { roomId: currentSessionId });
       }
       
       changeTimeout = setTimeout(() => {
@@ -450,7 +825,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Clear editing indicator after 2 seconds of inactivity
       editingTimeout = setTimeout(() => {
         if (socketRef.current && connectionStatus === 'connected') {
-          socketRef.current.emit('editing-stop', { sessionId: currentSessionId });
+          socketRef.current.emit('editing-stop', { roomId: currentSessionId });
         }
       }, 2000);
     });
@@ -465,7 +840,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           const position = event.position;
           socketRef.current.emit('cursor-move', {
             position,
-            sessionId: currentSessionId,
+            roomId: currentSessionId,
             color: generateUserColor(currentUser?.uid || ''),
             displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
           });
@@ -479,7 +854,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         const selection = event.selection;
         socketRef.current.emit('selection-change', {
           selection,
-          sessionId: currentSessionId,
+          roomId: currentSessionId,
           color: generateUserColor(currentUser?.uid || ''),
           displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
         });
@@ -508,7 +883,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Use socket to broadcast code execution to all collaborators
       if (socketRef.current && connectionStatus === 'connected') {
         socketRef.current.emit('execute-code', {
-          sessionId: currentSessionId,
+          roomId: currentSessionId,
           language,
           code,
           input: customInput
@@ -607,7 +982,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         // Notify other users about language change
         if (socketRef.current && connectionStatus === 'connected') {
           socketRef.current.emit('language-change', {
-            sessionId: currentSessionId,
+            roomId: currentSessionId,
             language: newLanguage,
             code: newDefaultCode
           });
@@ -623,26 +998,157 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     setTheme(prev => prev === 'vs-dark' ? 'vs-light' : 'vs-dark');
   };
 
-  const getDefaultCode = (lang: 'javascript' | 'python' = language) => {
-    if (lang === 'python') {
-      return `# Welcome to Python Collaborative Editor
-# Start coding with your team!
-
-def hello_world():
-    print("Hello, Collaborative World!")
-    
-# Add your Python code here
-`;
+  const handleFileSelect = (file: FileItem) => {
+    if (file.type === 'folder') {
+      // Navigate into folder
+      const folderPath = file.path.split('/').slice(0, -1).join('/');
+      if (folderPath) {
+        setCurrentFile(folderPath);
+      } else {
+        setCurrentFile(file.name);
+      }
+      showInfo('Folder Selected', `Navigated to ${file.name}`);
+    } else {
+      openFile(file);
     }
-    return `// Welcome to JavaScript Collaborative Editor
-// Start coding with your team!
+  };
 
-function helloWorld() {
-    console.log("Hello, Collaborative World!");
-}
+  const handleNewFileClick = () => {
+    setShowNewFileModal(true);
+    setNewFileName('');
+    setNewFileLanguage(language);
+  };
 
-// Add your JavaScript code here
-`;
+  const handleNewFolderClick = () => {
+    setShowNewFolderModal(true);
+    setNewFolderName('');
+  };
+
+  const handleOpenLocalFolder = () => {
+    setShowLocalFolderModal(true);
+    setLocalFolderPath('');
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // For folder selection, show the folder name
+      // For individual files, show the file names
+      const fileNames = Array.from(files).map(file => 
+        file.webkitRelativePath || file.name
+      ).join(', ');
+      
+      setLocalFolderPath(fileNames);
+      
+      // Process the selected files/folders
+      processSelectedFiles(files);
+    }
+  };
+
+  const processSelectedFiles = async (files: FileList) => {
+    try {
+      const token = await currentUser?.getIdToken();
+      
+      // Create FormData to send files
+      const formData = new FormData();
+      formData.append('sessionId', currentSessionId);
+      
+      // Add all files to FormData
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        formData.append('files', file, file.webkitRelativePath || file.name);
+      }
+      
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/import-files`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        setShowLocalFolderModal(false);
+        setLocalFolderPath('');
+        showSuccess('Files Imported', 'Local files imported successfully!');
+      } else {
+        const errorData = await response.json();
+        showError('Import Failed', errorData.error || 'Failed to import files');
+      }
+    } catch (error) {
+      console.error('Failed to import files:', error);
+      showError('Error', 'Failed to import files');
+    }
+  };
+
+  const handleNewFileModalClose = () => {
+    setShowNewFileModal(false);
+  };
+
+  const handleNewFolderModalClose = () => {
+    setShowNewFolderModal(false);
+  };
+
+  const handleLocalFolderModalClose = () => {
+    setShowLocalFolderModal(false);
+  };
+
+  const handleNewFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFileName(e.target.value);
+  };
+
+  const handleNewFolderInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFolderName(e.target.value);
+  };
+
+  const handleLocalFolderInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalFolderPath(e.target.value);
+  };
+
+  const handleNewFileLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNewFileLanguage(e.target.value);
+  };
+
+  const handleSaveNewFile = () => {
+    createNewFile();
+  };
+
+  const handleSaveNewFolder = () => {
+    createNewFolder();
+  };
+
+  const handleOpenLocalFolderSubmit = async () => {
+    if (!localFolderPath.trim()) return;
+    
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/import-local`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          localPath: localFolderPath
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        setShowLocalFolderModal(false);
+        setLocalFolderPath('');
+        showSuccess('Folder Imported', 'Local folder imported successfully!');
+      } else {
+        const errorData = await response.json();
+        showError('Import Failed', errorData.error || 'Failed to import local folder');
+      }
+    } catch (error) {
+      console.error('Failed to import local folder:', error);
+      showError('Error', 'Failed to import local folder');
+    }
   };
 
   // Apply remote cursor and selection decorations
@@ -669,10 +1175,10 @@ function helloWorld() {
     // Create selection decorations
     const selectionDecorations = Object.values(remoteSelections).map((selection: SelectionInfo) => ({
       range: new (window as any).monaco.Range(
-        selection.selection.startLineNumber,
-        selection.selection.startColumn,
-        selection.selection.endLineNumber,
-        selection.selection.endColumn
+        selection.range.startLineNumber,
+        selection.range.startColumn,
+        selection.range.endLineNumber,
+        selection.range.endColumn
       ),
       options: {
         className: 'remote-selection',
@@ -689,9 +1195,41 @@ function helloWorld() {
     editor.deltaDecorations([], allDecorations);
   }, [remoteCursors, remoteSelections]);
 
-  // Keyboard shortcuts
+  // Handle cursor position changes
+  const handleCursorPositionChanged = (event: any) => {
+    if (socketRef.current && connectionStatus === 'connected') {
+      const position = event.position;
+      socketRef.current.emit('cursor-change', {
+        position,
+        roomId: currentSessionId,
+        color: generateUserColor(currentUser?.uid || ''),
+        displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
+      });
+    }
+  };
+
+  // Handle selection changes
+  const handleSelectionChanged = (event: any) => {
+    if (socketRef.current && connectionStatus === 'connected') {
+      const selection = event.selection;
+      socketRef.current.emit('selection-change', {
+        selection,
+        roomId: currentSessionId,
+        color: generateUserColor(currentUser?.uid || ''),
+        displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
+      });
+    }
+  };
+
+  // Add keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S to save
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        saveCurrentFile();
+      }
+      
       // Ctrl+Enter or Cmd+Enter to run code
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
@@ -701,30 +1239,24 @@ function helloWorld() {
       // Ctrl+` or Cmd+` to toggle terminal
       if ((event.ctrlKey || event.metaKey) && event.key === '`') {
         event.preventDefault();
-        setShowTerminal(prev => !prev);
+        setShowTerminal(!showTerminal);
+      }
+      
+      // Ctrl+B or Cmd+B to toggle sidebar
+      if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+        event.preventDefault();
+        setShowSidebar(!showSidebar);
       }
       
       // Escape to close terminal
       if (event.key === 'Escape' && showTerminal) {
-        event.preventDefault();
         setShowTerminal(false);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showTerminal, handleRunCode]);
-
-  // File selection handler
-  const handleFileSelect = (file: any) => {
-    setCurrentFile(file.id);
-    if (file.name.endsWith('.js')) {
-      setLanguage('javascript');
-    } else if (file.name.endsWith('.py')) {
-      setLanguage('python');
-    }
-    showInfo('File Selected', `Switched to ${file.name}`);
-  };
+  }, [showTerminal, showSidebar, handleRunCode]);
 
   return (
     <div className={`collaborative-editor vscode-layout ${theme === 'vs-dark' ? 'dark-theme' : 'light-theme'}`}>
@@ -739,7 +1271,7 @@ function helloWorld() {
               onClick={() => {
                 // Notify server we're leaving the session
                 if (socketRef.current && connectionStatus === 'connected') {
-                  socketRef.current.emit('leave-collab-session', { sessionId: currentSessionId });
+                  socketRef.current.emit('leave-collab-room', { roomId: currentSessionId });
                 }
                 // Navigate back to dashboard
                 window.location.href = '/';
@@ -794,6 +1326,31 @@ function helloWorld() {
           
           <div className="header-right">
             <button 
+              className={`header-btn ${showSidebar ? 'active' : ''}`}
+              onClick={() => setShowSidebar(!showSidebar)}
+              title={`${showSidebar ? 'Hide' : 'Show'} Sidebar (Ctrl+B)`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="3" x2="9" y2="21"/>
+              </svg>
+              {showSidebar ? 'Hide' : 'Show'} Sidebar
+            </button>
+            
+            <button 
+              className="header-btn save-btn" 
+              onClick={saveCurrentFile}
+              title="Save File (Ctrl+S)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17,21 17,13 7,13 7,21"/>
+                <polyline points="7,3 7,8 15,8"/>
+              </svg>
+              Save
+            </button>
+            
+            <button 
               className="header-btn share-btn" 
               onClick={copyShareableLink}
               title="Copy Shareable Link"
@@ -805,17 +1362,10 @@ function helloWorld() {
               Share
             </button>
             
-            <button className="header-btn" onClick={toggleTheme} title="Toggle Theme">
-              {theme === 'vs-dark' ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="5"/>
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-              )}
+            <button className="header-btn" onClick={toggleTheme}
+              title="Toggle Theme"
+            >
+              {theme === 'vs-dark' ? '☀️' : '🌙'}
             </button>
             
             <button className="header-btn run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
@@ -835,6 +1385,10 @@ function helloWorld() {
           onToggle={() => setShowSidebar(!showSidebar)}
           currentFile={currentFile}
           onFileSelect={handleFileSelect}
+          files={files}
+          onNewFileClick={handleNewFileClick}
+          onNewFolderClick={handleNewFolderClick}
+          onOpenLocalFolder={handleOpenLocalFolder}
         />
         
         {/* VS Code Style Editor Area */}
@@ -842,7 +1396,7 @@ function helloWorld() {
           <Editor
             height="100%"
             defaultLanguage={language}
-            defaultValue={code || getDefaultCode()}
+            defaultValue={code || getDefaultCode(language)}
             theme={theme}
             onMount={handleEditorDidMount}
             options={{
@@ -888,11 +1442,6 @@ function helloWorld() {
       {/* VS Code Style Status Bar */}
       <div className="vscode-status-bar">
         <div className="status-left">
-          <LanguageSwitcher
-            currentLanguage={language}
-            onLanguageChange={handleLanguageChange}
-            disabled={connectionStatus !== 'connected'}
-          />
           <span className="status-item">
             Lines: {code.split('\n').length}
           </span>
@@ -918,7 +1467,7 @@ function helloWorld() {
             Terminal
           </button>
           <span className="shortcuts-hint">
-            Ctrl+Enter: Run • Ctrl+`: Terminal • Esc: Close
+            Ctrl+Enter: Run • Ctrl+`: Terminal • Ctrl+B: Sidebar • Esc: Close
           </span>
         </div>
       </div>
@@ -933,6 +1482,117 @@ function helloWorld() {
         onCustomInputChange={setCustomInput}
         onClear={handleClearTerminal}
       />
+
+      {/* New File Modal */}
+      <div className={`modal-overlay ${showNewFileModal ? 'active' : ''}`}>
+        <div className="modal-content">
+          <h2>New File</h2>
+          <input
+            type="text"
+            placeholder="File name (e.g., main.js)"
+            value={newFileName}
+            onChange={handleNewFileInputChange}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSaveNewFile();
+              }
+            }}
+          />
+          <select value={newFileLanguage} onChange={handleNewFileLanguageChange}>
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="csharp">C#</option>
+            <option value="typescript">TypeScript</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+          </select>
+          <button onClick={handleSaveNewFile}>Create File</button>
+          <button onClick={handleNewFileModalClose}>Cancel</button>
+        </div>
+      </div>
+
+      {/* New Folder Modal */}
+      <div className={`modal-overlay ${showNewFolderModal ? 'active' : ''}`}>
+        <div className="modal-content">
+          <h2>New Folder</h2>
+          <input
+            type="text"
+            placeholder="Folder name"
+            value={newFolderName}
+            onChange={handleNewFolderInputChange}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSaveNewFolder();
+              }
+            }}
+          />
+          <button onClick={handleSaveNewFolder}>Create Folder</button>
+          <button onClick={handleNewFolderModalClose}>Cancel</button>
+        </div>
+      </div>
+
+      {/* Local Folder Modal */}
+      <div className={`modal-overlay ${showLocalFolderModal ? 'active' : ''}`}>
+        <div className="modal-content">
+          <h2>Open Local Folder</h2>
+          <p style={{ marginBottom: '16px', color: 'var(--vscode-text-light)', fontSize: '14px' }}>
+            Select a folder or files to import into this session.
+          </p>
+          
+          <div className="file-picker-container">
+            <label htmlFor="folder-picker" className="file-picker-label">
+              <div className="file-picker-content">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>📁 Select a folder (includes all files)</span>
+              </div>
+            </label>
+            <input
+              id="folder-picker"
+              type="file"
+              webkitdirectory={true}
+              multiple
+              onChange={handleFileInputChange}
+              style={{ display: 'none' }}
+            />
+            
+            <div className="file-picker-options">
+              <label htmlFor="single-file-picker" className="file-picker-option">
+                <input
+                  id="single-file-picker"
+                  type="file"
+                  multiple
+                  onChange={handleFileInputChange}
+                  style={{ display: 'none' }}
+                />
+                <span>📄 Select individual files</span>
+              </label>
+            </div>
+          </div>
+          
+          {localFolderPath && (
+            <div className="selected-path">
+              <strong>Selected:</strong> {localFolderPath}
+            </div>
+          )}
+          
+          <div className="modal-actions">
+            <button onClick={handleLocalFolderModalClose}>Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Notification */}
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 };

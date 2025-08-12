@@ -1,342 +1,367 @@
-# Enhanced Real-Time Collaborative Coding System
+# 🚀 Enhanced Collaborative Coding Platform
 
-This document describes the comprehensive real-time collaborative coding system with advanced features for multi-user code editing, execution, and collaboration.
+A fully-featured, VS Code-like collaborative coding platform with real-time collaboration, multi-language support, file management, and Docker-based code execution.
 
-## 🚀 Features Overview
+## ✨ **New Features Added**
 
-### Real-Time Collaboration
-- **Live Code Editing**: See changes as they happen in real-time with operational transformation
-- **Cursor Tracking**: View other users' cursor positions with colored indicators and user avatars
-- **Selection Sharing**: See what other users have selected in the code
-- **User Presence**: Real-time user status with avatars and activity indicators
-- **Version Control**: Conflict-free editing with version-based synchronization
+### 🗂️ **Real File Management**
+- **Create/Delete Files**: Create new files with any programming language
+- **Create/Delete Folders**: Organize your project with folder structures
+- **File Persistence**: Files are saved to the backend and persist across sessions
+- **Multi-file Support**: Work with multiple files in the same session
+- **Real-time File Sync**: All collaborators see file changes in real-time
 
-### Code Execution
-- **Real-Time Execution Broadcasting**: When one user runs code, all collaborators see the results
-- **Secure Container Execution**: Docker-based isolated code execution
-- **Multiple Language Support**: JavaScript and Python with extensible architecture
-- **Fallback System**: Judge0 API integration for reliability
-- **Execution History**: Track and display recent code executions
+### 🔧 **Enhanced Language Support**
+- **JavaScript/TypeScript**: Full Node.js support
+- **Python**: Python 3.11 with all standard libraries
+- **Java**: OpenJDK 17 with compilation and execution
+- **C++**: GCC compiler with full C++ support
+- **C#**: .NET 7.0 runtime
+- **Go**: Go 1.21 runtime
+- **Rust**: Rust 1.75 compiler
+- **PHP**: PHP 8.2 runtime
+- **Ruby**: Ruby 3.2 runtime
 
-### User Experience
-- **VS Code-like Interface**: Familiar development environment
-- **User Avatars**: Visual user identification with status indicators
-- **Activity Notifications**: Real-time feedback for user actions
-- **Connection Management**: Automatic reconnection with state recovery
-- **Responsive Design**: Works on desktop and mobile devices
+### 🐳 **Docker-Based Code Execution**
+- **Secure Isolation**: Each code execution runs in a separate Docker container
+- **Resource Limits**: Memory and CPU limits prevent abuse
+- **No Network Access**: Containers run without network access for security
+- **Automatic Cleanup**: Containers are automatically removed after execution
 
-## 🏗️ Architecture
+### 💻 **VS Code-like Experience**
+- **File Explorer**: Real file tree with folder expansion
+- **Terminal**: Integrated terminal for code execution output
+- **Save Functionality**: Ctrl+S to save files
+- **Keyboard Shortcuts**: Full keyboard navigation support
+- **Theme Support**: Dark and light themes
 
-### Frontend Components
-1. **CollaborativeEditor** - Main editor with Monaco Editor integration
-2. **UserAvatar** - User identification with status indicators
-3. **Terminal** - Code execution output display
-4. **LanguageSwitcher** - Programming language selection
-5. **VSCodeSidebar** - File explorer and project structure
-6. **ToastContainer** - Notification system
+### 🔄 **Real-time Collaboration**
+- **Live Cursors**: See where other users are typing
+- **Live Selections**: See what other users have selected
+- **Code Sync**: All changes are synchronized in real-time
+- **User Presence**: See who's online and active
+- **Execution Sharing**: Code execution results are shared with all collaborators
 
-### Backend Services
-1. **Socket Handler** - Real-time communication management
-2. **Code Executor** - Secure code execution service
-3. **Room State Manager** - Collaborative session management
-4. **User Management** - Authentication and user tracking
+## 🚀 **Quick Start**
 
-## 📡 Real-Time Events
+### **Option 1: Docker Compose (Recommended)**
 
-### Client to Server
-- `join-collab-room` - Join collaborative editing room
-- `leave-collab-room` - Leave collaborative room
-- `code-change` - Send code changes to other users
-- `code-sync` - Full code synchronization
-- `cursor-move` - Broadcast cursor position
-- `selection-change` - Broadcast text selection
-- `language-change` - Change programming language
-- `execute-code` - Request code execution
-- `reconnect-request` - Handle reconnection
+1. **Prerequisites**
+   ```bash
+   # Install Docker and Docker Compose
+   # Make sure Docker daemon is running
+   ```
 
-### Server to Client
-- `room-state-sync` - Initial room state
-- `code-change` - Receive code changes from others
-- `code-sync` - Receive full code sync
-- `cursor-move` - Receive cursor updates
-- `selection-change` - Receive selection updates
-- `users-in-room` - Updated user list
-- `cursors-sync` - Initial cursor positions
-- `selections-sync` - Initial selections
-- `code-execution-started` - Code execution started
-- `code-execution-completed` - Code execution results
-- `code-execution-error` - Code execution errors
-- `user-left-collab-room` - User left notification
+2. **Clone and Start**
+   ```bash
+   git clone <your-repo>
+   cd collaborative-coding-platform
+   
+   # Start all services
+   docker-compose up -d
+   ```
 
-## 🔧 Code Execution System
+3. **Access the Platform**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5000
+   - MongoDB: localhost:27017
 
-### Security Features
-- **Container Isolation**: Each execution runs in isolated Docker containers
-- **Resource Limits**: Memory (256MB), CPU (50%), process limits (50 PIDs)
-- **Network Isolation**: Containers run without network access
-- **Read-only Filesystem**: Prevents file system access
-- **Code Validation**: Pattern-based security checks
-- **Timeout Protection**: 3-second execution timeout
+### **Option 2: Local Development**
 
-### Supported Languages
-- **JavaScript (Node.js)**: Full ES6+ support with security restrictions
-- **Python 3**: Standard library with security limitations
-- **Extensible**: Easy to add new languages
+1. **Backend Setup**
+   ```bash
+   cd server
+   npm install
+   
+   # Set environment variables
+   cp env.example .env
+   # Edit .env with your configuration
+   
+   npm start
+   ```
 
-### Execution Flow
-1. User requests code execution
-2. Server validates code for security
-3. Creates secure Docker container
-4. Executes code with input
-5. Captures stdout/stderr
-6. Broadcasts results to all collaborators
-7. Cleans up container automatically
+2. **Frontend Setup**
+   ```bash
+   cd client
+   npm install
+   npm start
+   ```
 
-## 🎨 User Interface
+3. **Database Setup**
+   ```bash
+   # Install MongoDB locally or use Docker
+   docker run -d -p 27017:27017 --name mongodb mongo:7.0
+   ```
 
-### VS Code-like Layout
-- **Header Bar**: Connection status, user indicators, execution status
-- **Sidebar**: File explorer and project structure
-- **Editor Area**: Monaco Editor with collaborative features
-- **Status Bar**: Language, metrics, shortcuts
-- **Terminal Panel**: Code execution output
+## 📁 **File Management Guide**
 
-### Visual Indicators
-- **Connection Status**: Connected, Disconnected, Reconnecting
-- **User Avatars**: Colored circles with initials or profile pictures
-- **Activity Status**: Online, Editing, Executing
-- **Cursor Colors**: Unique colors for each user
-- **Selection Highlights**: Semi-transparent overlays
+### **Creating Files**
+1. Click the 📄 button in the file explorer
+2. Enter filename with appropriate extension (e.g., `main.java`)
+3. Select programming language
+4. Click "Create File"
 
-## 🔄 State Management
+### **Creating Folders**
+1. Click the 📁 button in the file explorer
+2. Enter folder name
+3. Click "Create Folder"
 
-### Room State
-```typescript
-interface RoomState {
-  code: string;
-  language: string;
-  version: number;
-  lastModified: Date;
-  users: Set<string>;
-  executionHistory: ExecutionResult[];
-  lastExecution: ExecutionResult | null;
-}
-```
+### **Opening Files**
+- Click on any file in the explorer to open it
+- The editor will automatically detect the language
+- Syntax highlighting and IntelliSense will be enabled
 
-### User State
-```typescript
-interface UserInfo {
-  userId: string;
-  displayName: string;
-  avatar?: string;
-  socketId: string;
-  online: boolean;
-  isEditing: boolean;
-  lastActivity: Date;
-}
-```
+### **Saving Files**
+- Use Ctrl+S (Cmd+S on Mac) to save
+- Click the Save button in the header
+- Files are automatically saved to the backend
 
-### Cursor State
-```typescript
-interface CursorInfo {
-  position: any;
-  userId: string;
-  color: string;
-  displayName: string;
-  avatar?: string;
-  timestamp: Date;
-}
-```
+## 🖥️ **Code Execution Guide**
 
-## 🚀 Getting Started
+### **Running Code**
+1. **Select Language**: Choose the correct language for your file
+2. **Write Code**: Type your code in the editor
+3. **Run**: Press Ctrl+Enter or click the Run button
+4. **View Output**: Results appear in the integrated terminal
 
-### Prerequisites
-- Node.js 18+
-- Docker and Docker Compose
-- MongoDB (for user management)
-- Firebase (for authentication)
+### **Supported Languages & Extensions**
+| Language | Extension | Features |
+|----------|-----------|----------|
+| JavaScript | `.js` | Node.js runtime, npm packages |
+| TypeScript | `.ts` | TypeScript compilation |
+| Python | `.py` | Python 3.11, pip packages |
+| Java | `.java` | OpenJDK 17, compilation |
+| C++ | `.cpp` | GCC compiler, STL support |
+| C# | `.cs` | .NET 7.0 runtime |
+| Go | `.go` | Go 1.21 runtime |
+| Rust | `.rs` | Rust 1.75 compiler |
+| PHP | `.php` | PHP 8.2 runtime |
+| Ruby | `.rb` | Ruby 3.2 runtime |
 
-### Environment Setup
+### **Input/Output**
+- **Custom Input**: Use the input field in the terminal for stdin
+- **Output Display**: stdout, stderr, and compilation errors are clearly shown
+- **Execution Time**: See how long your code took to run
+- **Error Handling**: Clear error messages with line numbers
+
+## 👥 **Collaboration Features**
+
+### **Joining Sessions**
+1. **Create Session**: Start a new collaborative session
+2. **Share Link**: Copy the shareable link
+3. **Invite Others**: Send the link to your team
+4. **Real-time Sync**: All changes are synchronized instantly
+
+### **User Presence**
+- **Online Status**: See who's currently online
+- **Active Indicators**: Know who's typing or editing
+- **User Avatars**: Visual identification of team members
+- **Connection Status**: Monitor real-time connection health
+
+### **Live Collaboration**
+- **Cursor Tracking**: See where others are typing
+- **Selection Sharing**: View what others have selected
+- **Code Changes**: Watch code updates in real-time
+- **Execution Sharing**: See when others run code
+
+## 🔧 **Advanced Configuration**
+
+### **Environment Variables**
+
+#### **Backend (.env)**
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd collaborative-coding-platform
-
-# Install dependencies
-npm install
-cd client && npm install
-cd ../server && npm install
-cd ../executor && npm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start services
-docker-compose up --build
-```
-
-### Configuration
-```env
-# Main Server
-NODE_ENV=production
-MONGODB_URI=mongodb://localhost:27017/collaborative-coding
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/collaborative_coding
+JWT_SECRET=your-secret-key
 CLIENT_URL=http://localhost:3000
-
-# Code Execution
-EXECUTOR_URL=http://localhost:5001
-JUDGE0_API_KEY=your-judge0-api-key
-
-# Firebase
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY=your-private-key
-FIREBASE_CLIENT_EMAIL=your-client-email
+DOCKER_ENABLED=true
+JUDGE0_API_KEY=your-judge0-key
 ```
 
-## 📊 Performance Optimization
-
-### Real-Time Optimization
-- **Debounced Updates**: Code changes debounced by 100ms
-- **Throttled Cursors**: Cursor updates throttled to 50ms
-- **Selective Broadcasting**: Only send relevant data
-- **Connection Pooling**: Efficient socket management
-
-### Code Execution Optimization
-- **Container Reuse**: Fresh containers for each execution
-- **Resource Limits**: Prevent resource exhaustion
-- **Automatic Cleanup**: Containers removed after execution
-- **Caching**: Docker layer caching for faster builds
-
-## 🔒 Security Considerations
-
-### Code Execution Security
-- **Sandboxed Environment**: Complete isolation from host system
-- **Input Validation**: All inputs validated and sanitized
-- **Pattern Detection**: Blocks dangerous code patterns
-- **Resource Limits**: Prevents denial of service attacks
-
-### Network Security
-- **Authentication Required**: All operations require valid tokens
-- **Room-based Access**: Users can only access authorized rooms
-- **Input Sanitization**: All user inputs sanitized
-- **Rate Limiting**: Prevents abuse
-
-## 🧪 Testing
-
-### Unit Tests
+#### **Frontend (.env)**
 ```bash
-# Run frontend tests
-cd client && npm test
-
-# Run backend tests
-cd server && npm test
-
-# Run executor tests
-cd executor && npm test
+REACT_APP_API_URL=http://localhost:5000
+REACT_APP_SOCKET_URL=http://localhost:5000
 ```
 
-### Integration Tests
+### **Docker Configuration**
+```yaml
+# Enable/disable Docker execution
+DOCKER_ENABLED: true
+
+# Resource limits for containers
+DOCKER_MEMORY_LIMIT: 512MB
+DOCKER_CPU_LIMIT: 50%
+```
+
+## 🛠️ **Development & Customization**
+
+### **Adding New Languages**
+1. **Update Backend**: Add language config in `dockerExecutor.js`
+2. **Update Frontend**: Add language to `LanguageSwitcher.tsx`
+3. **Add Icons**: Update file icons in `VSCodeSidebar.tsx`
+4. **Test**: Verify compilation and execution work
+
+### **Custom File Types**
+1. **Backend**: Add MIME type handling in file routes
+2. **Frontend**: Add syntax highlighting support
+3. **Execution**: Configure appropriate runtime/compiler
+
+### **Extending Features**
+- **Git Integration**: Add version control capabilities
+- **Package Management**: Integrate with language-specific package managers
+- **Debugging**: Add step-through debugging support
+- **Testing**: Integrate testing frameworks
+
+## 🔒 **Security Features**
+
+### **Code Execution Security**
+- **Container Isolation**: Each execution runs in isolated containers
+- **Resource Limits**: Memory and CPU limits prevent abuse
+- **Network Isolation**: Containers have no network access
+- **Automatic Cleanup**: Temporary files and containers are removed
+
+### **Authentication & Authorization**
+- **Firebase Auth**: Secure user authentication
+- **JWT Tokens**: Secure API access
+- **User Permissions**: Role-based access control
+- **Session Management**: Secure session handling
+
+## 📊 **Performance & Scalability**
+
+### **Optimizations**
+- **WebSocket Connections**: Efficient real-time communication
+- **File Caching**: Smart file caching strategies
+- **Container Reuse**: Optimized Docker container management
+- **Database Indexing**: Optimized MongoDB queries
+
+### **Scaling Considerations**
+- **Load Balancing**: Multiple server instances
+- **Database Sharding**: MongoDB cluster support
+- **Redis Caching**: Session and data caching
+- **CDN Integration**: Static asset delivery
+
+## 🐛 **Troubleshooting**
+
+### **Common Issues**
+
+#### **Code Execution Fails**
 ```bash
-# Test collaborative editing
-npm run test:collaboration
+# Check Docker status
+docker ps
+docker logs collab-server
 
-# Test code execution
-npm run test:execution
-
-# Test real-time features
-npm run test:realtime
+# Verify language support
+curl http://localhost:5000/api/health
 ```
 
-### Load Testing
+#### **File Creation Issues**
 ```bash
-# Test with multiple users
-npm run test:load
+# Check file permissions
+ls -la server/uploads/
+ls -la server/temp/
 
-# Test code execution under load
-npm run test:execution-load
+# Verify MongoDB connection
+docker logs collab-mongodb
 ```
 
-## 🐛 Troubleshooting
+#### **Real-time Issues**
+```bash
+# Check WebSocket connections
+docker logs collab-server | grep socket
 
-### Common Issues
+# Verify client connection
+# Check browser console for errors
+```
 
-1. **Connection Problems**
-   - Check if server is running on port 5000
-   - Verify Firebase configuration
-   - Check network connectivity
-
-2. **Code Execution Failures**
-   - Ensure Docker is running
-   - Check executor service status
-   - Verify code doesn't contain forbidden patterns
-
-3. **Real-time Sync Issues**
-   - Check socket connection status
-   - Verify room permissions
-   - Check browser console for errors
-
-### Debug Mode
+### **Debug Mode**
 ```bash
 # Enable debug logging
-DEBUG=* npm start
+NODE_ENV=development DEBUG=* npm start
 
-# Monitor socket events
-DEBUG=socket.io* npm start
-
-# Monitor code execution
-DEBUG=executor* npm start
+# View detailed logs
+docker-compose logs -f server
 ```
 
-## 🔮 Future Enhancements
+## 🚀 **Deployment**
 
-### Planned Features
-- **Multi-file Support**: Edit multiple files simultaneously
-- **Git Integration**: Version control integration
-- **Code Review**: Built-in code review tools
-- **Video Chat**: Integrated video communication
-- **Screen Sharing**: Share screen during collaboration
-- **Plugin System**: Extensible editor plugins
+### **Production Setup**
+1. **Environment**: Set `NODE_ENV=production`
+2. **Secrets**: Use secure JWT secrets and API keys
+3. **SSL**: Configure HTTPS with proper certificates
+4. **Monitoring**: Set up logging and monitoring
+5. **Backup**: Configure MongoDB backups
 
-### Performance Improvements
-- **WebRTC**: Direct peer-to-peer communication
-- **WebAssembly**: Client-side code execution
-- **Service Workers**: Offline support
-- **Progressive Web App**: Mobile app-like experience
+### **Cloud Deployment**
+- **AWS**: Use ECS/EKS with RDS and ElastiCache
+- **Google Cloud**: Use GKE with Cloud SQL and Memorystore
+- **Azure**: Use AKS with Azure Database and Redis Cache
+- **DigitalOcean**: Use App Platform with managed databases
 
-## 📚 API Reference
+## 📚 **API Documentation**
 
-### Socket.IO Events
-Detailed documentation for all real-time events and their payloads.
+### **File Management Endpoints**
+```bash
+# Get files for session
+GET /api/files/session/:sessionId
 
-### REST API
-Complete API reference for server endpoints.
+# Create new file
+POST /api/files/session/:sessionId
 
-### Code Execution API
-Documentation for code execution service endpoints.
+# Create new folder
+POST /api/files/session/:sessionId/folder
 
-## 🤝 Contributing
+# Read file content
+GET /api/files/session/:sessionId/file/:filename
 
-### Development Setup
+# Update file content
+PUT /api/files/session/:sessionId/file/:filename
+
+# Delete file/folder
+DELETE /api/files/session/:sessionId/:itemType/:itemName
+
+# Rename file/folder
+PATCH /api/files/session/:sessionId/:itemType/:itemName/rename
+```
+
+### **Code Execution Endpoints**
+```bash
+# Execute code
+POST /api/rooms/:roomId/execute
+
+# Health check
+GET /api/health
+```
+
+## 🤝 **Contributing**
+
+### **Development Setup**
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests
 5. Submit a pull request
 
-### Code Style
-- Follow ESLint configuration
-- Use TypeScript for type safety
-- Write comprehensive tests
-- Document new features
+### **Code Style**
+- **TypeScript**: Use strict mode and proper typing
+- **React**: Use functional components with hooks
+- **Backend**: Use async/await and proper error handling
+- **Testing**: Write unit and integration tests
 
-## 📄 License
+## 📄 **License**
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## 🙏 **Acknowledgments**
 
-- Monaco Editor for the excellent code editor
-- Socket.IO for real-time communication
-- Docker for containerization
-- Judge0 for code execution API
-- VS Code for UI inspiration 
+- **Monaco Editor**: VS Code's web editor
+- **Socket.IO**: Real-time communication
+- **Docker**: Container-based execution
+- **MongoDB**: Database storage
+- **React**: Frontend framework
+
+---
+
+**🎉 You now have a fully-functional, VS Code-like collaborative coding platform!**
+
+Start coding collaboratively with your team, create and manage files, and execute code in multiple programming languages with full real-time synchronization. 

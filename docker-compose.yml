@@ -1,55 +1,102 @@
 version: '3.8'
 
 services:
-  # Main server
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: collab-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: collaborative_coding
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./server/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - collab-network
+
+  # Backend Server
   server:
-    build: ./server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: collab-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/collaborative_coding?authSource=admin
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      CLIENT_URL: http://localhost:3000
+      DOCKER_ENABLED: true
+      DOCKER_HOST: unix:///var/run/docker.sock
     ports:
       - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - EXECUTOR_URL=http://executor:5001
-      - JUDGE0_API_KEY=${JUDGE0_API_KEY}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./server/uploads:/app/uploads
+      - ./server/temp:/app/temp
     depends_on:
-      - executor
+      - mongodb
     networks:
-      - app-network
-    restart: unless-stopped
-    volumes:
-      - ./server:/app
-      - /app/node_modules
+      - collab-network
 
-  # Code executor service
-  executor:
-    build: ./executor
-    ports:
-      - "5001:5001"
-    environment:
-      - NODE_ENV=production
-    networks:
-      - app-network
+  # Frontend Client
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: collab-client
     restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_SOCKET_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    networks:
+      - collab-network
+
+  # Redis for session management (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: collab-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
+      - redis_data:/data
+    networks:
+      - collab-network
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    container_name: collab-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - client
+      - server
+    networks:
+      - collab-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
 
 networks:
-  app-network:
+  collab-network:
     driver: bridge
     ipam:
       config:

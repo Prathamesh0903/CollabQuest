@@ -9,9 +9,10 @@
   color: var(--vscode-text, #cccccc);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   user-select: none;
+  transition: width 0.3s ease;
 }
 
-.vscode-sidebar-collapsed {
+.vscode-sidebar.collapsed {
   width: 48px;
   background: var(--vscode-sidebar-bg, #252526);
   border-right: 1px solid var(--vscode-border, #3e3e42);
@@ -21,16 +22,16 @@
   color: var(--vscode-text, #cccccc);
   align-items: center;
   padding-top: 8px;
+  transition: width 0.3s ease;
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--vscode-border, #3e3e42);
   background: var(--vscode-header-bg, #2d2d30);
-  height: 35px;
   flex-shrink: 0;
 }
 
@@ -73,6 +74,36 @@
 
 .sidebar-toggle-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: var(--vscode-text, #cccccc);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  position: relative;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.sidebar-toggle.collapsed {
+  transform: rotate(180deg);
+}
+
+.sidebar-toggle.collapsed:hover {
+  transform: rotate(180deg) scale(1.05);
 }
 
 .sidebar-icons {
@@ -119,6 +150,12 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-content.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel-header {
@@ -382,6 +419,45 @@
   --vscode-text: #333333;
   --vscode-text-light: #6c6c6c;
   --vscode-bg: #ffffff;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--vscode-border, #3e3e42);
+  background: var(--vscode-header-bg, #2d2d30);
+  flex-shrink: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-footer.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--vscode-text-light, #969696);
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 3px;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab.active {
+  background: var(--vscode-accent, #007acc);
+  color: white;
 }
 
 /* Responsive Design */
