@@ -247,14 +247,56 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
   ];
 
   const confirmStartQuiz = () => {
+    console.log('confirmStartQuiz called with settings:', settings);
     setShowReadyModal(false);
     setQuizState('loading');
     
     // Simulate API call
     setTimeout(() => {
-      const filteredQuestions = sampleQuestions
-        .filter(q => q.difficulty === settings.difficulty)
+      // First try to get questions of the selected difficulty
+      let filteredQuestions = sampleQuestions
+        .filter(q => q.difficulty === settings.difficulty);
+      
+      // If we don't have enough questions of the selected difficulty, 
+      // fill with questions of other difficulties
+      if (filteredQuestions.length < settings.numQuestions) {
+        const remainingQuestions = sampleQuestions
+          .filter(q => q.difficulty !== settings.difficulty)
+          .sort(() => Math.random() - 0.5); // Shuffle for variety
+        
+        const neededQuestions = settings.numQuestions - filteredQuestions.length;
+        const additionalQuestions = remainingQuestions.slice(0, neededQuestions);
+        
+        filteredQuestions = [...filteredQuestions, ...additionalQuestions];
+      }
+      
+      // Shuffle and slice to the requested number
+      filteredQuestions = filteredQuestions
+        .sort(() => Math.random() - 0.5)
         .slice(0, settings.numQuestions);
+      
+      // Ensure we have at least one question
+      if (filteredQuestions.length === 0) {
+        console.error('No questions available for the selected settings');
+        // Fallback to all questions
+        filteredQuestions = sampleQuestions
+          .sort(() => Math.random() - 0.5)
+          .slice(0, Math.min(settings.numQuestions, sampleQuestions.length));
+      }
+      
+      // Final safety check
+      if (filteredQuestions.length === 0) {
+        console.error('Still no questions available, using default questions');
+        filteredQuestions = sampleQuestions.slice(0, 5); // Use first 5 questions as fallback
+      }
+      
+      console.log('Starting quiz with:', {
+        topic: settings.topic,
+        difficulty: settings.difficulty,
+        numQuestions: settings.numQuestions,
+        actualQuestions: filteredQuestions.length,
+        questions: filteredQuestions.map(q => ({ id: q.id, difficulty: q.difficulty }))
+      });
       
       setQuestions(filteredQuestions);
       const multiplier = difficulties.find(d => d.value === settings.difficulty)?.timeMultiplier ?? 1;
@@ -267,9 +309,22 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
     }, 1500);
   }
 
-  const startQuiz = useCallback(() => {
+  const startQuiz = () => {
+    // Validate that topic is selected
+    if (!settings.topic) {
+      alert('Please select a topic before starting the quiz.');
+      return;
+    }
+    
+    // Validate that we have enough questions available
+    const availableQuestions = sampleQuestions.filter(q => q.difficulty === settings.difficulty);
+    if (availableQuestions.length === 0) {
+      alert(`No questions available for ${settings.difficulty} difficulty. Please select a different difficulty.`);
+      return;
+    }
+    
     setShowReadyModal(true);
-  }, []);
+  };
 
   useEffect(() => {
     if (quizState === 'quiz' && quizData.timeLeft > 0 && !quizData.isComplete) {
@@ -441,7 +496,7 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
   const renderStartContent = () => (
     <div className="quiz-setup-enhanced">
       <div className="start-quiz-section">
-        <div className="start-quiz-card" style={{cursor: 'pointer'}} onClick={() => setQuizState('setup')}>
+        <div className="start-quiz-card">
           <div className="quiz-card-header">
             <h2>🚀 Ready to Start a Quiz?</h2>
             <p>Click here to configure your quiz and test your knowledge!</p>
@@ -449,6 +504,7 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
           <div className="quiz-actions">
             <button
               className="start-quiz-btn"
+              onClick={() => setQuizState('setup')}
             >
               Start Quiz
             </button>
@@ -460,39 +516,12 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
 
   const renderSetupContent = () => (
     <div className="quiz-setup-enhanced">
-      {/* Information Cards */}
-      <div className="info-cards-section">
-        <div className="info-card">
-          <div className="info-card-icon">📚</div>
-          <h3>Multiple Topics</h3>
-          <p>Choose from JavaScript, React, Python, Data Structures, Algorithms, and more!</p>
-        </div>
-        
-        <div className="info-card">
-          <div className="info-card-icon">⏱️</div>
-          <h3>Timed Challenges</h3>
-          <p>Test your speed and accuracy with customizable time limits for each difficulty level.</p>
-        </div>
-        
-        <div className="info-card">
-          <div className="info-card-icon">🎯</div>
-          <h3>Difficulty Levels</h3>
-          <p>Start with Easy, challenge yourself with Medium, or master the Hard level questions.</p>
-        </div>
-        
-        <div className="info-card">
-          <div className="info-card-icon">💡</div>
-          <h3>Learn & Improve</h3>
-          <p>Get detailed explanations for each question to enhance your understanding.</p>
-        </div>
-      </div>
-
       {/* Start Quiz Card */}
       <div className="start-quiz-section">
         <div className="start-quiz-card">
           <div className="quiz-card-header">
-            <h2>🚀 Ready to Start?</h2>
-            <p>Configure your quiz settings and begin your coding challenge!</p>
+            <h2>🚀 Configure Your Quiz</h2>
+            <p>Set up your perfect coding challenge and test your skills!</p>
           </div>
           
           <div className="quiz-settings-grid">
@@ -532,8 +561,9 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
                     key={diff.value}
                     className={`difficulty-btn ${settings.difficulty === diff.value ? 'active' : ''}`}
                     style={{ 
-                      backgroundColor: settings.difficulty === diff.value ? diff.color : 'white',
-                      color: settings.difficulty === diff.value ? 'white' : '#666'
+                      backgroundColor: settings.difficulty === diff.value ? diff.color : 'transparent',
+                      color: settings.difficulty === diff.value ? 'white' : '#e0e0e0',
+                      borderColor: settings.difficulty === diff.value ? diff.color : '#444'
                     }}
                     onClick={() => setSettings(prev => ({ ...prev, difficulty: diff.value as any }))}
                   >
@@ -745,6 +775,14 @@ const Quiz: React.FC<{ onComplete: (score: number, totalQuestions: number) => vo
       </div>
     );
   };
+
+  // Debug logging
+  console.log('Quiz state:', quizState, {
+    questionsCount: questions.length,
+    currentQuestion: quizData.currentQuestion,
+    settings: settings,
+    showReadyModal: showReadyModal
+  });
 
   return (
     <div className="quiz-container">
