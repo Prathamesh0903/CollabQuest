@@ -38,14 +38,15 @@
     margin-left: 20px;
   }
   
-  .nav-links a {
+  .nav-links span {
     color: rgba(255, 255, 255, 0.75);
     text-decoration: none;
     font-size: 14px;
     transition: color 0.3s;
+    cursor: pointer;
   }
   
-  .nav-links a:hover {
+  .nav-links span:hover {
     color: #ffffff;
   }
   

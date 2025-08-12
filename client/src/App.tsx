@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
 import ResultScreen from './components/ResultScreen';
@@ -138,6 +139,7 @@ const AppWithAuth: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/about" element={<About />} />
           <Route path="/collab/:sessionId" element={<SessionEditor />} />
         </Routes>
       </Router>
