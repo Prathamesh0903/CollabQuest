@@ -129,6 +129,9 @@ const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess
                   console.log('Start Battle condition met');
                   handleStartBattle();
                 }
+                else if (card.button === 'Start Prep') {
+                  navigate('/dsa-sheet');
+                }
               }}
             >
               {card.button}

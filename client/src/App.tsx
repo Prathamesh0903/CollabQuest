@@ -8,6 +8,7 @@ import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
 import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
+import DSASheet from './components/DSASheet/DSASheet';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 
@@ -102,6 +103,7 @@ const AppWithAuth: React.FC = () => {
           <Route path="/quiz" element={<QuizWrapper />} />
           <Route path="/battle" element={<BattleLanding />} />
           <Route path="/battle/play" element={<BattlePlay />} />
+          <Route path="/dsa-sheet" element={<DSASheet />} />
         </Routes>
       </Router>
     </AuthProvider>
