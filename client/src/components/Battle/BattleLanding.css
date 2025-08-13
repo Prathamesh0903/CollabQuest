@@ -1,0 +1,448 @@
+/* Battle Landing Page Styles - Isolated */
+.battle-landing {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #1a1a1a 100%);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.battle-landing__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.battle-landing__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.battle-landing .brand-mark {
+  font-size: 2rem;
+}
+
+.battle-landing .cta {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-size: 14px;
+}
+
+.battle-landing .cta--ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.battle-landing .cta--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Main Hero Section */
+.battle-landing__hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  padding: 60px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: calc(100vh - 100px);
+}
+
+/* Left Side Content */
+.battle-landing .hero__left {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.battle-landing .hero__title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.battle-landing .hero__subtitle {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.battle-landing .hero__actions {
+  display: flex;
+  gap: 16px;
+}
+
+.battle-landing .hero__actions .cta {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: #fff;
+  font-size: 16px;
+  padding: 16px 32px;
+}
+
+.battle-landing .hero__actions .cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+
+/* Benefits Section */
+.battle-landing .hero__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.battle-landing .benefit {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.battle-landing .benefit:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(8px);
+}
+
+.battle-landing .benefit__icon {
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.battle-landing .benefit__title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.battle-landing .benefit__desc {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Section Titles */
+.battle-landing .section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+  color: #fff;
+}
+
+/* Footer Section */
+.battle-landing__footer {
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 60px 40px 20px;
+  margin-top: 80px;
+}
+
+.battle-landing .footer-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.battle-landing .footer-section h4 {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.battle-landing .footer-section p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.battle-landing .social-links {
+  display: flex;
+  gap: 16px;
+}
+
+.battle-landing .social-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.battle-landing .social-link:hover {
+  color: #3b82f6;
+}
+
+.battle-landing .footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.battle-landing .footer-links li {
+  margin-bottom: 12px;
+}
+
+.battle-landing .footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.battle-landing .footer-links a:hover {
+  color: #3b82f6;
+}
+
+.battle-landing .footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.battle-landing .footer-bottom p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+/* Features Section */
+.battle-landing .features-section {
+  margin-top: 40px;
+}
+
+.battle-landing .features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.battle-landing .feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+}
+
+.battle-landing .feature-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.battle-landing .feature-icon {
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.battle-landing .feature-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.battle-landing .feature-content p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+/* Right Side - Problems Section */
+.battle-landing .hero__right {
+  display: flex;
+  flex-direction: column;
+}
+
+.battle-landing .problems-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.battle-landing .problems-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.battle-landing .preview-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.battle-landing .preview-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.battle-landing .preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.battle-landing .preview-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.battle-landing .badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.battle-landing .badge--easy {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.battle-landing .badge--medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.battle-landing .badge--hard {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.battle-landing .preview-body p {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+  font-size: 14px;
+}
+
+.battle-landing .preview-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.battle-landing .preview-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .battle-landing__hero {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 40px 20px;
+  }
+  
+  .battle-landing .hero__title {
+    font-size: 2.5rem;
+  }
+  
+  .battle-landing .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .battle-landing__header {
+    padding: 16px 20px;
+  }
+  
+  .battle-landing__hero {
+    padding: 30px 20px;
+  }
+  
+  .battle-landing .hero__title {
+    font-size: 2rem;
+  }
+  
+  .battle-landing .hero__subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .battle-landing .hero__actions {
+    flex-direction: column;
+  }
+  
+  .battle-landing .footer-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .battle-landing__footer {
+    padding: 40px 20px 20px;
+  }
+  
+  .battle-landing .benefit {
+    padding: 16px;
+  }
+  
+  .battle-landing .feature-item {
+    padding: 16px;
+  }
+  
+  .battle-landing .preview-card {
+    padding: 20px;
+  }
+}
+
+

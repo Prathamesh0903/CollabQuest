@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import BattleLanding from './components/Battle/BattleLanding';
+import BattlePlay from './components/Battle/BattlePlay';
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
@@ -15,22 +17,27 @@ const SessionEditor: React.FC = () => {
   return <CollaborativeEditor sessionId={sessionId} />;
 };
 
-// Main App component
-const App: React.FC = () => {
+// Quiz component wrapper
+const QuizWrapper: React.FC = () => {
+  const handleQuizComplete = (score: number, totalQuestions: number) => {
+    // Handle quiz completion - could redirect to results page
+    console.log(`Quiz completed with score: ${score}/${totalQuestions}`);
+  };
+
+  return (
+    <Quiz 
+      onComplete={handleQuizComplete} 
+      onClose={() => window.location.href = '/'} 
+    />
+  );
+};
+
+// Dashboard wrapper with state management
+const DashboardWrapper: React.FC = () => {
   const [editorState, setEditorState] = useState<{
     sessionId: string;
     language: 'javascript' | 'python';
   } | null>(null);
-  
-  const [quizState, setQuizState] = useState<{
-    isActive: boolean;
-    score: number;
-    totalQuestions: number;
-  }>({
-    isActive: false,
-    score: 0,
-    totalQuestions: 0
-  });
   
   const [showDemo, setShowDemo] = useState(false);
 
@@ -43,28 +50,12 @@ const App: React.FC = () => {
     setEditorState({ sessionId, language });
   };
 
-  const handleStartQuiz = () => {
-    setQuizState({
-      isActive: true,
-      score: 0,
-      totalQuestions: 0
-    });
-  };
-
   const handleShowDemo = () => {
     setShowDemo(true);
   };
 
   const handleCloseDemo = () => {
     setShowDemo(false);
-  };
-
-  const handleQuizComplete = (score: number, totalQuestions: number) => {
-    setQuizState({
-      isActive: false,
-      score,
-      totalQuestions
-    });
   };
 
   // If editor is active, show it
@@ -75,16 +66,6 @@ const App: React.FC = () => {
           sessionId={editorState.sessionId}
           language={editorState.language}
         />
-       
-      </div>
-    );
-  }
-
-  // If quiz is active, show it
-  if (quizState.isActive) {
-    return (
-      <div className="app">
-        <Quiz onComplete={handleQuizComplete} />
       </div>
     );
   }
@@ -98,34 +79,11 @@ const App: React.FC = () => {
     );
   }
 
-  // If quiz results are available, show them
-  if (quizState.score > 0 || quizState.totalQuestions > 0) { // Show if quiz has been attempted
-    const result = {
-      passed: quizState.score,
-      total: quizState.totalQuestions,
-      testCaseResults: [], // No test cases for quiz
-      accuracyScore: quizState.totalQuestions > 0 ? (quizState.score / quizState.totalQuestions) * 100 : 0,
-      speedScore: 0, // No speed score for quiz
-      totalScore: quizState.totalQuestions > 0 ? (quizState.score / quizState.totalQuestions) * 100 : 0,
-      timeTaken: null // No time taken for quiz
-    };
-
-    return (
-      <div className="app">
-        <ResultScreen
-          result={result}
-          onClose={() => setQuizState({ isActive: false, score: 0, totalQuestions: 0 })}
-        />
-      </div>
-    );
-  }
-
   // Default: show dashboard
   return (
     <div className="app">
       <Dashboard 
         onSessionSuccess={handleSessionSuccess} 
-        onStartQuiz={handleStartQuiz} 
         onStartDemo={handleShowDemo} 
       />
     </div>
@@ -138,9 +96,12 @@ const AppWithAuth: React.FC = () => {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<App />} />
+          <Route path="/" element={<DashboardWrapper />} />
           <Route path="/about" element={<About />} />
           <Route path="/collab/:sessionId" element={<SessionEditor />} />
+          <Route path="/quiz" element={<QuizWrapper />} />
+          <Route path="/battle" element={<BattleLanding />} />
+          <Route path="/battle/play" element={<BattlePlay />} />
         </Routes>
       </Router>
     </AuthProvider>

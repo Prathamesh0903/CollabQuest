@@ -159,14 +159,7 @@
   box-shadow: 0 5px 15px rgba(0, 255, 148, 0.2);
 }
 
-/* Footer */
-.dashboard-footer {
-  padding: 2rem;
-  text-align: center;
-  background: rgba(10, 10, 10, 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-}
+/* Footer - Now handled by Footer component */
 
 /* Upcoming badge */
 .upcoming-badge {

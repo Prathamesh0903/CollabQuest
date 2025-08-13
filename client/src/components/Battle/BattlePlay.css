@@ -1,0 +1,46 @@
+.battle-play { height: 100vh; display: flex; flex-direction: column; background: #0f1115; color: #e6e6e6; }
+.battle-play__header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #1f2633; background: #0b0e13; position: sticky; top: 0; z-index: 5; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+.brand-mark { font-size: 18px; }
+.header-controls { display: flex; gap: 10px; align-items: center; }
+.room-code-display { 
+  background: #007acc; 
+  color: #fff; 
+  padding: 6px 12px; 
+  border-radius: 6px; 
+  font-size: 12px; 
+  font-weight: 600; 
+  font-family: 'Courier New', monospace;
+}
+.header-controls select { background: #141821; color: #e6e6e6; border: 1px solid #1f2633; border-radius: 8px; padding: 8px 10px; }
+.cta { background: #00e5a8; color: #001a12; border: 1px solid transparent; border-radius: 10px; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+.cta--secondary { background: #1f2633; color: #e6e6e6; }
+.cta--ghost { background: transparent; color: #9aa4b2; border-color: #1f2633; }
+
+.battle-play__content { flex: 1; display: grid; grid-template-columns: 1.1fr 1.3fr; min-height: 0; }
+
+.problem-panel { border-right: 1px solid #1f2633; background: #0f131b; display: flex; flex-direction: column; min-height: 0; }
+.problem-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #1f2633; background: #0b0e13; }
+.problem-title { margin: 0; font-size: 18px; font-weight: 700; }
+.badge { padding: 4px 10px; border-radius: 999px; border: 1px solid #1f2633; font-size: 12px; font-weight: 700; }
+.badge--easy { background: rgba(0,229,168,0.12); color: #7affd6; border-color: rgba(0,229,168,0.35); }
+.badge--medium { background: rgba(255,193,7,0.12); color: #ffd45a; border-color: rgba(255,193,7,0.35); }
+.badge--hard { background: rgba(244,67,54,0.12); color: #ffa09a; border-color: rgba(244,67,54,0.35); }
+.problem-body { padding: 14px 16px; overflow: auto; }
+.problem-desc { color: #c6ced8; line-height: 1.6; margin-bottom: 12px; }
+.problem-meta { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.meta-label { color: #9aa4b2; text-transform: uppercase; font-size: 12px; letter-spacing: 0.4px; margin-bottom: 6px; }
+.io-block { background: #0b0e13; color: #e6e6e6; border: 1px solid #1f2633; border-radius: 8px; padding: 10px; white-space: pre-wrap; }
+.constraints { margin: 0; padding-left: 18px; color: #c6ced8; }
+
+.editor-panel { display: flex; flex-direction: column; min-height: 0; }
+.editor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #1f2633; background: #0b0e13; }
+.timer { color: #7affd6; font-weight: 700; }
+.editor-container { flex: 1; min-height: 0; }
+
+@media (max-width: 1100px) {
+  .battle-play__content { grid-template-columns: 1fr; }
+  .problem-panel { border-right: none; border-bottom: 1px solid #1f2633; }
+}
+
+

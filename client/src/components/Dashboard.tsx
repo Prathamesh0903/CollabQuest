@@ -6,18 +6,16 @@ import './Dashboard.css';
 
 interface DashboardProps {
   onSessionSuccess?: (sessionId: string, language: 'javascript' | 'python') => void;
-  onStartQuiz?: () => void; 
   onStartDemo?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onSessionSuccess, onStartQuiz, onStartDemo }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onSessionSuccess, onStartDemo }) => {
 
   return (
     <div className="dashboard-container dashboard-no-sidebar">
       <Navbar />
       <div className="dashboard-main-area dashboard-main-area-nosidebar leetcode-main-content">
         <MainContent 
-          onStartQuiz={onStartQuiz} 
           onStartDemo={onStartDemo} 
           onSessionSuccess={onSessionSuccess}
         />

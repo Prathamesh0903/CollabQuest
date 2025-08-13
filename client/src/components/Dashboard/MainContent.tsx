@@ -3,9 +3,9 @@ import { Typewriter } from 'react-simple-typewriter';
 import { motion } from 'framer-motion';
 import '../Dashboard.css';
 import { useNavigate } from 'react-router-dom';
+import Footer from './Footer';
 
 interface MainContentProps {
-  onStartQuiz?: () => void;
   onStartDemo?: () => void;
   onSessionSuccess?: (sessionId: string, language: 'javascript' | 'python') => void;
 }
@@ -28,13 +28,14 @@ const featureCards = [
     animationClass: 'card-animate-battle',
   },
   {
-    key: 'quizzes',
-    icon: '❓',
-    title: 'Quizzes',
-    desc: 'Test your skills with coding quizzes and get instant feedback.',
-    button: 'Take a Quiz',
-    animationClass: 'card-animate-quiz',
-  },
+    key: 'results',
+    icon: '🎉',
+    title: 'DSA Sheet',
+    desc: 'Practice DSA questions and get interview ready',
+    button: 'Start Prep',
+    animationClass: 'card-animate-results',
+  }
+  ,
   {
     key: 'Hackathons',
     icon: '👥',
@@ -54,16 +55,17 @@ const featureCards = [
     isUpcoming: true,
   },
   {
-    key: 'results',
-    icon: '🎉',
-    title: 'Achievements',
-    desc: 'See your results, badges, and progress.',
-    button: 'View Results',
-    animationClass: 'card-animate-results',
+    key: 'quizzes',
+    icon: '❓',
+    title: 'Quizzes',
+    desc: 'Test your skills with coding quizzes and get instant feedback.',
+    button: 'Take a Quiz',
+    animationClass: 'card-animate-quiz',
   }
+ 
 ];
 
-const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onSessionSuccess }) => {
+const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess }) => {
   const navigate = useNavigate();
 
   // Generate a unique session ID
@@ -72,7 +74,8 @@ const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onS
   };
 
   const handleStartBattle = () => {
-    navigate('/battle-lobby');
+    console.log('Start Battle button clicked - navigating to /battle');
+    window.location.href = '/battle';
   };
 
   return (
@@ -113,13 +116,19 @@ const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onS
             <button 
               className="action-button"
               onClick={() => {
+                console.log('Button clicked:', card.button);
                 if (card.button === 'Start Coding') {
                   const sessionId = generateSessionId();
                   onSessionSuccess?.(sessionId, 'javascript');
                 }
-                else if (card.button === 'Take a Quiz') onStartQuiz?.();
+                else if (card.button === 'Take a Quiz') {
+                  window.location.href = '/quiz';
+                }
                 else if (card.button === 'Start Demo') onStartDemo?.();
-                else if (card.button === 'Start Battle') handleStartBattle();
+                else if (card.button === 'Start Battle') {
+                  console.log('Start Battle condition met');
+                  handleStartBattle();
+                }
               }}
             >
               {card.button}
@@ -128,9 +137,7 @@ const MainContent: React.FC<MainContentProps> = ({ onStartQuiz, onStartDemo, onS
         ))}
       </section>
 
-      <footer className="dashboard-footer">
-        © {new Date().getFullYear()} Collab Quest &mdash; Level up together. All rights reserved.
-      </footer>
+      <Footer />
     </main>
   );
 };
