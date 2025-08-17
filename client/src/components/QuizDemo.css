@@ -1,0 +1,296 @@
+/* Quiz Demo Styles */
+
+.quiz-demo-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  padding: 2rem;
+  color: white;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.demo-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.demo-header p {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+}
+
+.category-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.category-card:hover::before {
+  opacity: 1;
+}
+
+.category-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.category-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  border-radius: 16px;
+}
+
+.category-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #ffffff;
+}
+
+.category-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.difficulty-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-arrow {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .category-arrow {
+  color: rgba(255, 255, 255, 0.8);
+  transform: translateX(4px);
+}
+
+.last-config {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.last-config h3 {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.last-config pre {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .quiz-demo-container {
+    padding: 1rem;
+  }
+
+  .demo-header h1 {
+    font-size: 2rem;
+  }
+
+  .demo-header p {
+    font-size: 1rem;
+  }
+
+  .categories-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .category-card {
+    padding: 1.5rem;
+  }
+
+  .category-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 1rem;
+  }
+
+  .category-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .category-meta {
+    gap: 0.75rem;
+  }
+
+  .last-config {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .quiz-demo-container {
+    padding: 0.5rem;
+  }
+
+  .demo-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .category-card {
+    padding: 1rem;
+  }
+
+  .category-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .category-content h3 {
+    font-size: 1.125rem;
+  }
+
+  .category-description {
+    font-size: 0.875rem;
+  }
+
+  .meta-item {
+    font-size: 0.75rem;
+  }
+
+  .last-config {
+    padding: 1rem;
+  }
+
+  .last-config pre {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Animation Enhancements */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.category-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.category-card:nth-child(1) { animation-delay: 0.1s; }
+.category-card:nth-child(2) { animation-delay: 0.2s; }
+.category-card:nth-child(3) { animation-delay: 0.3s; }
+.category-card:nth-child(4) { animation-delay: 0.4s; }
+.category-card:nth-child(5) { animation-delay: 0.5s; }
+.category-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Focus States for Accessibility */
+.category-card:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Loading States */
+.category-card:active {
+  transform: translateY(-4px);
+  transition: transform 0.1s ease;
+}

@@ -6,6 +6,7 @@ import BattlePlay from './components/Battle/BattlePlay';
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
+import QuizPage from './components/QuizPage';
 
 
 import ResultScreen from './components/ResultScreen';
@@ -106,6 +107,7 @@ const AppWithAuth: React.FC = () => {
           <Route path="/collab/:sessionId" element={<SessionEditor />} />
 
           <Route path="/advanced-quiz" element={<AdvancedQuizWrapper />} />
+          <Route path="/quiz" element={<QuizPage />} />
           <Route path="/battle" element={<BattleLanding />} />
           <Route path="/battle/play" element={<BattlePlay />} />
           <Route path="/dsa-sheet" element={<DSASheet />} />

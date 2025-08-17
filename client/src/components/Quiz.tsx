@@ -7,6 +7,7 @@ import {
   Volume2, VolumeX, Eye, EyeOff, Lock, Unlock, Award, Target as TargetIcon
 } from 'lucide-react';
 import './Quiz.css';
+import QuizConfigModal from './QuizConfigModal';
 
 interface QuizProps {
   onComplete?: (score: number, totalQuestions: number) => void;
@@ -32,19 +33,6 @@ interface QuizConfig {
   timeLimit: number;
   questionCount: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  showTimer: boolean;
-  showProgress: boolean;
-  allowSkip: boolean;
-  allowReview: boolean;
-  soundEnabled: boolean;
-  hintsEnabled: boolean;
-  livesEnabled: boolean;
-  powerUpsEnabled: boolean;
-  streakEnabled: boolean;
-  shuffleQuestions: boolean;
-  showExplanations: boolean;
-  autoSubmit: boolean;
-  theme: 'dark' | 'light' | 'auto';
 }
 
 // Advanced quiz interfaces
@@ -93,20 +81,7 @@ interface QuizStats {
 const defaultQuizConfig: QuizConfig = {
   timeLimit: 20,
   questionCount: 10,
-  difficulty: 'Medium',
-  showTimer: true,
-  showProgress: true,
-  allowSkip: false,
-  allowReview: true,
-  soundEnabled: true,
-  hintsEnabled: true,
-  livesEnabled: true,
-  powerUpsEnabled: true,
-  streakEnabled: true,
-  shuffleQuestions: true,
-  showExplanations: true,
-  autoSubmit: false,
-  theme: 'dark'
+  difficulty: 'Medium'
 };
 
 // Advanced questions for advanced mode
@@ -245,7 +220,8 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
   const [timeLeft, setTimeLeft] = useState(0);
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [selectedCategoryForConfig, setSelectedCategoryForConfig] = useState<QuizCategory | null>(null);
   
   // Quiz Configuration
   const [quizConfig, setQuizConfig] = useState<QuizConfig>(defaultQuizConfig);
@@ -287,7 +263,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (isQuizActive && timeLeft > 0 && !isPaused && quizConfig.showTimer) {
+    if (isQuizActive && timeLeft > 0 && !isPaused) {
       timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
       }, 1000);
@@ -295,39 +271,40 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
       handleQuizComplete();
     }
     return () => clearTimeout(timer);
-  }, [timeLeft, isQuizActive, isPaused, quizConfig.showTimer]);
+  }, [timeLeft, isQuizActive, isPaused]);
 
   const startQuiz = (category: QuizCategory) => {
-    setSelectedCategory(category);
-    // Show configuration panel first
-    setShowConfig(true);
+    setSelectedCategoryForConfig(category);
+    setShowConfigModal(true);
   };
 
-  const startQuizWithConfig = () => {
-    if (!selectedCategory) return;
+  const startQuizWithConfig = (config: QuizConfig) => {
+    if (!selectedCategoryForConfig) return;
     
-    setTimeLeft(quizConfig.timeLimit * 60);
+    setQuizConfig(config);
+    setSelectedCategory(selectedCategoryForConfig);
+    setTimeLeft(config.timeLimit * 60);
     setIsQuizActive(true);
     setCurrentQuestion(0);
     setScore(0);
-    setShowConfig(false);
+    setShowConfigModal(false);
     
     if (isAdvanced) {
       setQuizStats(prev => ({
         ...prev,
         totalQuestions: advancedQuestions.length,
         totalPoints: advancedQuestions.reduce((sum, q) => sum + q.points, 0),
-        timeRemaining: quizConfig.timeLimit * 60
+        timeRemaining: config.timeLimit * 60
       }));
       setUserAnswers([]);
       setCurrentStreak(0);
       setHintsUsed(0);
-      setLivesRemaining(quizConfig.livesEnabled ? 3 : 999);
+              setLivesRemaining(3);
       setPowerUps({
-        skipQuestion: quizConfig.powerUpsEnabled ? 1 : 0,
-        timeFreeze: quizConfig.powerUpsEnabled ? 1 : 0,
-        fiftyFifty: quizConfig.powerUpsEnabled ? 2 : 0,
-        hint: quizConfig.hintsEnabled ? 3 : 0
+          skipQuestion: 1,
+          timeFreeze: 1,
+          fiftyFifty: 2,
+          hint: 3
       });
       setAnsweredQuestions([]);
     }
@@ -338,6 +315,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
   };
 
   const handleAdvancedAnswer = (answer: string | number | string[] | boolean) => {
+    console.log('handleAdvancedAnswer called with:', answer);
     if (!selectedCategory) return;
 
     const currentQ = advancedQuestions[currentQuestion];
@@ -377,16 +355,14 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
       setCurrentStreak(prev => prev + 1);
     } else {
       setCurrentStreak(0);
-      if (livesRemaining > 0 && quizConfig.livesEnabled) {
+      if (livesRemaining > 0) {
         setLivesRemaining(prev => prev - 1);
       }
     }
 
-    // Show explanation if enabled
-    if (quizConfig.showExplanations) {
+    // Show explanation
       setShowExplanation(true);
       setTimeout(() => setShowExplanation(false), 3000);
-    }
 
         // Move to next question or complete quiz
     if (currentQuestion + 1 < advancedQuestions.length) {
@@ -439,13 +415,13 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
   };
 
   const handlePowerUp = (type: keyof typeof powerUps) => {
-    if (powerUps[type] <= 0 || !quizConfig.powerUpsEnabled) return;
+    if (powerUps[type] <= 0) return;
 
     setPowerUps(prev => ({ ...prev, [type]: prev[type] - 1 }));
 
     switch (type) {
       case 'skipQuestion':
-        if (currentQuestion + 1 < advancedQuestions.length && quizConfig.allowSkip) {
+        if (currentQuestion + 1 < advancedQuestions.length) {
           setCurrentQuestion(prev => prev + 1);
         }
         break;
@@ -457,20 +433,14 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
         // In real app, this would eliminate two wrong options
         break;
       case 'hint':
-        if (quizConfig.hintsEnabled) {
         setHintsUsed(prev => prev + 1);
-        }
         break;
     }
   };
 
-  const toggleConfig = () => {
-    setShowConfig(!showConfig);
-  };
 
-  const updateConfig = (key: keyof QuizConfig, value: any) => {
-    setQuizConfig(prev => ({ ...prev, [key]: value }));
-  };
+
+
 
   const renderFloatingElements = () => {
     return (
@@ -531,234 +501,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     );
   };
 
-  const renderConfigPanel = () => {
-    if (!showConfig) return null;
 
-    return (
-      <motion.div 
-        className="config-panel"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-      >
-        <div className="config-header">
-          <div className="config-header-left">
-            <Settings className="w-5 h-5" />
-            <div>
-              <h3>Quiz Configuration</h3>
-              {selectedCategory && (
-                <p className="config-subtitle">
-                  {selectedCategory.title} • {selectedCategory.questionCount} questions • {selectedCategory.timeLimit} min
-                </p>
-              )}
-            </div>
-          </div>
-          <button onClick={toggleConfig} className="config-close">
-            <XCircle className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="config-content">
-          <div className="config-section">
-            <h4>General Settings</h4>
-            <div className="config-item">
-              <label>Time Limit (minutes)</label>
-              <input 
-                type="number" 
-                value={quizConfig.timeLimit}
-                onChange={(e) => updateConfig('timeLimit', parseInt(e.target.value))}
-                min="1"
-                max="120"
-              />
-            </div>
-            <div className="config-item">
-              <label>Question Count</label>
-              <input 
-                type="number" 
-                value={quizConfig.questionCount}
-                onChange={(e) => updateConfig('questionCount', parseInt(e.target.value))}
-                min="1"
-                max="50"
-              />
-            </div>
-            <div className="config-item">
-              <label>Difficulty</label>
-              <select 
-                value={quizConfig.difficulty}
-                onChange={(e) => updateConfig('difficulty', e.target.value)}
-              >
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="config-section">
-            <h4>Display Options</h4>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.showTimer}
-                  onChange={(e) => updateConfig('showTimer', e.target.checked)}
-                />
-                Show Timer
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.showProgress}
-                  onChange={(e) => updateConfig('showProgress', e.target.checked)}
-                />
-                Show Progress
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.showExplanations}
-                  onChange={(e) => updateConfig('showExplanations', e.target.checked)}
-                />
-                Show Explanations
-              </label>
-            </div>
-          </div>
-
-          <div className="config-section">
-            <h4>Advanced Features</h4>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.allowSkip}
-                  onChange={(e) => updateConfig('allowSkip', e.target.checked)}
-                />
-                Allow Skip Questions
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.allowReview}
-                  onChange={(e) => updateConfig('allowReview', e.target.checked)}
-                />
-                Allow Review
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.shuffleQuestions}
-                  onChange={(e) => updateConfig('shuffleQuestions', e.target.checked)}
-                />
-                Shuffle Questions
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.autoSubmit}
-                  onChange={(e) => updateConfig('autoSubmit', e.target.checked)}
-                />
-                Auto Submit
-              </label>
-            </div>
-          </div>
-
-          <div className="config-section">
-            <h4>Power-ups & Lives</h4>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.livesEnabled}
-                  onChange={(e) => updateConfig('livesEnabled', e.target.checked)}
-                />
-                Enable Lives
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.powerUpsEnabled}
-                  onChange={(e) => updateConfig('powerUpsEnabled', e.target.checked)}
-                />
-                Enable Power-ups
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.hintsEnabled}
-                  onChange={(e) => updateConfig('hintsEnabled', e.target.checked)}
-                />
-                Enable Hints
-              </label>
-            </div>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.streakEnabled}
-                  onChange={(e) => updateConfig('streakEnabled', e.target.checked)}
-                />
-                Enable Streaks
-              </label>
-            </div>
-          </div>
-
-          <div className="config-section">
-            <h4>Audio & Theme</h4>
-            <div className="config-toggle">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={quizConfig.soundEnabled}
-                  onChange={(e) => updateConfig('soundEnabled', e.target.checked)}
-                />
-                Sound Effects
-              </label>
-            </div>
-            <div className="config-item">
-              <label>Theme</label>
-              <select 
-                value={quizConfig.theme}
-                onChange={(e) => updateConfig('theme', e.target.value)}
-              >
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="auto">Auto</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        
-        <div className="config-actions">
-          <button 
-            className="btn-primary"
-            onClick={startQuizWithConfig}
-          >
-            Start Quiz
-          </button>
-          <button 
-            className="btn-secondary"
-            onClick={toggleConfig}
-          >
-            Cancel
-          </button>
-        </div>
-      </motion.div>
-    );
-  };
 
   const renderQuestion = () => {
     if (selectedCategory) {
@@ -877,12 +620,21 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     const canSubmit = selectedAnswer !== null || 
                      (currentQ.type === 'fill-blank' && fillBlankAnswer.trim()) ||
                      (currentQ.type === 'matching' && matchingAnswers.some(a => a.trim()));
+    
+    console.log('Submit Debug:', {
+      selectedAnswer,
+      fillBlankAnswer,
+      matchingAnswers,
+      canSubmit,
+      questionType: currentQ.type
+    });
 
     return (
       <div className="question-actions">
         <button 
           className="btn-submit"
           onClick={() => {
+            console.log('Submit button clicked!');
             if (currentQ.type === 'fill-blank') {
               handleAdvancedAnswer(fillBlankAnswer);
             } else if (currentQ.type === 'matching') {
@@ -895,7 +647,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
         >
           Submit Answer
         </button>
-        {quizConfig.hintsEnabled && (
         <button 
           className="btn-hint"
           onClick={() => handlePowerUp('hint')}
@@ -904,8 +655,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           <Lightbulb className="w-4 h-4" />
           Hint ({powerUps.hint})
         </button>
-        )}
-        {quizConfig.allowSkip && (
           <button 
             className="btn-skip"
             onClick={() => handlePowerUp('skipQuestion')}
@@ -914,7 +663,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
             <Zap className="w-4 h-4" />
             Skip ({powerUps.skipQuestion})
           </button>
-        )}
       </div>
     );
   };
@@ -1027,17 +775,13 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
             <div className="quiz-info">
               <h2 className="quiz-title">{selectedCategory.title}</h2>
               <div className="quiz-meta">
-                {quizConfig.showProgress && (
                               <span className="question-counter">
                 Question {currentQuestion + 1} of {advancedQuestions.length}
               </span>
-                )}
-                {quizConfig.showTimer && (
                 <div className="timer">
                   <Clock className="w-4 h-4" />
                   {formatTime(timeLeft)}
                 </div>
-                )}
                 <div className="difficulty-badge">
                   {advancedQuestions[currentQuestion]?.difficulty}
                 </div>
@@ -1046,7 +790,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           </div>
 
           <div className="quiz-header-right">
-            {quizConfig.livesEnabled && (
             <div className="lives-container">
               {[...Array(3)].map((_, i) => (
                 <Heart
@@ -1056,18 +799,15 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
                 />
               ))}
             </div>
-            )}
 
-            {quizConfig.streakEnabled && (
             <div className="streak-container">
               <Zap className="w-5 h-5 text-yellow-500" />
               <span>{currentStreak}</span>
             </div>
-            )}
 
             <button 
               className="config-button"
-              onClick={toggleConfig}
+              onClick={() => setShowConfigModal(true)}
               title="Quiz Settings"
             >
               <Settings className="w-5 h-5" />
@@ -1076,7 +816,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
         </div>
 
         <div className="quiz-content">
-          {quizConfig.powerUpsEnabled && (
           <div className="power-ups-container">
             {Object.entries(powerUps).map(([type, count]) => (
               <button
@@ -1094,7 +833,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
               </button>
             ))}
           </div>
-          )}
 
           <motion.div 
             className="question-card"
@@ -1113,7 +851,12 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           </motion.div>
         </div>
 
-        {renderConfigPanel()}
+        <QuizConfigModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onStart={startQuizWithConfig}
+          category={selectedCategoryForConfig!}
+        />
       </motion.div>
     );
   }
@@ -1241,6 +984,13 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           </motion.div>
         </div>
       </div>
+      
+      <QuizConfigModal
+        isOpen={showConfigModal}
+        onClose={() => setShowConfigModal(false)}
+        onStart={startQuizWithConfig}
+        category={selectedCategoryForConfig!}
+      />
     </motion.div>
   );
 };
