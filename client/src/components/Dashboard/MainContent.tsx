@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import '../Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer';
+import SpaceParticles from '../SpaceParticles';
+import EnhancedContent from './EnhancedContent';
 
 interface MainContentProps {
   onStartDemo?: () => void;
@@ -56,11 +58,11 @@ const featureCards = [
   },
   {
     key: 'quizzes',
-    icon: '❓',
-    title: 'Quizzes',
-    desc: 'Test your skills with coding quizzes and get instant feedback.',
+    icon: '🚀',
+    title: 'Advanced Quizzes',
+    desc: 'Challenge yourself with advanced questions, power-ups, and real-time feedback.',
     button: 'Take a Quiz',
-    animationClass: 'card-animate-quiz',
+    animationClass: 'card-animate-advanced-quiz',
   }
  
 ];
@@ -80,6 +82,8 @@ const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess
 
   return (
     <main className="dashboard-main-content">
+      <SpaceParticles />
+      
       <section className="hero-section">
         <div>
           <h1>
@@ -122,7 +126,7 @@ const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess
                   onSessionSuccess?.(sessionId, 'javascript');
                 }
                 else if (card.button === 'Take a Quiz') {
-                  window.location.href = '/quiz';
+                  window.location.href = '/advanced-quiz';
                 }
                 else if (card.button === 'Start Demo') onStartDemo?.();
                 else if (card.button === 'Start Battle') {
@@ -139,6 +143,8 @@ const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess
           </motion.div>
         ))}
       </section>
+
+      <EnhancedContent />
 
       <Footer />
     </main>

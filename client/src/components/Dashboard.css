@@ -3,9 +3,10 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #0A0A0A;
+  background: transparent;
   color: #FFFFFF;
   font-family: 'Segoe UI', 'Inter', sans-serif;
+  position: relative;
 }
 
 /* Modern Navbar */
@@ -37,7 +38,9 @@
 .dashboard-main-content {
   flex: 1;
   padding: 2rem;
-  background: #0A0A0A;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero section */
@@ -45,9 +48,52 @@
   text-align: center;
   padding: 4rem 2rem;
   margin-bottom: 3rem;
-  background: linear-gradient(rgba(10, 10, 10, 0.8), rgba(10, 10, 10, 0.9));
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(10px);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  padding: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 255, 148, 0.3) 25%, 
+    rgba(0, 178, 255, 0.3) 50%, 
+    rgba(0, 255, 148, 0.3) 75%, 
+    transparent 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: borderMove 3s ease-in-out infinite;
+  opacity: 0;
+  animation-delay: 0.5s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes borderMove {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
 
 .hero-section h1 {
@@ -92,6 +138,7 @@
 
 .feature-card {
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 2rem;
@@ -119,6 +166,17 @@
 
 .feature-card:hover::before {
   opacity: 1;
+}
+
+/* Advanced Quiz Card Animation */
+.card-animate-advanced-quiz {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 107, 107, 0.1) 100%);
+}
+
+.card-animate-advanced-quiz:hover {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 107, 107, 0.2) 100%);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(255, 193, 7, 0.3);
 }
 
 .feature-icon {

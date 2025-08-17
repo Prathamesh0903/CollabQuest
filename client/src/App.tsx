@@ -6,6 +6,8 @@ import BattlePlay from './components/Battle/BattlePlay';
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
+
+
 import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
 import DSASheet from './components/DSASheet/DSASheet';
@@ -18,16 +20,18 @@ const SessionEditor: React.FC = () => {
   return <CollaborativeEditor sessionId={sessionId} />;
 };
 
-// Quiz component wrapper
-const QuizWrapper: React.FC = () => {
-  const handleQuizComplete = (score: number, totalQuestions: number) => {
-    // Handle quiz completion - could redirect to results page
-    console.log(`Quiz completed with score: ${score}/${totalQuestions}`);
+
+
+// Advanced Quiz component wrapper
+const AdvancedQuizWrapper: React.FC = () => {
+  const handleAdvancedQuizComplete = (score: number, totalQuestions: number) => {
+    console.log(`Advanced quiz completed with score: ${score}/${totalQuestions}`);
   };
 
   return (
     <Quiz 
-      onComplete={handleQuizComplete} 
+      isAdvanced={true}
+      onComplete={handleAdvancedQuizComplete} 
       onClose={() => window.location.href = '/'} 
     />
   );
@@ -100,7 +104,8 @@ const AppWithAuth: React.FC = () => {
           <Route path="/" element={<DashboardWrapper />} />
           <Route path="/about" element={<About />} />
           <Route path="/collab/:sessionId" element={<SessionEditor />} />
-          <Route path="/quiz" element={<QuizWrapper />} />
+
+          <Route path="/advanced-quiz" element={<AdvancedQuizWrapper />} />
           <Route path="/battle" element={<BattleLanding />} />
           <Route path="/battle/play" element={<BattlePlay />} />
           <Route path="/dsa-sheet" element={<DSASheet />} />

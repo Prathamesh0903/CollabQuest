@@ -1,12 +1,17 @@
 
 .dashboard-navbar {
-    background-color: #282828;
+    background-color: rgba(40, 40, 40, 0.8);
+    backdrop-filter: blur(15px);
     padding: 0 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #3c3c3c;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     height: 48px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
   
   .navbar-left {

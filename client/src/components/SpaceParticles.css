@@ -1,0 +1,35 @@
+.space-particles-canvas {
+  background: linear-gradient(135deg, #050709 0%, #0d1017 50%, #050709 100%);
+  filter: blur(0px);
+  transition: all 0.3s ease;
+}
+
+/* Add some additional space-themed effects */
+.space-particles-canvas::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .space-particles-canvas {
+    background: linear-gradient(135deg, #050709 0%, #0d1017 100%);
+  }
+}
+
+/* Performance optimizations */
+@media (prefers-reduced-motion: reduce) {
+  .space-particles-canvas {
+    animation: none;
+  }
+}
