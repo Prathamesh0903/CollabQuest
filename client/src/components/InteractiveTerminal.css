@@ -1,0 +1,496 @@
+/* Interactive Terminal Styles */
+.interactive-terminal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 400px;
+  background: #1e1e1e;
+  border-top: 2px solid #007acc;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  font-family: 'Fira Code', 'Consolas', 'Menlo', monospace;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Terminal Header */
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+  padding: 8px 16px;
+  min-height: 40px;
+  flex-shrink: 0;
+}
+
+.terminal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cccccc;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.terminal-icon {
+  font-size: 16px;
+}
+
+.terminal-session-info {
+  color: #007acc;
+  font-size: 12px;
+  background: rgba(0, 122, 204, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 122, 204, 0.3);
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Connection Status */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.connection-status.connecting {
+  color: #ffa500;
+}
+
+.connection-status.connected {
+  color: #4caf50;
+}
+
+.connection-status.disconnected {
+  color: #f44336;
+}
+
+.connection-status.error {
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.connection-status.connecting .status-dot {
+  background: #ffa500;
+  animation: pulse 1s infinite;
+}
+
+.connection-status.connected .status-dot {
+  background: #4caf50;
+  animation: none;
+}
+
+.connection-status.disconnected .status-dot,
+.connection-status.error .status-dot {
+  background: #f44336;
+  animation: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Terminal Buttons */
+.terminal-btn {
+  background: transparent;
+  border: 1px solid #3e3e42;
+  color: #cccccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+}
+
+.terminal-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #007acc;
+  color: #ffffff;
+}
+
+.terminal-btn:active {
+  background: rgba(0, 122, 204, 0.2);
+  transform: translateY(1px);
+}
+
+.terminal-btn.close-btn {
+  color: #f44336;
+  border-color: #f44336;
+}
+
+.terminal-btn.close-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+  color: #ff6b6b;
+}
+
+/* Error Message */
+.terminal-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #f44336;
+  padding: 8px 16px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.error-icon {
+  font-size: 14px;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-close {
+  background: transparent;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.error-close:hover {
+  background: rgba(244, 67, 54, 0.2);
+}
+
+/* Terminal Container */
+.terminal-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.terminal-element {
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+}
+
+/* Xterm.js Customization */
+.terminal-element .xterm {
+  height: 100%;
+  padding: 0;
+}
+
+.terminal-element .xterm-viewport {
+  background: #1e1e1e;
+}
+
+.terminal-element .xterm-screen {
+  background: #1e1e1e;
+}
+
+/* Terminal Footer */
+.terminal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2d2d30;
+  border-top: 1px solid #3e3e42;
+  padding: 6px 16px;
+  min-height: 32px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.terminal-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #cccccc;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.status-item.blocked {
+  color: #ff6b6b;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.terminal-help {
+  color: #888888;
+}
+
+.help-text {
+  font-size: 11px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .interactive-terminal {
+    height: 300px;
+  }
+
+  .terminal-header {
+    padding: 6px 12px;
+    min-height: 36px;
+  }
+
+  .terminal-title {
+    font-size: 13px;
+  }
+
+  .terminal-session-info {
+    display: none;
+  }
+
+  .terminal-controls {
+    gap: 4px;
+  }
+
+  .terminal-btn {
+    min-width: 28px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .terminal-footer {
+    padding: 4px 12px;
+    min-height: 28px;
+  }
+
+  .terminal-status {
+    gap: 8px;
+  }
+
+  .status-item {
+    font-size: 11px;
+    padding: 1px 4px;
+  }
+
+  .help-text {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .interactive-terminal {
+    height: 250px;
+  }
+
+  .terminal-header {
+    padding: 4px 8px;
+    min-height: 32px;
+  }
+
+  .terminal-title {
+    font-size: 12px;
+  }
+
+  .terminal-icon {
+    font-size: 14px;
+  }
+
+  .connection-status {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .terminal-btn {
+    min-width: 24px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .terminal-footer {
+    padding: 3px 8px;
+    min-height: 24px;
+  }
+
+  .terminal-status {
+    gap: 6px;
+  }
+
+  .status-item {
+    font-size: 10px;
+    padding: 1px 3px;
+  }
+
+  .help-text {
+    font-size: 9px;
+  }
+}
+
+/* Dark Theme Enhancements */
+@media (prefers-color-scheme: dark) {
+  .interactive-terminal {
+    background: #0d1117;
+    border-top-color: #58a6ff;
+  }
+
+  .terminal-header {
+    background: #161b22;
+    border-bottom-color: #30363d;
+  }
+
+  .terminal-title {
+    color: #f0f6fc;
+  }
+
+  .terminal-session-info {
+    color: #58a6ff;
+    background: rgba(88, 166, 255, 0.1);
+    border-color: rgba(88, 166, 255, 0.3);
+  }
+
+  .terminal-controls {
+    color: #f0f6fc;
+  }
+
+  .connection-status {
+    background: rgba(240, 246, 252, 0.1);
+  }
+
+  .terminal-btn {
+    border-color: #30363d;
+    color: #f0f6fc;
+  }
+
+  .terminal-btn:hover {
+    background: rgba(240, 246, 252, 0.1);
+    border-color: #58a6ff;
+  }
+
+  .terminal-error {
+    background: rgba(248, 81, 73, 0.1);
+    border-color: rgba(248, 81, 73, 0.3);
+    color: #f85149;
+  }
+
+  .terminal-container {
+    background: #0d1117;
+  }
+
+  .terminal-footer {
+    background: #161b22;
+    border-top-color: #30363d;
+  }
+
+  .terminal-status {
+    color: #f0f6fc;
+  }
+
+  .status-item {
+    background: rgba(240, 246, 252, 0.05);
+  }
+
+  .status-item.blocked {
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.1);
+    border-color: rgba(248, 81, 73, 0.3);
+  }
+
+  .terminal-help {
+    color: #7d8590;
+  }
+}
+
+/* Animation for terminal appearance */
+.interactive-terminal.entering {
+  animation: slideUp 0.3s ease-out;
+}
+
+.interactive-terminal.exiting {
+  animation: slideDown 0.3s ease-in;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Focus styles for accessibility */
+.terminal-btn:focus,
+.error-close:focus {
+  outline: 2px solid #007acc;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .interactive-terminal {
+    border-top-width: 3px;
+  }
+
+  .terminal-header,
+  .terminal-footer {
+    border-width: 2px;
+  }
+
+  .terminal-btn {
+    border-width: 2px;
+  }
+
+  .terminal-error {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .interactive-terminal {
+    animation: none;
+  }
+
+  .status-dot {
+    animation: none;
+  }
+
+  .terminal-btn {
+    transition: none;
+  }
+}

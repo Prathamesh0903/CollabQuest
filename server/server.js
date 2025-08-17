@@ -16,6 +16,8 @@ const quizRoutes = require('./routes/quizzes');
 const leaderboardRoutes = require('./routes/leaderboards');
 const messageRoutes = require('./routes/messages');
 const fileRoutes = require('./routes/files');
+const collaborativeSessionRoutes = require('./routes/collaborativeSessions');
+const codeExecutionRoutes = require('./routes/codeExecution');
 
 const { socketAuth } = require('./middleware/auth');
 const { handleSocketConnection } = require('./utils/socketHandler');
@@ -57,6 +59,8 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/collaborative-sessions', collaborativeSessionRoutes);
+app.use('/api/execute', codeExecutionRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {

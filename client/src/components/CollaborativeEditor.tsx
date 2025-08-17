@@ -7,6 +7,7 @@ import Terminal, { TerminalOutput } from './Terminal';
 import LanguageSwitcher from './LanguageSwitcher';
 import VSCodeSidebar from './VSCodeSidebar';
 import UserAvatar from './UserAvatar';
+import ConcurrentExecutionHandler from './ConcurrentExecutionHandler';
 import './CollaborativeEditor.css';
 
 // Extend HTMLInputElement interface for webkitdirectory
@@ -705,7 +706,63 @@ puts greet("World")`
         }
       });
 
-      // Code execution events
+      // Concurrent execution events (handled by ConcurrentExecutionHandler)
+      socket.on('execution-queued', (data: { userId: string; displayName: string; avatar?: string; executionId: string; position: number; timestamp: Date }) => {
+        if (data.userId !== currentUser?.uid) {
+          showInfo('Code Execution', `${data.displayName} queued code execution (position ${data.position})`);
+        }
+      });
+
+      socket.on('execution-started', (data: { executionId: string; userId: string; displayName: string; avatar?: string; language: string; timestamp: Date }) => {
+        if (data.userId !== currentUser?.uid) {
+          setIsExecuting(true);
+          showInfo('Code Execution', `${data.displayName} started executing ${data.language} code`);
+        }
+      });
+
+      socket.on('execution-completed', (data: { executionId: string; userId: string; displayName: string; avatar?: string; result: any; executionTime: number; timestamp: Date }) => {
+        setIsExecuting(false);
+        if (data.userId !== currentUser?.uid) {
+          setTerminalOutput({
+            stdout: data.result.stdout || '',
+            stderr: data.result.stderr || '',
+            compile_output: data.result.compile_output || '',
+            status: data.result.status || 'success',
+            executionTime: data.executionTime
+          });
+          setShowTerminal(true);
+          showSuccess('Code Executed', `${data.displayName} completed execution in ${(data.executionTime / 1000).toFixed(2)}s`);
+        }
+        setExecutionHistory(prev => [...prev.slice(-9), {
+          success: true,
+          result: data.result,
+          executedBy: data.userId,
+          displayName: data.displayName,
+          avatar: data.avatar,
+          timestamp: data.timestamp
+        }]);
+      });
+
+      socket.on('execution-failed', (data: { executionId: string; userId: string; displayName: string; avatar?: string; error: string; executionTime: number; timestamp: Date }) => {
+        setIsExecuting(false);
+        if (data.userId !== currentUser?.uid) {
+          setTerminalOutput({
+            error: data.error
+          });
+          setShowTerminal(true);
+          showError('Code Execution Failed', `${data.displayName}: ${data.error}`);
+        }
+        setExecutionHistory(prev => [...prev.slice(-9), {
+          success: false,
+          error: data.error,
+          executedBy: data.userId,
+          displayName: data.displayName,
+          avatar: data.avatar,
+          timestamp: data.timestamp
+        }]);
+      });
+
+      // Legacy code execution events (for backward compatibility)
       socket.on('code-execution-started', (data: { userId: string; displayName: string; avatar?: string; timestamp: Date }) => {
         if (data.userId !== currentUser?.uid) {
           setIsExecuting(true);
@@ -1586,6 +1643,19 @@ puts greet("World")`
           </div>
         </div>
       </div>
+
+      {/* Concurrent Execution Handler */}
+      <ConcurrentExecutionHandler
+        socket={socketRef.current}
+        roomId={currentSessionId}
+        currentUserId={currentUser?.uid || ''}
+        onExecutionStatusChange={(status) => {
+          console.log('Execution status changed:', status);
+        }}
+        onExecutionHistoryUpdate={(history) => {
+          console.log('Execution history updated:', history);
+        }}
+      />
 
       {/* Notification */}
       {notification && (

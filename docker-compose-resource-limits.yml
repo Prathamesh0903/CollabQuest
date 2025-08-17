@@ -1,0 +1,232 @@
+version: '3.8'
+
+services:
+  # Basic code execution service with resource limits
+  code-executor-basic:
+    image: python:3.11-alpine
+    container_name: code-executor-basic
+    command: ["python", "-c", "print('Hello from basic executor')"]
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          # Memory limits
+          memory: 256M
+          memory-swap: 0M
+          
+          # CPU limits
+          cpus: '0.5'  # 50% of one CPU core
+          
+          # PIDs limit
+          pids: 50
+        
+        reservations:
+          # Minimum guaranteed resources
+          memory: 64M
+          cpus: '0.1'  # 10% of one CPU core
+    
+    # Security options
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    
+    # Network isolation
+    network_mode: 'none'
+    
+    # Read-only filesystem
+    read_only: true
+    
+    # Temporary filesystem for /tmp
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    
+    # Environment variables for additional limits
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONHASHSEED=random
+      - PYTHONDONTWRITEBYTECODE=1
+    
+    # User isolation
+    user: 'nobody:nobody'
+    
+    # Restart policy
+    restart: 'no'
+    
+    # Labels for monitoring
+    labels:
+      - "resource.limits=enabled"
+      - "security.level=high"
+
+  # Advanced code execution service with comprehensive limits
+  code-executor-advanced:
+    image: node:18-alpine
+    container_name: code-executor-advanced
+    command: ["node", "-e", "console.log('Hello from advanced executor')"]
+    
+    # Advanced resource limits
+    deploy:
+      resources:
+        limits:
+          # Memory limits
+          memory: 512M
+          memory-swap: 0M
+          
+          # CPU limits with period/quota
+          cpus: '0.25'  # 25% of one CPU core
+          
+          # Process limits
+          pids: 100
+        
+        reservations:
+          memory: 128M
+          cpus: '0.05'  # 5% of one CPU core
+    
+    # Security options
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    
+    # Network isolation
+    network_mode: 'none'
+    
+    # Read-only filesystem
+    read_only: true
+    
+    # Temporary filesystem
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+      - /var/tmp:noexec,nosuid,size=100m
+    
+    # Environment variables
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=256
+      - NODE_ENV=production
+    
+    # User isolation
+    user: 'nobody:nobody'
+    
+    # Restart policy
+    restart: 'no'
+    
+    # Labels
+    labels:
+      - "resource.limits=advanced"
+      - "security.level=high"
+      - "monitoring.enabled=true"
+
+  # Java code execution service
+  code-executor-java:
+    image: openjdk:17-alpine
+    container_name: code-executor-java
+    command: ["sh", "-c", "echo 'public class Main { public static void main(String[] args) { System.out.println(\"Hello from Java\"); } }' > Main.java && javac Main.java && java Main"]
+    
+    # Resource limits for Java (higher due to JVM overhead)
+    deploy:
+      resources:
+        limits:
+          # Memory limits (higher for JVM)
+          memory: 1G
+          memory-swap: 0M
+          
+          # CPU limits
+          cpus: '0.75'  # 75% of one CPU core
+          
+          # Process limits
+          pids: 150
+        
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+    
+    # Security options
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    
+    # Network isolation
+    network_mode: 'none'
+    
+    # Read-only filesystem
+    read_only: true
+    
+    # Temporary filesystem
+    tmpfs:
+      - /tmp:noexec,nosuid,size=500m
+    
+    # Environment variables for JVM
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms128m
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport
+    
+    # User isolation
+    user: 'nobody:nobody'
+    
+    # Restart policy
+    restart: 'no'
+    
+    # Labels
+    labels:
+      - "resource.limits=java"
+      - "security.level=high"
+
+  # Resource monitoring service
+  resource-monitor:
+    image: alpine:latest
+    container_name: resource-monitor
+    command: ["sh", "-c", "while true; do echo 'Monitoring...'; sleep 10; done"]
+    
+    # Minimal resource limits for monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+          pids: 10
+        
+        reservations:
+          memory: 16M
+          cpus: '0.01'
+    
+    # Security options
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    
+    # Network access for monitoring
+    networks:
+      - monitoring
+    
+    # Read-only filesystem
+    read_only: true
+    
+    # User isolation
+    user: 'nobody:nobody'
+    
+    # Restart policy
+    restart: 'unless-stopped'
+    
+    # Labels
+    labels:
+      - "monitoring.service=true"
+
+# Custom networks
+networks:
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volume for persistent data (if needed)
+volumes:
+  code-execution-logs:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=100m

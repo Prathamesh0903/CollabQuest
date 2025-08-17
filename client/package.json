@@ -13,6 +13,11 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/socket.io-client": "^1.4.36",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-search": "^0.15.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/addon-webgl": "^0.18.0",
+    "@xterm/xterm": "^5.5.0",
     "firebase": "^10.7.1",
     "framer-motion": "^12.23.0",
     "lucide-react": "^0.525.0",
@@ -52,5 +57,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/xterm": "^2.0.3"
   }
 }

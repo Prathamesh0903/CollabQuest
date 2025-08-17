@@ -21,6 +21,11 @@ class DockerExecutor {
   async executeCode(language, sourceCode, input = '') {
     const executionId = uuidv4();
     const executionDir = path.join(this.tempDir, executionId);
+    const startTime = Date.now();
+    let container = null;
+    let runtimeLogs = [];
+    let memoryUsage = 'N/A';
+    let cpuUsage = 'N/A';
     
     try {
       await fs.mkdir(executionDir, { recursive: true });
@@ -31,13 +36,221 @@ class DockerExecutor {
       // Write source code to file
       await fs.writeFile(filePath, sourceCode, 'utf8');
       
-      // Create Docker container and execute
-      const result = await this.runInContainer(executionDir, dockerImage, runCommand, compileCommand, input);
+      // Add execution start log
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        message: `Starting ${language} code execution in Docker container`,
+        details: {
+          execution_id: executionId,
+          docker_image: dockerImage,
+          filename: filename,
+          code_length: sourceCode.length
+        }
+      });
       
-      return result;
+      // Create Docker container and execute
+      const result = await this.runInContainerWithMonitoring(
+        executionDir, 
+        dockerImage, 
+        runCommand, 
+        compileCommand, 
+        input,
+        runtimeLogs
+      );
+      
+      // Add successful execution log
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        message: 'Docker container execution completed successfully',
+        details: {
+          execution_time: Date.now() - startTime,
+          container_id: result.container_id,
+          stdout_length: result.stdout?.length || 0,
+          stderr_length: result.stderr?.length || 0
+        }
+      });
+      
+      return {
+        ...result,
+        runtime_logs: runtimeLogs,
+        memory_used: memoryUsage,
+        cpu_usage: cpuUsage,
+        container_id: result.container_id
+      };
+      
     } catch (error) {
+      const executionTime = Date.now() - startTime;
+      
+      // Add error log
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'ERROR',
+        message: 'Docker container execution failed',
+        details: {
+          execution_time: executionTime,
+          error_message: error.message,
+          container_id: container?.id || null
+        }
+      });
+      
       console.error('Docker execution error:', error);
-      throw new Error(`Code execution failed: ${error.message}`);
+      
+      // Create enhanced error with runtime logs
+      const enhancedError = new Error(`Code execution failed: ${error.message}`);
+      enhancedError.runtime_logs = runtimeLogs;
+      enhancedError.memory_used = memoryUsage;
+      enhancedError.cpu_usage = cpuUsage;
+      enhancedError.container_id = container?.id || null;
+      enhancedError.execution_time = executionTime;
+      
+      throw enhancedError;
+    } finally {
+      // Clean up temporary files
+      try {
+        await fs.rm(executionDir, { recursive: true, force: true });
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup execution directory:', cleanupError);
+      }
+    }
+  }
+
+  async executeCodeWithFiles(language, sourceCode, input, uploadedFiles, sessionId, timeout = 10000, memoryLimit = '256MB') {
+    const executionId = uuidv4();
+    const executionDir = path.join(this.tempDir, executionId);
+    const startTime = Date.now();
+    let container = null;
+    let runtimeLogs = [];
+    let memoryUsage = 'N/A';
+    let cpuUsage = 'N/A';
+    let generatedFiles = [];
+    
+    try {
+      await fs.mkdir(executionDir, { recursive: true });
+      
+      const { filename, dockerImage, runCommand, compileCommand } = this.getLanguageConfig(language);
+      const mainFilePath = path.join(executionDir, filename);
+      
+      // Write main source code to file
+      await fs.writeFile(mainFilePath, sourceCode, 'utf8');
+      
+      // Copy uploaded files to execution directory
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        runtimeLogs.push({
+          timestamp: new Date().toISOString(),
+          level: 'INFO',
+          message: 'Copying uploaded files to execution directory',
+          details: {
+            files_count: uploadedFiles.length,
+            files: uploadedFiles.map(f => f.originalname)
+          }
+        });
+        
+        for (const file of uploadedFiles) {
+          const targetPath = path.join(executionDir, file.originalname);
+          await fs.copyFile(file.path, targetPath);
+        }
+      }
+      
+      // Add execution start log
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        message: `Starting ${language} code execution with files in Docker container`,
+        details: {
+          execution_id: executionId,
+          docker_image: dockerImage,
+          main_file: filename,
+          code_length: sourceCode.length,
+          files_uploaded: uploadedFiles?.length || 0
+        }
+      });
+      
+      // Create Docker container and execute
+      const result = await this.runInContainerWithMonitoring(
+        executionDir, 
+        dockerImage, 
+        runCommand, 
+        compileCommand, 
+        input,
+        runtimeLogs
+      );
+      
+      // Collect generated files after execution
+      try {
+        const entries = await fs.readdir(executionDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isFile() && entry.name !== filename) {
+            const filePath = path.join(executionDir, entry.name);
+            const stats = await fs.stat(filePath);
+            
+            // Copy generated file to session directory
+            const sessionDir = path.join(__dirname, '../uploads', sessionId);
+            await fs.mkdir(sessionDir, { recursive: true });
+            const sessionFilePath = path.join(sessionDir, entry.name);
+            await fs.copyFile(filePath, sessionFilePath);
+            
+            generatedFiles.push({
+              name: entry.name,
+              size: stats.size,
+              path: entry.name
+            });
+          }
+        }
+      } catch (fileError) {
+        console.warn('Failed to collect generated files:', fileError);
+      }
+      
+      // Add successful execution log
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        message: 'Docker container execution with files completed successfully',
+        details: {
+          execution_time: Date.now() - startTime,
+          container_id: result.container_id,
+          stdout_length: result.stdout?.length || 0,
+          stderr_length: result.stderr?.length || 0,
+          files_generated: generatedFiles.length
+        }
+      });
+      
+      return {
+        ...result,
+        runtime_logs: runtimeLogs,
+        memory_used: memoryUsage,
+        cpu_usage: cpuUsage,
+        container_id: result.container_id,
+        generated_files: generatedFiles
+      };
+      
+    } catch (error) {
+      const executionTime = Date.now() - startTime;
+      
+      // Add error log
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'ERROR',
+        message: 'Docker container execution with files failed',
+        details: {
+          execution_time: executionTime,
+          error_message: error.message,
+          container_id: container?.id || null
+        }
+      });
+      
+      console.error('Docker execution with files error:', error);
+      
+      // Create enhanced error with runtime logs
+      const enhancedError = new Error(`Code execution with files failed: ${error.message}`);
+      enhancedError.runtime_logs = runtimeLogs;
+      enhancedError.memory_used = memoryUsage;
+      enhancedError.cpu_usage = cpuUsage;
+      enhancedError.container_id = container?.id || null;
+      enhancedError.execution_time = executionTime;
+      
+      throw enhancedError;
     } finally {
       // Clean up temporary files
       try {
@@ -114,14 +327,14 @@ class DockerExecutor {
     return config;
   }
 
-  async runInContainer(executionDir, dockerImage, runCommand, compileCommand, input) {
+  async runInContainerWithMonitoring(executionDir, dockerImage, runCommand, compileCommand, input, runtimeLogs) {
     const startTime = Date.now();
     
     try {
       // Pull the Docker image if it doesn't exist
       await this.pullImage(dockerImage);
       
-      // Create container
+      // Create container with enhanced security and monitoring
       const container = await this.docker.createContainer({
         Image: dockerImage,
         Cmd: ['/bin/sh', '-c', 'sleep 30'], // Keep container alive
@@ -132,9 +345,23 @@ class DockerExecutor {
           MemorySwap: 0,
           CpuPeriod: 100000,
           CpuQuota: 50000, // 50% CPU limit
+          PidsLimit: 50, // Process limit
           NetworkMode: 'none', // No network access
           SecurityOpt: ['no-new-privileges'],
-          ReadonlyRootfs: false
+          ReadonlyRootfs: false,
+          Ulimits: [
+            { Name: 'nofile', Soft: 64, Hard: 64 },
+            { Name: 'nproc', Soft: 50, Hard: 50 },
+            { Name: 'fsize', Soft: 1024 * 1024, Hard: 1024 * 1024 },
+            { Name: 'core', Soft: 0, Hard: 0 }
+          ],
+          AutoRemove: true,
+          RestartPolicy: { Name: 'no' }
+        },
+        Labels: {
+          'execution.type': 'code-execution',
+          'language': 'unknown',
+          'created.by': 'docker-executor'
         }
       });
 
@@ -142,13 +369,37 @@ class DockerExecutor {
         // Start container
         await container.start();
         
+        // Add container start log
+        runtimeLogs.push({
+          timestamp: new Date().toISOString(),
+          level: 'INFO',
+          message: 'Docker container started',
+          details: {
+            container_id: container.id,
+            image: dockerImage
+          }
+        });
+        
         let stdout = '';
         let stderr = '';
         let compileOutput = '';
+        let exitCode = 0;
+        
+        // Monitor container resources
+        const resourceMonitor = this.monitorContainerResources(container, runtimeLogs);
         
         // Compile if needed
         if (compileCommand) {
           try {
+            runtimeLogs.push({
+              timestamp: new Date().toISOString(),
+              level: 'INFO',
+              message: 'Starting compilation',
+              details: {
+                compile_command: compileCommand.join(' ')
+              }
+            });
+            
             const compileResult = await container.exec({
               Cmd: compileCommand,
               AttachStdout: true,
@@ -161,15 +412,50 @@ class DockerExecutor {
             if (compileData.stderr) {
               compileOutput = compileData.stderr;
               stderr = compileData.stderr;
+              exitCode = 1;
+              
+              runtimeLogs.push({
+                timestamp: new Date().toISOString(),
+                level: 'ERROR',
+                message: 'Compilation failed',
+                details: {
+                  stderr: compileData.stderr.substring(0, 500)
+                }
+              });
+            } else {
+              runtimeLogs.push({
+                timestamp: new Date().toISOString(),
+                level: 'INFO',
+                message: 'Compilation completed successfully'
+              });
             }
           } catch (compileError) {
             stderr = `Compilation failed: ${compileError.message}`;
+            exitCode = 1;
+            
+            runtimeLogs.push({
+              timestamp: new Date().toISOString(),
+              level: 'ERROR',
+              message: 'Compilation error',
+              details: {
+                error_message: compileError.message
+              }
+            });
           }
         }
         
         // Run the code if compilation succeeded or not needed
         if (!compileCommand || !stderr) {
           try {
+            runtimeLogs.push({
+              timestamp: new Date().toISOString(),
+              level: 'INFO',
+              message: 'Starting code execution',
+              details: {
+                run_command: runCommand.join(' ')
+              }
+            });
+            
             const runResult = await container.exec({
               Cmd: runCommand,
               AttachStdout: true,
@@ -190,19 +476,49 @@ class DockerExecutor {
             if (runData.stderr) {
               stderr = runData.stderr;
             }
+            
+            runtimeLogs.push({
+              timestamp: new Date().toISOString(),
+              level: 'INFO',
+              message: 'Code execution completed',
+              details: {
+                stdout_length: stdout.length,
+                stderr_length: stderr.length
+              }
+            });
           } catch (runError) {
             stderr = `Execution failed: ${runError.message}`;
+            exitCode = 1;
+            
+            runtimeLogs.push({
+              timestamp: new Date().toISOString(),
+              level: 'ERROR',
+              message: 'Execution error',
+              details: {
+                error_message: runError.message
+              }
+            });
           }
         }
         
+        // Stop resource monitoring
+        clearInterval(resourceMonitor);
+        
         const executionTime = Date.now() - startTime;
+        
+        // Get final resource usage
+        const finalStats = await this.getContainerStats(container);
         
         return {
           stdout: stdout.trim(),
           stderr: stderr.trim(),
           compile_output: compileOutput.trim(),
-          status: stderr ? 'error' : 'success',
-          executionTime
+          status: exitCode === 0 ? 'success' : 'error',
+          executionTime,
+          container_id: container.id,
+          exit_code: exitCode,
+          memory_used: finalStats.memory_used,
+          cpu_usage: finalStats.cpu_usage
         };
         
       } finally {
@@ -210,13 +526,117 @@ class DockerExecutor {
         try {
           await container.stop({ t: 0 });
           await container.remove();
+          
+          runtimeLogs.push({
+            timestamp: new Date().toISOString(),
+            level: 'INFO',
+            message: 'Docker container stopped and removed',
+            details: {
+              container_id: container.id
+            }
+          });
         } catch (cleanupError) {
           console.warn('Failed to cleanup container:', cleanupError);
+          
+          runtimeLogs.push({
+            timestamp: new Date().toISOString(),
+            level: 'WARN',
+            message: 'Container cleanup failed',
+            details: {
+              error_message: cleanupError.message
+            }
+          });
         }
       }
       
     } catch (error) {
       throw new Error(`Container execution failed: ${error.message}`);
+    }
+  }
+
+  async monitorContainerResources(container, runtimeLogs) {
+    const monitor = setInterval(async () => {
+      try {
+        const stats = await this.getContainerStats(container);
+        
+        // Log resource usage every 2 seconds
+        runtimeLogs.push({
+          timestamp: new Date().toISOString(),
+          level: 'DEBUG',
+          message: 'Resource usage update',
+          details: {
+            memory_used: stats.memory_used,
+            cpu_usage: stats.cpu_usage,
+            memory_percent: stats.memory_percent
+          }
+        });
+        
+        // Check for resource limits
+        if (stats.memory_percent > 90) {
+          runtimeLogs.push({
+            timestamp: new Date().toISOString(),
+            level: 'WARN',
+            message: 'Memory usage approaching limit',
+            details: {
+              memory_percent: stats.memory_percent
+            }
+          });
+        }
+        
+        if (stats.cpu_usage > 80) {
+          runtimeLogs.push({
+            timestamp: new Date().toISOString(),
+            level: 'WARN',
+            message: 'CPU usage is high',
+            details: {
+              cpu_usage: stats.cpu_usage
+            }
+          });
+        }
+        
+      } catch (error) {
+        console.error('Resource monitoring error:', error);
+      }
+    }, 2000);
+    
+    return monitor;
+  }
+
+  async getContainerStats(container) {
+    try {
+      const stats = await container.stats({ stream: false });
+      
+      const memoryUsage = stats.memory_stats.usage || 0;
+      const memoryLimit = stats.memory_stats.limit || 1;
+      const memoryPercent = (memoryUsage / memoryLimit) * 100;
+      
+      const cpuUsage = this.calculateCPUUsage(stats);
+      
+      return {
+        memory_used: `${(memoryUsage / 1024 / 1024).toFixed(2)}MB`,
+        memory_percent: memoryPercent.toFixed(2),
+        cpu_usage: `${cpuUsage.toFixed(2)}%`
+      };
+    } catch (error) {
+      return {
+        memory_used: 'N/A',
+        memory_percent: 0,
+        cpu_usage: 'N/A'
+      };
+    }
+  }
+
+  calculateCPUUsage(stats) {
+    try {
+      const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+      const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+      
+      if (systemDelta > 0 && cpuDelta > 0) {
+        return (cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100;
+      }
+      return 0;
+    } catch (error) {
+      return 0;
     }
   }
 

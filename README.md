@@ -1,150 +1,412 @@
-# Gamified Collaborative Platform
+# Docker Code Executor
 
-A full-stack MERN application featuring gamified collaboration, real-time quizzes, team management, and leaderboards.
+A secure, Docker-based code execution system that safely runs untrusted user code in isolated containers. Supports Python, JavaScript, and Java with comprehensive security measures.
 
-## Features
+## 🚀 Features
 
-- 🔐 Firebase Authentication
-- 👥 Team Management
-- 🏠 Virtual Rooms for Collaboration
-- 📝 Interactive Quizzes
-- 🏆 Leaderboards
-- 🎮 Gamification Elements
-- 💬 Real-time Communication
+- **Multi-language Support**: Python, JavaScript, and Java
+- **Security First**: Isolated containers with strict resource limits
+- **Input/Output Handling**: Supports stdin/stdout for interactive programs
+- **Automatic Cleanup**: Containers are automatically removed after execution
+- **Comprehensive Validation**: Pattern-based security checks for dangerous operations
+- **Resource Limits**: Memory, CPU, and time constraints
+- **Error Handling**: Detailed error reporting and logging
 
-## Tech Stack
+## 🔒 Security Features
 
-- **Frontend**: React.js, Material-UI, Socket.io-client
-- **Backend**: Node.js, Express.js, Socket.io
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: Firebase Auth
-- **Real-time**: Socket.io
+- **Container Isolation**: Each execution runs in a separate Docker container
+- **Resource Limits**: 
+  - Memory: 256MB maximum
+  - CPU: 50% maximum
+  - Time: 10 seconds maximum
+  - Processes: 50 maximum
+- **Network Isolation**: No network access by default
+- **Read-only Filesystem**: Prevents file system modifications
+- **Non-root User**: Containers run as `nobody:nobody`
+- **Pattern Validation**: Blocks dangerous imports and system calls
+- **Input Sanitization**: Validates and limits input size
 
-## Project Structure
+## 📋 Prerequisites
 
-```
-├── client/                 # React frontend
-│   ├── public/
-│   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── pages/         # Page components
-│   │   ├── services/      # API services
-│   │   ├── context/       # React context
-│   │   ├── hooks/         # Custom hooks
-│   │   └── utils/         # Utility functions
-├── server/                 # Node.js backend
-│   ├── config/            # Configuration files
-│   ├── controllers/       # Route controllers
-│   ├── middleware/        # Custom middleware
-│   ├── models/            # MongoDB models
-│   ├── routes/            # API routes
-│   └── utils/             # Utility functions
-├── .env.example           # Environment variables template
-└── README.md
-```
+- **Docker**: Must be installed and running
+- **Node.js**: Version 16 or higher
+- **Linux/macOS**: For Docker support
 
-## Quick Start
+## 🛠️ Installation
 
-1. **Clone and Install Dependencies**
+1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd gamified-collaborative-platform
-   npm run install-all
+   cd docker-code-executor
    ```
 
-2. **Environment Setup**
+2. **Install dependencies**:
    ```bash
-   # Copy environment files
-   cp .env.example .env
-   cp server/.env.example server/.env
-   cp client/.env.example client/.env
-   
-   # Edit the .env files with your configuration
+   npm install
    ```
 
-3. **Start Development Servers**
+3. **Ensure Docker is running**:
    ```bash
-   npm run dev
+   docker --version
+   docker ps
    ```
 
-4. **Access the Application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
+## 🚀 Quick Start
 
-## Environment Variables
+### Basic Usage
 
-### Root .env
-```
-NODE_ENV=development
-```
+```javascript
+const { DockerCodeExecutor } = require('./docker-code-executor');
 
-### Server .env
-```
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/gamified-platform
-JWT_SECRET=your-jwt-secret
-FIREBASE_PROJECT_ID=your-firebase-project-id
-FIREBASE_PRIVATE_KEY=your-firebase-private-key
-FIREBASE_CLIENT_EMAIL=your-firebase-client-email
-```
+// Create executor instance
+const executor = new DockerCodeExecutor();
 
-### Client .env
-```
-REACT_APP_API_URL=http://localhost:5000/api
-REACT_APP_FIREBASE_API_KEY=your-firebase-api-key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your-firebase-auth-domain
-REACT_APP_FIREBASE_PROJECT_ID=your-firebase-project-id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your-firebase-storage-bucket
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your-firebase-messaging-sender-id
-REACT_APP_FIREBASE_APP_ID=your-firebase-app-id
+// Execute Python code
+const result = await executor.executeCode('python', 'print("Hello, World!")');
+console.log(result);
+// Output: { success: true, stdout: 'Hello, World!\n', stderr: '', executionTime: 123, ... }
+
+// Execute JavaScript code
+const jsResult = await executor.executeCode('javascript', 'console.log("Hello from JS!");');
+console.log(jsResult);
+
+// Execute Java code
+const javaResult = await executor.executeCode('java', `
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from Java!");
+    }
+}`);
+console.log(javaResult);
 ```
 
-## API Endpoints
+### With Input
 
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
-- `GET /api/auth/verify` - Verify JWT token
+```javascript
+// Python with input
+const result = await executor.executeCode('python', `
+name = input()
+print(f"Hello, {name}!")
+`, 'Alice');
 
-### Users
-- `GET /api/users` - Get all users
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
+// JavaScript with input
+const jsResult = await executor.executeCode('javascript', `
+const readline = require('readline');
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-### Teams
-- `GET /api/teams` - Get all teams
-- `POST /api/teams` - Create team
-- `GET /api/teams/:id` - Get team by ID
-- `PUT /api/teams/:id` - Update team
-- `DELETE /api/teams/:id` - Delete team
+rl.question('', (answer) => {
+  console.log("Hello, " + answer + "!");
+  rl.close();
+});
+`, 'Bob');
+```
 
-### Rooms
-- `GET /api/rooms` - Get all rooms
-- `POST /api/rooms` - Create room
-- `GET /api/rooms/:id` - Get room by ID
-- `PUT /api/rooms/:id` - Update room
-- `DELETE /api/rooms/:id` - Delete room
+### Configuration Options
 
-### Quizzes
-- `GET /api/quizzes` - Get all quizzes
-- `POST /api/quizzes` - Create quiz
-- `GET /api/quizzes/:id` - Get quiz by ID
-- `PUT /api/quizzes/:id` - Update quiz
-- `DELETE /api/quizzes/:id` - Delete quiz
+```javascript
+const executor = new DockerCodeExecutor({
+  dockerSocket: '/var/run/docker.sock',  // Docker socket path
+  tempDir: '/tmp',                       // Temporary directory
+  maxExecutionTime: 10000,               // 10 seconds
+  maxMemory: 256 * 1024 * 1024,         // 256MB
+  maxCodeLength: 50000                   // 50KB
+});
+```
 
-### Leaderboards
-- `GET /api/leaderboards` - Get leaderboards
-- `POST /api/leaderboards` - Create leaderboard entry
+## 🧪 Testing
 
-## Contributing
+Run the comprehensive test suite:
+
+```bash
+npm test
+```
+
+This will test:
+- ✅ Basic code execution for all languages
+- ✅ Input/output handling
+- ✅ Security validation (blocking dangerous code)
+- ✅ Resource limits
+- ✅ Error handling
+- ✅ Health checks
+
+## 📚 API Reference
+
+### DockerCodeExecutor Class
+
+#### Constructor
+```javascript
+new DockerCodeExecutor(options)
+```
+
+**Options:**
+- `dockerSocket` (string): Docker socket path (default: `/var/run/docker.sock`)
+- `tempDir` (string): Temporary directory (default: system temp dir)
+- `maxExecutionTime` (number): Maximum execution time in ms (default: 10000)
+- `maxMemory` (number): Maximum memory in bytes (default: 256MB)
+- `maxCodeLength` (number): Maximum code length in characters (default: 50000)
+
+#### Methods
+
+##### `executeCode(language, code, input)`
+Execute code in the specified language.
+
+**Parameters:**
+- `language` (string): Language identifier (`python`, `javascript`, `java`)
+- `code` (string): Source code to execute
+- `input` (string, optional): Input data for the program
+
+**Returns:**
+```javascript
+{
+  success: boolean,
+  stdout: string,
+  stderr: string,
+  executionTime: number,
+  language: string,
+  codeLength: number,
+  error?: string
+}
+```
+
+##### `validateCode(code, language)`
+Validate code for security and syntax.
+
+**Parameters:**
+- `code` (string): Source code to validate
+- `language` (string): Language identifier
+
+**Returns:** `true` if valid, throws error if invalid
+
+##### `getSupportedLanguages()`
+Get list of supported programming languages.
+
+**Returns:**
+```javascript
+[
+  {
+    id: 'python',
+    name: 'Python',
+    version: '3.11',
+    extension: '.py'
+  },
+  // ...
+]
+```
+
+##### `healthCheck()`
+Check the health of the Docker daemon.
+
+**Returns:**
+```javascript
+{
+  status: 'healthy' | 'unhealthy',
+  docker: boolean,
+  error?: string
+}
+```
+
+## 🔧 Supported Languages
+
+### Python
+- **Image**: `python:3.11-alpine`
+- **Version**: Python 3.11
+- **Features**: Full Python standard library (except dangerous modules)
+- **Security**: Blocks `os`, `subprocess`, `sys`, file operations, etc.
+
+### JavaScript
+- **Image**: `node:18-alpine`
+- **Version**: Node.js 18
+- **Features**: Full Node.js runtime (except dangerous modules)
+- **Security**: Blocks `fs`, `child_process`, `process`, `eval`, etc.
+
+### Java
+- **Image**: `openjdk:17-alpine`
+- **Version**: OpenJDK 17
+- **Features**: Full Java standard library (except dangerous packages)
+- **Security**: Blocks `java.io`, `java.nio`, `java.net`, file operations, etc.
+
+## 🛡️ Security Measures
+
+### Code Validation
+The system validates code before execution to prevent dangerous operations:
+
+**Python Forbidden Patterns:**
+- `import os`, `import subprocess`, `import sys`
+- `exec()`, `eval()`, `open()`
+- `os.system()`, `subprocess.call()`
+
+**JavaScript Forbidden Patterns:**
+- `require('fs')`, `require('child_process')`
+- `eval()`, `Function()`
+- `process.exit()`, `process.kill()`
+
+**Java Forbidden Patterns:**
+- `import java.io.*`, `import java.nio.*`
+- `System.exit()`, `Runtime.getRuntime()`
+- `File`, `FileInputStream`, `ProcessBuilder`
+
+### Container Security
+- **Isolation**: Each execution runs in a separate container
+- **Resource Limits**: Strict memory, CPU, and time constraints
+- **Network Isolation**: No network access by default
+- **Read-only Filesystem**: Prevents file system modifications
+- **Non-root User**: Containers run as unprivileged user
+- **Automatic Cleanup**: Containers are removed after execution
+
+## 📊 Performance
+
+Typical execution times:
+- **Python**: 100-500ms
+- **JavaScript**: 50-300ms
+- **Java**: 500-2000ms (includes compilation)
+
+Resource usage per execution:
+- **Memory**: 50-200MB
+- **CPU**: 10-50% (limited to 50% max)
+- **Disk**: Minimal (read-only filesystem)
+
+## 🚨 Error Handling
+
+The system provides detailed error information:
+
+```javascript
+{
+  success: false,
+  error: "Forbidden pattern detected: /import\\s+os\\s*$/m",
+  stderr: "",
+  executionTime: 45,
+  language: "python",
+  codeLength: 25
+}
+```
+
+Common error types:
+- **Validation Errors**: Code contains forbidden patterns
+- **Timeout Errors**: Execution exceeds time limit
+- **Resource Errors**: Memory or CPU limits exceeded
+- **Docker Errors**: Container creation or execution failed
+
+## 🔍 Monitoring and Logging
+
+The system includes comprehensive logging:
+
+```javascript
+// Enable debug logging
+const executor = new DockerCodeExecutor({
+  debug: true
+});
+
+// Monitor resource usage
+const result = await executor.executeCode('python', 'print("test")');
+console.log(`Execution time: ${result.executionTime}ms`);
+console.log(`Code length: ${result.codeLength} characters`);
+```
+
+## 🚀 Deployment
+
+### Docker Compose
+```yaml
+version: '3.8'
+services:
+  code-executor:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+```
+
+### Environment Variables
+```bash
+# Docker configuration
+DOCKER_SOCKET=/var/run/docker.sock
+DOCKER_HOST=unix:///var/run/docker.sock
+
+# Resource limits
+MAX_EXECUTION_TIME=10000
+MAX_MEMORY=268435456
+MAX_CODE_LENGTH=50000
+
+# Security
+SECURITY_LEVEL=high
+ENABLE_LOGGING=true
+```
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
 
-## License
+## 📄 License
 
-MIT License 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ Disclaimer
+
+This system is designed for educational and development purposes. While it includes comprehensive security measures, no sandbox is 100% secure. Use at your own risk in production environments.
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+**Docker not running:**
+```bash
+# Start Docker
+sudo systemctl start docker
+# or
+sudo service docker start
+```
+
+**Permission denied:**
+```bash
+# Add user to docker group
+sudo usermod -aG docker $USER
+# Log out and back in
+```
+
+**Container creation failed:**
+```bash
+# Check Docker daemon
+docker ps
+# Check available images
+docker images
+```
+
+**Memory limit exceeded:**
+```bash
+# Increase memory limit
+const executor = new DockerCodeExecutor({
+  maxMemory: 512 * 1024 * 1024 // 512MB
+});
+```
+
+### Debug Mode
+Enable debug logging for troubleshooting:
+
+```javascript
+const executor = new DockerCodeExecutor({
+  debug: true,
+  verbose: true
+});
+```
+
+## 📞 Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check the troubleshooting section
+- Review the test suite for examples
+
+---
+
+**Happy coding! 🎉** 

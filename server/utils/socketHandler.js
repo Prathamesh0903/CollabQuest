@@ -2,7 +2,12 @@ const User = require('../models/User');
 const Room = require('../models/Room');
 const Team = require('../models/Team');
 const Message = require('../models/Message');
+const CollaborativeSession = require('../models/CollaborativeSession');
 const { calculateScore } = require('./scoring');
+const CodePersistenceManager = require('./codePersistence');
+const { handleInteractiveTerminal } = require('./interactiveTerminal');
+const { handleEnhancedInteractiveTerminal } = require('./enhancedTerminal');
+const concurrentExecutionManager = require('./concurrentExecutionManager');
 
 // Store active connections
 const activeConnections = new Map();
@@ -10,11 +15,17 @@ const activeConnections = new Map();
 // Store room states for collaborative editing
 const roomStates = new Map();
 
+// Store collaborative session states
+const sessionStates = new Map();
+
 // Store user cursors for collaborative editing
 const userCursors = new Map();
 
 // Store user selections for collaborative editing
 const userSelections = new Map();
+
+// Enhanced collaborator tracking with detailed status
+const collaboratorStatus = new Map(); // userId -> { sessionId, status, lastActivity, isTyping, isEditing }
 
 // Store code execution results for broadcasting
 const executionResults = new Map();
@@ -50,6 +61,12 @@ const handleSocketConnection = (socket, io) => {
   } else {
     console.log('Unauthenticated user connected - limited functionality available');
   }
+
+  // Set up interactive terminal handlers
+  handleInteractiveTerminal(socket, io);
+  
+  // Set up enhanced interactive terminal handlers
+  handleEnhancedInteractiveTerminal(socket, io);
 
   // Handle room joining
   socket.on('join-room', async (data) => {
@@ -355,6 +372,150 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
+  // Join collaborative session by session ID (for sharable URLs)
+  socket.on('join-collaborative-session', async (data) => {
+    try {
+      const { sessionId, accessCode } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Find the collaborative session
+      const session = await CollaborativeSession.findBySessionId(sessionId);
+      if (!session) {
+        socket.emit('error', { message: 'Session not found' });
+        return;
+      }
+
+      // Check if session is active
+      if (session.status !== 'active') {
+        socket.emit('error', { message: 'Session is not active' });
+        return;
+      }
+
+      // Check access code if required
+      if (session.accessCode && session.accessCode !== accessCode) {
+        socket.emit('error', { message: 'Invalid access code' });
+        return;
+      }
+
+      // Check if access code is expired
+      if (session.accessCodeExpiresAt && new Date() > session.accessCodeExpiresAt) {
+        socket.emit('error', { message: 'Access code has expired' });
+        return;
+      }
+
+      // Join socket to collaborative session room
+      socket.join(`collaborative-session:${sessionId}`);
+      
+             // Initialize session state if it doesn't exist
+       if (!sessionStates.has(sessionId)) {
+         const defaultFile = session.files.find(f => f.isActive) || session.files[0];
+         sessionStates.set(sessionId, {
+           sessionId: session.sessionId,
+           name: session.name,
+           language: session.defaultLanguage,
+           files: session.files.filter(f => f.isActive),
+           currentFile: defaultFile ? defaultFile.fileName : 'main.js',
+           lastModified: new Date(),
+           version: 0,
+           users: new Set(),
+           executionHistory: [],
+           lastExecution: null,
+           settings: session.settings
+         });
+
+         // Initialize code persistence manager for this session
+         await CodePersistenceManager.loadSessionState(sessionId);
+       }
+
+      const sessionState = sessionStates.get(sessionId);
+      sessionState.users.add(socket.user._id.toString());
+
+      // Enhanced collaborator status tracking
+      updateCollaboratorStatus(socket.user._id.toString(), sessionId, {
+        status: 'active',
+        role: 'editor',
+        isTyping: false,
+        isEditing: false
+      });
+
+      // Check if user is already a collaborator, if not add them
+      const existingCollaborator = session.collaborators.find(c => 
+        c.userId.toString() === socket.user._id.toString()
+      );
+
+      if (!existingCollaborator) {
+        await session.addCollaborator(socket.user._id, 'editor');
+        await session.addActivityRecord(socket.user._id, 'join');
+      } else {
+        // Update online status
+        existingCollaborator.isOnline = true;
+        existingCollaborator.lastActive = new Date();
+        await session.save();
+      }
+
+      // Send current session state to the joining user
+      socket.emit('session-state-sync', {
+        sessionId: session.sessionId,
+        name: session.name,
+        language: sessionState.language,
+        files: sessionState.files,
+        currentFile: sessionState.currentFile,
+        version: sessionState.version,
+        lastModified: sessionState.lastModified,
+        lastExecution: sessionState.lastExecution,
+        settings: sessionState.settings
+      });
+
+      // Get enhanced collaborator list with detailed status
+      const usersInSession = await getSessionCollaborators(sessionId);
+
+      // Broadcast updated user list to all users in the session
+      io.in(`collaborative-session:${sessionId}`).emit('users-in-session', usersInSession);
+
+      // Send current cursors to the new user
+      const currentCursors = Array.from(userCursors.entries())
+        .filter(([userId, cursor]) => cursor.sessionId === sessionId)
+        .map(([userId, cursor]) => ({
+          userId,
+          position: cursor.position,
+          color: cursor.color,
+          displayName: cursor.displayName,
+          avatar: cursor.avatar,
+          timestamp: cursor.timestamp
+        }));
+
+      socket.emit('cursors-sync', currentCursors);
+
+      // Send current selections to the new user
+      const currentSelections = Array.from(userSelections.entries())
+        .filter(([userId, selection]) => selection.sessionId === sessionId)
+        .map(([userId, selection]) => ({
+          userId,
+          selection: selection.selection,
+          color: selection.color,
+          displayName: selection.displayName,
+          avatar: selection.avatar,
+          timestamp: selection.timestamp
+        }));
+
+      socket.emit('selections-sync', currentSelections);
+
+      // Enhanced collaborator join notification
+      await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'join', {
+        joinedAt: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} joined collaborative session ${sessionId}`);
+    } catch (error) {
+      console.error('Error joining collaborative session:', error);
+      socket.emit('error', { message: 'Failed to join collaborative session' });
+    }
+  });
+
   // Enhanced collaborative editing code changes with versioning
   socket.on('code-change', async (data) => {
     try {
@@ -399,6 +560,82 @@ const handleSocketConnection = (socket, io) => {
       console.log(`Code change by user ${socket.user.displayName} in room ${roomId}, version ${roomState.version}`);
     } catch (error) {
       console.error('Error handling code change:', error);
+      socket.emit('error', { message: 'Failed to sync code change' });
+    }
+  });
+
+  // Collaborative session code changes
+  socket.on('session-code-change', async (data) => {
+    try {
+      const { range, text, sessionId, fileName, version } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const sessionState = sessionStates.get(sessionId);
+      if (!sessionState) {
+        socket.emit('error', { message: 'Session state not found' });
+        return;
+      }
+
+      // Check version to ensure consistency
+      if (version !== sessionState.version) {
+        socket.emit('version-mismatch', {
+          currentVersion: sessionState.version,
+          currentCode: sessionState.files.find(f => f.fileName === fileName)?.content || ''
+        });
+        return;
+      }
+
+      // Update session state
+      sessionState.version += 1;
+      sessionState.lastModified = new Date();
+      sessionState.lastModifiedBy = socket.user._id.toString();
+
+             // Update file content
+       const file = sessionState.files.find(f => f.fileName === fileName);
+       if (file) {
+         // Apply the change to the file content
+         // This is a simplified version - in a real implementation, you'd use operational transformation
+         file.content = applyTextChange(file.content, range, text);
+         file.version += 1;
+         file.lastModified = new Date();
+         file.lastModifiedBy = socket.user._id.toString();
+
+         // Update code persistence manager
+         CodePersistenceManager.updateFileContent(
+           sessionId, 
+           fileName, 
+           file.content, 
+           file.version, 
+           socket.user._id
+         );
+         CodePersistenceManager.markDirty(sessionId, fileName);
+       }
+
+       // Update the session in the database (now handled by persistence manager)
+       const session = await CollaborativeSession.findBySessionId(sessionId);
+       if (session) {
+         await session.addActivityRecord(socket.user._id, 'edit', fileName);
+       }
+
+      // Broadcast code change to other users in the session
+      socket.to(`collaborative-session:${sessionId}`).emit('session-code-change', {
+        range,
+        text,
+        fileName,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        version: sessionState.version,
+        timestamp: new Date()
+      });
+
+      console.log(`Code change by user ${socket.user.displayName} in session ${sessionId}, file ${fileName}, version ${sessionState.version}`);
+    } catch (error) {
+      console.error('Error handling session code change:', error);
       socket.emit('error', { message: 'Failed to sync code change' });
     }
   });
@@ -478,6 +715,42 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
+  // Collaborative session cursor movement
+  socket.on('session-cursor-move', (data) => {
+    try {
+      const { position, sessionId, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store cursor position
+      userCursors.set(userId, {
+        position,
+        sessionId,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast cursor position to other users in the session
+      socket.to(`collaborative-session:${sessionId}`).emit('session-cursor-move', {
+        position,
+        userId,
+        color: userCursors.get(userId).color,
+        displayName: userCursors.get(userId).displayName,
+        avatar: userCursors.get(userId).avatar,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error handling session cursor move:', error);
+    }
+  });
+
   // Handle selection changes
   socket.on('selection-change', (data) => {
     try {
@@ -514,7 +787,218 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
-  // Handle code execution requests
+  // Collaborative session selection changes
+  socket.on('session-selection-change', (data) => {
+    try {
+      const { selection, sessionId, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store selection
+      userSelections.set(userId, {
+        selection,
+        sessionId,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast selection to other users in the session
+      socket.to(`collaborative-session:${sessionId}`).emit('session-selection-change', {
+        selection,
+        userId,
+        color: userSelections.get(userId).color,
+        displayName: userSelections.get(userId).displayName,
+        avatar: userSelections.get(userId).avatar,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error handling session selection change:', error);
+    }
+  });
+
+  // Create new file in collaborative session
+  socket.on('session-file-create', async (data) => {
+    try {
+      const { sessionId, fileName, language, content = '' } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const sessionState = sessionStates.get(sessionId);
+      if (!sessionState) {
+        socket.emit('error', { message: 'Session state not found' });
+        return;
+      }
+
+      // Check if file already exists
+      const existingFile = sessionState.files.find(f => f.fileName === fileName);
+      if (existingFile) {
+        socket.emit('error', { message: 'File already exists' });
+        return;
+      }
+
+      // Create new file in session state
+      const newFile = {
+        fileName,
+        filePath: `/${fileName}`,
+        language,
+        content,
+        version: 0,
+        lastModified: new Date(),
+        lastModifiedBy: socket.user._id.toString(),
+        isActive: true
+      };
+
+      sessionState.files.push(newFile);
+      sessionState.version += 1;
+      sessionState.lastModified = new Date();
+      sessionState.lastModifiedBy = socket.user._id.toString();
+
+             // Update the session in the database
+       const session = await CollaborativeSession.findBySessionId(sessionId);
+       if (session) {
+         await session.addFile(fileName, language, content, socket.user._id);
+         await session.addActivityRecord(socket.user._id, 'create_file', fileName);
+         
+         // Update code persistence manager
+         CodePersistenceManager.updateFileContent(
+           sessionId, 
+           fileName, 
+           content, 
+           0, 
+           socket.user._id
+         );
+         CodePersistenceManager.markDirty(sessionId, fileName);
+       }
+
+      // Broadcast file creation to all users in the session
+      io.in(`collaborative-session:${sessionId}`).emit('session-file-created', {
+        file: newFile,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        version: sessionState.version,
+        timestamp: new Date()
+      });
+
+      console.log(`File ${fileName} created by user ${socket.user.displayName} in session ${sessionId}`);
+    } catch (error) {
+      console.error('Error creating file:', error);
+      socket.emit('error', { message: 'Failed to create file' });
+    }
+  });
+
+  // Delete file in collaborative session
+  socket.on('session-file-delete', async (data) => {
+    try {
+      const { sessionId, fileName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const sessionState = sessionStates.get(sessionId);
+      if (!sessionState) {
+        socket.emit('error', { message: 'Session state not found' });
+        return;
+      }
+
+      // Find the file to delete
+      const fileIndex = sessionState.files.findIndex(f => f.fileName === fileName);
+      if (fileIndex === -1) {
+        socket.emit('error', { message: 'File not found' });
+        return;
+      }
+
+      // Soft delete the file
+      sessionState.files[fileIndex].isActive = false;
+      sessionState.version += 1;
+      sessionState.lastModified = new Date();
+      sessionState.lastModifiedBy = socket.user._id.toString();
+
+             // Update the session in the database
+       const session = await CollaborativeSession.findBySessionId(sessionId);
+       if (session) {
+         await session.deleteFile(fileName);
+         await session.addActivityRecord(socket.user._id, 'delete_file', fileName);
+         
+         // Mark session as dirty for persistence manager
+         CodePersistenceManager.markDirty(sessionId, fileName);
+       }
+
+      // Broadcast file deletion to all users in the session
+      io.in(`collaborative-session:${sessionId}`).emit('session-file-deleted', {
+        fileName,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        version: sessionState.version,
+        timestamp: new Date()
+      });
+
+      console.log(`File ${fileName} deleted by user ${socket.user.displayName} in session ${sessionId}`);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      socket.emit('error', { message: 'Failed to delete file' });
+    }
+  });
+
+  // Switch active file in collaborative session
+  socket.on('session-file-switch', async (data) => {
+    try {
+      const { sessionId, fileName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const sessionState = sessionStates.get(sessionId);
+      if (!sessionState) {
+        socket.emit('error', { message: 'Session state not found' });
+        return;
+      }
+
+      // Check if file exists and is active
+      const file = sessionState.files.find(f => f.fileName === fileName && f.isActive);
+      if (!file) {
+        socket.emit('error', { message: 'File not found or inactive' });
+        return;
+      }
+
+      // Update current file
+      sessionState.currentFile = fileName;
+      sessionState.lastModified = new Date();
+      sessionState.lastModifiedBy = socket.user._id.toString();
+
+      // Broadcast file switch to all users in the session
+      io.in(`collaborative-session:${sessionId}`).emit('session-file-switched', {
+        fileName,
+        file,
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      console.log(`File switched to ${fileName} by user ${socket.user.displayName} in session ${sessionId}`);
+    } catch (error) {
+      console.error('Error switching file:', error);
+      socket.emit('error', { message: 'Failed to switch file' });
+    }
+  });
+
+  // Handle code execution requests with concurrent execution management
   socket.on('execute-code', async (data) => {
     try {
       const { roomId, language, code, input = '' } = data;
@@ -530,23 +1014,24 @@ const handleSocketConnection = (socket, io) => {
         return;
       }
 
-      // Notify all users that code is being executed
-      io.in(`collab-room:${roomId}`).emit('code-execution-started', {
-        userId: socket.user._id.toString(),
-        displayName: socket.user.displayName,
-        avatar: socket.user.avatar,
-        timestamp: new Date()
-      });
-
       try {
-        // Execute the code using the code executor
-        const { executeCode } = require('./codeExecutor');
-        const result = await executeCode(language, code, input);
+        // Use concurrent execution manager to handle the execution
+        const result = await concurrentExecutionManager.requestExecution(
+          roomId,
+          socket.user._id.toString(),
+          socket.user.displayName,
+          socket.user.avatar,
+          language,
+          code,
+          input,
+          socket,
+          io
+        );
 
-        // Store execution result
+        // Store execution result in room state for backward compatibility
         const executionResult = {
           success: true,
-          result,
+          result: result.result,
           executedBy: socket.user._id.toString(),
           displayName: socket.user.displayName,
           avatar: socket.user.avatar,
@@ -561,25 +1046,76 @@ const handleSocketConnection = (socket, io) => {
           roomState.executionHistory = roomState.executionHistory.slice(-10);
         }
 
-        // Broadcast execution result to all users in the room
-        io.in(`collab-room:${roomId}`).emit('code-execution-completed', executionResult);
-
         console.log(`Code executed successfully by ${socket.user.displayName} in room ${roomId}`);
       } catch (executionError) {
-        // Broadcast execution error to all users in the room
-        io.in(`collab-room:${roomId}`).emit('code-execution-error', {
-          error: executionError.message,
-          executedBy: socket.user._id.toString(),
-          displayName: socket.user.displayName,
-          avatar: socket.user.avatar,
-          timestamp: new Date()
-        });
-
         console.error(`Code execution failed by ${socket.user.displayName} in room ${roomId}:`, executionError.message);
+        socket.emit('error', { message: executionError.message });
       }
     } catch (error) {
       console.error('Error handling code execution:', error);
       socket.emit('error', { message: 'Failed to execute code' });
+    }
+  });
+
+  // Handle execution status requests
+  socket.on('get-execution-status', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const status = concurrentExecutionManager.getRoomExecutionStatus(roomId);
+      socket.emit('execution-status', status);
+    } catch (error) {
+      console.error('Error getting execution status:', error);
+      socket.emit('error', { message: 'Failed to get execution status' });
+    }
+  });
+
+  // Handle execution history requests
+  socket.on('get-execution-history', async (data) => {
+    try {
+      const { roomId, limit = 20 } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const history = concurrentExecutionManager.getRoomExecutionHistory(roomId, limit);
+      socket.emit('execution-history', history);
+    } catch (error) {
+      console.error('Error getting execution history:', error);
+      socket.emit('error', { message: 'Failed to get execution history' });
+    }
+  });
+
+  // Handle execution cancellation
+  socket.on('cancel-execution', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      concurrentExecutionManager.cancelUserExecution(socket.user._id.toString(), roomId);
+      socket.emit('execution-cancelled');
+      
+      // Notify other users
+      socket.to(`collab-room:${roomId}`).emit('execution-cancelled', {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error cancelling execution:', error);
+      socket.emit('error', { message: 'Failed to cancel execution' });
     }
   });
 
@@ -683,6 +1219,65 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
+  // Leave collaborative session
+  socket.on('leave-collaborative-session', async (data) => {
+    try {
+      const { sessionId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Leave collaborative session room
+      socket.leave(`collaborative-session:${sessionId}`);
+      
+      // Remove user from session state
+      const sessionState = sessionStates.get(sessionId);
+      if (sessionState) {
+        sessionState.users.delete(socket.user._id.toString());
+        
+               // Clean up session state if no users left
+       if (sessionState.users.size === 0) {
+         sessionStates.delete(sessionId);
+         
+         // Force final save and cleanup persistence manager
+         await CodePersistenceManager.forceSave(sessionId);
+         CodePersistenceManager.cleanupSession(sessionId);
+         
+         console.log(`Session ${sessionId} state cleaned up - no users left`);
+       }
+      }
+
+      // Enhanced collaborator cleanup
+      removeCollaboratorStatus(socket.user._id.toString());
+      userCursors.delete(socket.user._id.toString());
+      userSelections.delete(socket.user._id.toString());
+
+      // Update session in database
+      const session = await CollaborativeSession.findBySessionId(sessionId);
+      if (session) {
+        await session.addActivityRecord(socket.user._id, 'leave');
+      }
+
+      // Get updated enhanced collaborator list
+      const usersInSession = await getSessionCollaborators(sessionId);
+
+      // Broadcast updated user list to all users in the session
+      io.in(`collaborative-session:${sessionId}`).emit('users-in-session', usersInSession);
+
+      // Enhanced collaborator leave notification
+      await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'leave', {
+        leftAt: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} left collaborative session ${sessionId}`);
+    } catch (error) {
+      console.error('Error leaving collaborative session:', error);
+      socket.emit('error', { message: 'Failed to leave collaborative session' });
+    }
+  });
+
   // Handle team events
   socket.on('join-team', async (data) => {
     try {
@@ -755,6 +1350,204 @@ const handleSocketConnection = (socket, io) => {
     });
   });
 
+  // Enhanced collaborative session typing indicators
+  socket.on('session-typing-start', async (data) => {
+    try {
+      const { sessionId } = data;
+      
+      if (!socket.user) return;
+
+      // Update collaborator status
+      updateCollaboratorStatus(socket.user._id.toString(), sessionId, {
+        isTyping: true
+      });
+
+      // Broadcast typing status
+      await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'typing', {
+        isTyping: true
+      });
+    } catch (error) {
+      console.error('Error handling session typing start:', error);
+    }
+  });
+
+  socket.on('session-typing-stop', async (data) => {
+    try {
+      const { sessionId } = data;
+      
+      if (!socket.user) return;
+
+      // Update collaborator status
+      updateCollaboratorStatus(socket.user._id.toString(), sessionId, {
+        isTyping: false
+      });
+
+      // Broadcast typing status
+      await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'typing', {
+        isTyping: false
+      });
+    } catch (error) {
+      console.error('Error handling session typing stop:', error);
+    }
+  });
+
+  // Enhanced collaborative session editing indicators
+  socket.on('session-editing-start', async (data) => {
+    try {
+      const { sessionId } = data;
+      
+      if (!socket.user) return;
+
+      // Update collaborator status
+      updateCollaboratorStatus(socket.user._id.toString(), sessionId, {
+        isEditing: true
+      });
+
+      // Broadcast editing status
+      await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'editing', {
+        isEditing: true
+      });
+    } catch (error) {
+      console.error('Error handling session editing start:', error);
+    }
+  });
+
+  socket.on('session-editing-stop', async (data) => {
+    try {
+      const { sessionId } = data;
+      
+      if (!socket.user) return;
+
+      // Update collaborator status
+      updateCollaboratorStatus(socket.user._id.toString(), sessionId, {
+        isEditing: false
+      });
+
+      // Broadcast editing status
+      await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'editing', {
+        isEditing: false
+      });
+    } catch (error) {
+      console.error('Error handling session editing stop:', error);
+    }
+  });
+
+     // Get detailed collaborator information
+   socket.on('get-collaborators', async (data) => {
+     try {
+       const { sessionId } = data;
+       
+       if (!socket.user) {
+         socket.emit('error', { message: 'Authentication required' });
+         return;
+       }
+
+       // Get enhanced collaborator list
+       const collaborators = await getSessionCollaborators(sessionId);
+       
+       // Send detailed collaborator information
+       socket.emit('collaborators-info', {
+         sessionId,
+         collaborators,
+         totalCollaborators: collaborators.length,
+         timestamp: new Date()
+       });
+
+       console.log(`Sent collaborator info to ${socket.user.displayName} for session ${sessionId}`);
+     } catch (error) {
+       console.error('Error getting collaborators:', error);
+       socket.emit('error', { message: 'Failed to get collaborators' });
+     }
+   });
+
+   // Recover session state after reconnection
+   socket.on('recover-session-state', async (data) => {
+     try {
+       const { sessionId, fileName } = data;
+       
+       if (!socket.user) {
+         socket.emit('error', { message: 'Authentication required' });
+         return;
+       }
+
+       // Recover session state from persistence manager
+       const recoveredState = await CodePersistenceManager.recoverSessionState(sessionId, fileName);
+       
+       // Send recovered state to client
+       socket.emit('session-state-recovered', {
+         sessionId,
+         source: recoveredState.source,
+         files: recoveredState.files,
+         lastModified: recoveredState.lastModified,
+         timestamp: new Date()
+       });
+
+       console.log(`Recovered session state for ${socket.user.displayName} in session ${sessionId} from ${recoveredState.source}`);
+     } catch (error) {
+       console.error('Error recovering session state:', error);
+       socket.emit('error', { message: 'Failed to recover session state' });
+     }
+   });
+
+   // Force save session state
+   socket.on('force-save-session', async (data) => {
+     try {
+       const { sessionId } = data;
+       
+       if (!socket.user) {
+         socket.emit('error', { message: 'Authentication required' });
+         return;
+       }
+
+       // Force immediate save
+       await CodePersistenceManager.forceSave(sessionId);
+       
+       // Get save statistics
+       const stats = CodePersistenceManager.getSessionStats(sessionId);
+       
+       socket.emit('session-saved', {
+         sessionId,
+         saveCount: stats?.saveCount || 0,
+         lastSave: stats?.lastSave || new Date(),
+         timestamp: new Date()
+       });
+
+       console.log(`Force saved session ${sessionId} by ${socket.user.displayName}`);
+     } catch (error) {
+       console.error('Error force saving session:', error);
+       socket.emit('error', { message: 'Failed to save session' });
+     }
+   });
+
+   // Get session persistence statistics
+   socket.on('get-session-stats', async (data) => {
+     try {
+       const { sessionId } = data;
+       
+       if (!socket.user) {
+         socket.emit('error', { message: 'Authentication required' });
+         return;
+       }
+
+       const stats = CodePersistenceManager.getSessionStats(sessionId);
+       
+       if (stats) {
+         socket.emit('session-stats', {
+           sessionId,
+           ...stats,
+           timestamp: new Date()
+         });
+       } else {
+         socket.emit('error', { message: 'Session not found or not active' });
+       }
+
+       console.log(`Sent session stats to ${socket.user.displayName} for session ${sessionId}`);
+     } catch (error) {
+       console.error('Error getting session stats:', error);
+       socket.emit('error', { message: 'Failed to get session statistics' });
+     }
+   });
+
   // Handle user status updates
   socket.on('update-status', async (data) => {
     try {
@@ -795,7 +1588,8 @@ const handleSocketConnection = (socket, io) => {
         // Remove from active connections
         activeConnections.delete(socket.user._id.toString());
         
-        // Remove user cursor and selection
+        // Enhanced collaborator cleanup on disconnect
+        removeCollaboratorStatus(socket.user._id.toString());
         userCursors.delete(socket.user._id.toString());
         userSelections.delete(socket.user._id.toString());
         
@@ -1073,6 +1867,80 @@ puts greet("World")`
   
   return defaults[language] || defaults.javascript;
 }
+
+// Helper function to apply text changes (simplified operational transformation)
+function applyTextChange(content, range, text) {
+  try {
+    const { start, end } = range;
+    
+    // Simple text replacement - in a production system, you'd use proper operational transformation
+    const before = content.substring(0, start);
+    const after = content.substring(end);
+    
+    return before + text + after;
+  } catch (error) {
+    console.error('Error applying text change:', error);
+    return content;
+  }
+}
+
+// Enhanced collaborator status management functions
+const updateCollaboratorStatus = (userId, sessionId, updates) => {
+  const currentStatus = collaboratorStatus.get(userId) || {};
+  collaboratorStatus.set(userId, {
+    ...currentStatus,
+    sessionId,
+    lastActivity: new Date(),
+    ...updates
+  });
+};
+
+const getCollaboratorStatus = (userId) => {
+  return collaboratorStatus.get(userId) || {};
+};
+
+const removeCollaboratorStatus = (userId) => {
+  collaboratorStatus.delete(userId);
+};
+
+const getSessionCollaborators = async (sessionId) => {
+  const sessionSockets = await io.in(`collaborative-session:${sessionId}`).fetchSockets();
+  return sessionSockets
+    .filter(s => s.user)
+    .map(s => {
+      const status = getCollaboratorStatus(s.user._id.toString());
+      return {
+        userId: s.user._id.toString(),
+        displayName: s.user.displayName || s.user.email || 'Anonymous',
+        avatar: s.user.avatar,
+        socketId: s.id,
+        online: true,
+        isEditing: status.isEditing || false,
+        isTyping: status.isTyping || false,
+        status: status.status || 'active',
+        lastActivity: status.lastActivity || new Date(),
+        role: status.role || 'editor'
+      };
+    });
+};
+
+const broadcastCollaboratorUpdate = async (sessionId, userId, updateType, data) => {
+  const status = getCollaboratorStatus(userId);
+  const user = activeConnections.get(userId)?.user;
+  
+  if (user) {
+    const updateData = {
+      userId,
+      displayName: user.displayName || user.email || 'Anonymous',
+      avatar: user.avatar,
+      updateType, // 'join', 'leave', 'status_change', 'typing', 'editing'
+      ...data,
+      timestamp: new Date()
+    };
+    
+    io.in(`collaborative-session:${sessionId}`).emit('collaborator-update', updateData);
+  }
+};
 
 // Broadcast to room
 const broadcastToRoom = (roomId, event, data) => {
