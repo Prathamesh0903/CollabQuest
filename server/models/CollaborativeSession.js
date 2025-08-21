@@ -346,7 +346,6 @@ const collaborativeSessionSchema = new mongoose.Schema({
 });
 
 // Indexes for better query performance
-collaborativeSessionSchema.index({ sessionId: 1 }, { unique: true });
 collaborativeSessionSchema.index({ createdBy: 1, status: 1 });
 collaborativeSessionSchema.index({ 'collaborators.userId': 1 });
 collaborativeSessionSchema.index({ status: 1, isPublic: 1 });

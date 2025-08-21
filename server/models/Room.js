@@ -182,7 +182,6 @@ roomSchema.index({ status: 1, type: 1 });
 roomSchema.index({ 'schedule.startTime': 1 });
 roomSchema.index({ teamId: 1 });
 roomSchema.index({ createdBy: 1 });
-roomSchema.index({ roomCode: 1 }, { unique: true });
 roomSchema.index({ codeExpiresAt: 1 });
 
 // Virtual for current participant count

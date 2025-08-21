@@ -113,16 +113,16 @@ console.log("Code execution successful! 🎉");`);
 
       if (result.success) {
         setTerminalOutput({
-          stdout: result.stdout || '',
-          stderr: result.stderr || '',
-          compile_output: result.compile_output || '',
-          status: result.status || 'success',
-          executionTime: result.executionTime
+          stdout: (result as any).data?.stdout || (result as any).stdout || '',
+          stderr: (result as any).data?.stderr || (result as any).stderr || '',
+          compile_output: (result as any).data?.compile_output || (result as any).compile_output || '',
+          status: (result as any).status || 'success',
+          executionTime: (result as any).execution?.duration_ms || (result as any).executionTime
         });
       } else {
         setTerminalOutput({
-          error: result.error || 'Execution failed',
-          stderr: result.stderr || '',
+          error: (result as any).error || 'Execution failed',
+          stderr: (result as any).data?.stderr || (result as any).stderr || '',
           status: 'error'
         });
       }

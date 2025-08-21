@@ -151,10 +151,10 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   // Load files from backend
   const loadFiles = async () => {
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         }
       });
       
@@ -175,12 +175,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   // Create default file for the session
   const createDefaultFile = async () => {
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           filename: `main.${getFileExtension(language)}`,
@@ -338,12 +338,12 @@ puts greet("World")`
     }
     
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           fileName,
@@ -382,12 +382,12 @@ puts greet("World")`
     }
     
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/folder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           folderName: newFolderName
@@ -415,10 +415,10 @@ puts greet("World")`
     if (file.type === 'folder') return;
     
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/file/${file.path}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         }
       });
       
@@ -439,12 +439,12 @@ puts greet("World")`
     if (!currentFile) return;
     
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/file/${currentFile}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           content: code
@@ -479,7 +479,7 @@ puts greet("World")`
     if (!currentUser) return;
 
     try {
-      const token = await currentUser.getIdToken();
+      // const token = await currentUser.getIdToken();
       
       // Disconnect existing socket if any
       if (socketRef.current) {
@@ -488,7 +488,8 @@ puts greet("World")`
 
       socketRef.current = io('http://localhost:5000', {
         query: { sessionId: currentSessionId },
-        auth: { token },
+        // In dev, socket auth is optional on server side. Provide token if available.
+        auth: { token: (await currentUser?.getIdToken?.()) || '' },
         reconnection: true,
         reconnectionAttempts: maxReconnectAttempts,
         reconnectionDelay: 1000,
@@ -948,11 +949,11 @@ puts greet("World")`
       }
 
       // Also execute locally for immediate feedback
-      const response = await fetch(`http://localhost:5000/api/sessions/${currentSessionId}/execute`, {
+      const response = await fetch(`http://localhost:5000/api/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await currentUser?.getIdToken()}`
+          // Optional auth: 'Authorization': `Bearer ${await currentUser?.getIdToken()}`
         },
         body: JSON.stringify({
           language,
@@ -982,17 +983,25 @@ puts greet("World")`
       const result = await response.json();
 
       if (result.success) {
-        setTerminalOutput({
-          stdout: result.result.stdout || '',
-          stderr: result.result.stderr || '',
-          compile_output: result.result.compile_output || '',
-          status: result.result.status || 'success',
-          executionTime: result.result.executionTime
-        });
+        const terminalOutput = {
+          stdout: result.data?.stdout || result.stdout || '',
+          stderr: result.data?.stderr || result.stderr || '',
+          compile_output: result.data?.compile_output || result.compile_output || '',
+          status: result.status || 'success',
+          executionTime: result.execution?.duration_ms || result.executionTime
+        };
+        
+        console.log('Setting terminal output:', terminalOutput);
+        setTerminalOutput(terminalOutput);
+        setShowTerminal(true);
       } else {
-        setTerminalOutput({
-          error: result.error || 'Execution failed'
-        });
+        const errorOutput = {
+          error: (result.error && (result.error.message || result.error)) || 'Execution failed'
+        };
+        
+        console.log('Setting error output:', errorOutput);
+        setTerminalOutput(errorOutput);
+        setShowTerminal(true);
       }
     } catch (error) {
       console.error('Code execution error:', error);
@@ -1006,9 +1015,13 @@ puts greet("World")`
         errorMessage = 'Server returned invalid response. This usually means the server is not running or there\'s a configuration issue.';
       }
       
-      setTerminalOutput({
+      const errorOutput = {
         error: `Failed to execute code: ${errorMessage}`
-      });
+      };
+      
+      console.log('Setting error output:', errorOutput);
+      setTerminalOutput(errorOutput);
+      setShowTerminal(true);
     } finally {
       setOutputLoading(false);
       setIsExecuting(false);
@@ -1104,7 +1117,7 @@ puts greet("World")`
 
   const processSelectedFiles = async (files: FileList) => {
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       
       // Create FormData to send files
       const formData = new FormData();
@@ -1119,7 +1132,7 @@ puts greet("World")`
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/import-files`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         },
         body: formData
       });
@@ -1180,12 +1193,12 @@ puts greet("World")`
     if (!localFolderPath.trim()) return;
     
     try {
-      const token = await currentUser?.getIdToken();
+      // const token = await currentUser?.getIdToken();
       const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/import-local`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           localPath: localFolderPath

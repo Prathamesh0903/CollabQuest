@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, param, query, validationResult } = require('express-validator');
 const CollaborativeSession = require('../models/CollaborativeSession');
 const User = require('../models/User');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 // Validation middleware
 const validateSession = [

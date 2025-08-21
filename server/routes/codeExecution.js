@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { executeCode } = require('../utils/codeExecutor');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
@@ -50,7 +50,7 @@ const upload = multer({
  * @desc Execute code with language and optional input
  * @access Public (or Private with auth middleware)
  */
-router.post('/execute', async (req, res) => {
+router.post('/', async (req, res) => {
   const startTime = Date.now();
   const { language, code, input = '', timeout, memoryLimit } = req.body;
 
@@ -188,7 +188,7 @@ router.post('/execute', async (req, res) => {
  * @desc Execute code with authentication required
  * @access Private
  */
-router.post('/execute/secure', auth, async (req, res) => {
+router.post('/secure', auth, async (req, res) => {
   const startTime = Date.now();
   const { language, code, input = '', timeout, memoryLimit } = req.body;
 

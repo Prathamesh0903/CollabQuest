@@ -37,6 +37,11 @@ const Terminal: React.FC<TerminalProps> = ({
     }
   }, [output, isVisible]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Terminal props:', { isVisible, output, isLoading });
+  }, [isVisible, output, isLoading]);
+
   if (!isVisible) return null;
 
   const getStatusColor = (status?: string) => {
@@ -58,7 +63,7 @@ const Terminal: React.FC<TerminalProps> = ({
   };
 
   return (
-    <div className="terminal-panel">
+    <div className={`terminal-panel ${isVisible ? 'visible' : ''}`}>
       <div className="terminal-header">
         <div className="terminal-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -66,12 +71,6 @@ const Terminal: React.FC<TerminalProps> = ({
             <path d="M12 19h8"/>
           </svg>
           <span>Terminal</span>
-          {isLoading && (
-            <div className="terminal-loading-indicator">
-              <div className="loading-spinner"></div>
-              <span>Executing...</span>
-            </div>
-          )}
         </div>
         <div className="terminal-controls">
           <button className="terminal-btn clear-btn" onClick={onClear} title="Clear Output">
@@ -108,7 +107,7 @@ const Terminal: React.FC<TerminalProps> = ({
               </div>
             )}
 
-            {output.stdout && (
+            {output.stdout && output.stdout.trim() && (
               <div className="output-section">
                 <div className="output-label">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -121,7 +120,7 @@ const Terminal: React.FC<TerminalProps> = ({
               </div>
             )}
 
-            {output.stderr && (
+            {output.stderr && output.stderr.trim() && (
               <div className="output-section">
                 <div className="output-label stderr">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -134,7 +133,7 @@ const Terminal: React.FC<TerminalProps> = ({
               </div>
             )}
 
-            {output.compile_output && (
+            {output.compile_output && output.compile_output.trim() && (
               <div className="output-section">
                 <div className="output-label">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

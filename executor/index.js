@@ -48,6 +48,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Pull image if missing
+async function pullImageIfMissing(imageName) {
+  try {
+    const image = docker.getImage(imageName);
+    await image.inspect();
+  } catch {
+    await new Promise((resolve, reject) => {
+      docker.pull(imageName, (err, stream) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+    });
+  }
+}
+
 // Enhanced language configurations with security settings
 const languageConfigs = {
   javascript: {
@@ -175,6 +194,8 @@ function validateCode(code, language) {
 
 // Enhanced container creation with better security
 async function createSecureContainer(config, code, input = '') {
+  // Ensure image is available
+  await pullImageIfMissing(config.image);
   const containerId = crypto.randomBytes(16).toString('hex');
   const containerName = `code-exec-${containerId}-${Date.now()}`;
   

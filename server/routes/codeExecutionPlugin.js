@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pluginManager = require('../plugins/languagePlugins/PluginManager');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 /**
  * @route POST /api/execute/plugin

@@ -145,16 +145,19 @@ print("Code execution completed! 🎉")`);
         throw new Error(`Server returned ${response.status} with non-JSON response. Please check if the server is running.`);
       }
 
-      const result: CodeExecutionResponse = await response.json();
+      const result: any = await response.json();
       console.log('Basic code execution result:', result);
 
       if (result.success) {
+        const stdout = result.data?.stdout ?? result.stdout;
+        const stderr = result.data?.stderr ?? result.stderr;
+        const compile = result.data?.compile_output ?? result.compile_output;
+        const execMs = result.execution?.duration_ms ?? result.executionTime;
         let output = '';
-        if (result.stdout) output += `STDOUT:\n${result.stdout}\n\n`;
-        if (result.stderr) output += `STDERR:\n${result.stderr}\n\n`;
-        if (result.compile_output) output += `COMPILE OUTPUT:\n${result.compile_output}\n\n`;
-        if (result.executionTime) output += `Execution time: ${result.executionTime}ms\n`;
-        
+        if (stdout) output += `STDOUT:\n${stdout}\n\n`;
+        if (stderr) output += `STDERR:\n${stderr}\n\n`;
+        if (compile) output += `COMPILE OUTPUT:\n${compile}\n\n`;
+        if (execMs) output += `Execution time: ${execMs}ms\n`;
         setTerminalOutput(output);
       } else {
         setTerminalOutput(`Error: ${result.error || 'Execution failed'}`);
@@ -218,27 +221,29 @@ print("Code execution completed! 🎉")`);
         throw new Error(`Server returned ${response.status} with non-JSON response.`);
       }
 
-      const result: CodeExecutionResponse = await response.json();
+      const result: any = await response.json();
       console.log('Code execution with files result:', result);
 
       if (result.success) {
+        const stdout = result.data?.stdout ?? result.stdout;
+        const stderr = result.data?.stderr ?? result.stderr;
+        const compile = result.data?.compile_output ?? result.compile_output;
+        const execMs = result.execution?.duration_ms ?? result.executionTime;
         let output = '';
-        if (result.stdout) output += `STDOUT:\n${result.stdout}\n\n`;
-        if (result.stderr) output += `STDERR:\n${result.stderr}\n\n`;
-        if (result.compile_output) output += `COMPILE OUTPUT:\n${result.compile_output}\n\n`;
-        if (result.executionTime) output += `Execution time: ${result.executionTime}ms\n`;
-        
-        if (result.generated_files && result.generated_files.length > 0) {
+        if (stdout) output += `STDOUT:\n${stdout}\n\n`;
+        if (stderr) output += `STDERR:\n${stderr}\n\n`;
+        if (compile) output += `COMPILE OUTPUT:\n${compile}\n\n`;
+        if (execMs) output += `Execution time: ${execMs}ms\n`;
+        const generated: Array<{ name: string; size: number; path?: string }> =
+          result.data?.generated_files ?? result.generated_files ?? [];
+        if (generated.length > 0) {
           output += `Generated files:\n`;
-          result.generated_files.forEach(file => {
+          generated.forEach((file) => {
             output += `- ${file.name} (${file.size} bytes)\n`;
           });
           output += '\n';
         }
-        
         setTerminalOutput(output);
-        
-        // Refresh session files
         await loadSessionFiles();
       } else {
         setTerminalOutput(`Error: ${result.error || 'Execution failed'}`);

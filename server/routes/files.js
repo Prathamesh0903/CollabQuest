@@ -1,5 +1,5 @@
 const express = require('express');
-const { auth } = require('../middleware/auth');
+const { optionalAuth } = require('../middleware/auth');
 const Room = require('../models/Room');
 const fs = require('fs').promises;
 const path = require('path');
@@ -20,7 +20,7 @@ const ensureUploadsDir = async () => {
 };
 
 // Get all files for a session/room
-router.get('/session/:sessionId', auth, async (req, res) => {
+router.get('/session/:sessionId', /* auth, */ async (req, res) => {
   try {
     const { sessionId } = req.params;
     const sessionDir = path.join(UPLOADS_DIR, sessionId);
@@ -54,7 +54,7 @@ router.get('/session/:sessionId', auth, async (req, res) => {
 });
 
 // Create a new file
-router.post('/session/:sessionId', auth, async (req, res) => {
+router.post('/session/:sessionId', /* auth, */ async (req, res) => {
   try {
     const { sessionId } = req.params;
     const { filename, content = '', language = 'javascript' } = req.body;
@@ -108,7 +108,7 @@ router.post('/session/:sessionId', auth, async (req, res) => {
 });
 
 // Create a new folder
-router.post('/session/:sessionId/folder', auth, async (req, res) => {
+router.post('/session/:sessionId/folder', optionalAuth, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const { folderName } = req.body;
@@ -160,7 +160,7 @@ router.post('/session/:sessionId/folder', auth, async (req, res) => {
 });
 
 // Read file content
-router.get('/session/:sessionId/file/:filename(*)', auth, async (req, res) => {
+router.get('/session/:sessionId/file/:filename(*)', optionalAuth, async (req, res) => {
   try {
     const { sessionId, filename } = req.params;
     const filePath = path.join(UPLOADS_DIR, sessionId, filename);
@@ -199,7 +199,7 @@ router.get('/session/:sessionId/file/:filename(*)', auth, async (req, res) => {
 });
 
 // Update file content
-router.put('/session/:sessionId/file/:filename(*)', auth, async (req, res) => {
+router.put('/session/:sessionId/file/:filename(*)', optionalAuth, async (req, res) => {
   try {
     const { sessionId, filename } = req.params;
     const { content } = req.body;
@@ -236,7 +236,7 @@ router.put('/session/:sessionId/file/:filename(*)', auth, async (req, res) => {
 });
 
 // Delete file or folder
-router.delete('/session/:sessionId/:itemType/:itemName(*)', auth, async (req, res) => {
+router.delete('/session/:sessionId/:itemType/:itemName(*)', optionalAuth, async (req, res) => {
   try {
     const { sessionId, itemType, itemName } = req.params;
     const itemPath = path.join(UPLOADS_DIR, sessionId, itemName);
@@ -279,7 +279,7 @@ router.delete('/session/:sessionId/:itemType/:itemName(*)', auth, async (req, re
 });
 
 // Rename file or folder
-router.patch('/session/:sessionId/:itemType/:itemName(*)/rename', auth, async (req, res) => {
+router.patch('/session/:sessionId/:itemType/:itemName(*)/rename', optionalAuth, async (req, res) => {
   try {
     const { sessionId, itemType, itemName } = req.params;
     const { newName } = req.body;
@@ -323,7 +323,7 @@ router.patch('/session/:sessionId/:itemType/:itemName(*)/rename', auth, async (r
 });
 
 // Import local folder
-router.post('/session/:sessionId/import-local', auth, async (req, res) => {
+router.post('/session/:sessionId/import-local', optionalAuth, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const { localPath } = req.body;
@@ -403,7 +403,7 @@ router.post('/session/:sessionId/import-local', auth, async (req, res) => {
 });
 
 // Import files via file upload
-router.post('/session/:sessionId/import-files', auth, upload.array('files'), async (req, res) => {
+router.post('/session/:sessionId/import-files', optionalAuth, upload.array('files'), async (req, res) => {
   try {
     const { sessionId } = req.params;
     const files = req.files;
