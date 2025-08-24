@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const Docker = require('dockerode');
 const crypto = require('crypto');

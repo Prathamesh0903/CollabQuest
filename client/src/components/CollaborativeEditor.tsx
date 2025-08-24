@@ -479,7 +479,8 @@ puts greet("World")`
     if (!currentUser) return;
 
     try {
-      // const token = await currentUser.getIdToken();
+      // Get Firebase token for authentication
+      const token = currentUser ? await currentUser.getIdToken() : null;
       
       // Disconnect existing socket if any
       if (socketRef.current) {
@@ -488,8 +489,7 @@ puts greet("World")`
 
       socketRef.current = io('http://localhost:5001', {
         query: { sessionId: currentSessionId },
-        // In dev, socket auth is optional on server side. Provide token if available.
-        auth: { token: (await currentUser?.getIdToken?.()) || '' },
+        auth: { token: token || '' },
         reconnection: true,
         reconnectionAttempts: maxReconnectAttempts,
         reconnectionDelay: 1000,
