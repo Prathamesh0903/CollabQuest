@@ -56,4 +56,9 @@ jspm_packages/
 *.tgz
 
 # Yarn Integrity file
-.yarn-integrity 
+.yarn-integrity
+
+# Temporary files and uploads
+server/temp/
+server/uploads/
+*-5 
