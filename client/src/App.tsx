@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import BattleLanding from './components/Battle/BattleLanding';
 import BattlePlay from './components/Battle/BattlePlay';
@@ -12,7 +12,8 @@ import QuizPage from './components/QuizPage';
 import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
 import DSASheet from './components/DSASheet/DSASheet';
-import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
+import Login from './components/Login';
 import './App.css';
 
 // Session-based editor component
@@ -96,25 +97,37 @@ const DashboardWrapper: React.FC = () => {
   );
 };
 
-// Wrapper with AuthProvider
-const AppWithAuth: React.FC = () => {
-  return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<DashboardWrapper />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/collab/:sessionId" element={<SessionEditor />} />
+// Route guards
+const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  if (loading) return null;
+  return currentUser ? children : <Navigate to="/login" replace />;
+};
 
-          <Route path="/advanced-quiz" element={<AdvancedQuizWrapper />} />
-          <Route path="/quiz" element={<QuizPage />} />
-          <Route path="/battle" element={<BattleLanding />} />
-          <Route path="/battle/play" element={<BattlePlay />} />
-          <Route path="/dsa-sheet" element={<DSASheet />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  if (loading) return null;
+  return currentUser ? <Navigate to="/" replace /> : children;
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+
+        <Route path="/" element={<PrivateRoute><DashboardWrapper /></PrivateRoute>} />
+        <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
+        <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditor /></PrivateRoute>} />
+
+        <Route path="/advanced-quiz" element={<PrivateRoute><AdvancedQuizWrapper /></PrivateRoute>} />
+        <Route path="/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
+        <Route path="/battle" element={<PrivateRoute><BattleLanding /></PrivateRoute>} />
+        <Route path="/battle/play" element={<PrivateRoute><BattlePlay /></PrivateRoute>} />
+        <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />
+      </Routes>
+    </Router>
   );
 };
 
-export default AppWithAuth;
+export default App;

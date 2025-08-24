@@ -4,8 +4,8 @@
   "description": "Secure code execution service for collaborative platform",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "cross-env PORT=5001 node index.js",
+    "dev": "cross-env PORT=5001 nodemon index.js",
     "test": "node ../test-code-execution.js"
   },
   "keywords": [
@@ -18,9 +18,11 @@
   "license": "MIT",
   "dependencies": {
     "dockerode": "^4.0.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.0.2"
   }
 }
