@@ -53,7 +53,7 @@ npm start
 
 ### Access Points
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
+- **Backend API**: http://localhost:5001
 - **Executor Service**: http://localhost:5001
 - **MongoDB**: localhost:27017
 
@@ -122,8 +122,8 @@ DOCKER_ENABLED=true
 
 #### Client (.env)
 ```env
-REACT_APP_API_URL=http://localhost:5000
-REACT_APP_SOCKET_URL=http://localhost:5000
+REACT_APP_API_URL=http://localhost:5001
+REACT_APP_SOCKET_URL=http://localhost:5001
 ```
 
 ### API Endpoints

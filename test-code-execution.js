@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5001';
 const EXECUTOR_URL = 'http://localhost:5001';
 
 // Test cases for basic functionality
@@ -462,7 +462,7 @@ module.exports = {
   testHealthChecks
 }; const axios = require('axios');
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5001';
 const EXECUTOR_URL = 'http://localhost:5001';
 
 // Test cases for basic functionality

@@ -5,8 +5,8 @@ const Message = require('../models/Message');
 const CollaborativeSession = require('../models/CollaborativeSession');
 const { calculateScore } = require('./scoring');
 const CodePersistenceManager = require('./codePersistence');
-const { handleInteractiveTerminal } = require('./interactiveTerminal');
-const { handleEnhancedInteractiveTerminal } = require('./enhancedTerminal');
+// const { handleInteractiveTerminal } = require('./interactiveTerminal');
+// const { handleEnhancedInteractiveTerminal } = require('./enhancedTerminal');
 const concurrentExecutionManager = require('./concurrentExecutionManager');
 
 // Store active connections
@@ -63,10 +63,10 @@ const handleSocketConnection = (socket, io) => {
   }
 
   // Set up interactive terminal handlers
-  handleInteractiveTerminal(socket, io);
+  // handleInteractiveTerminal(socket, io);
   
   // Set up enhanced interactive terminal handlers
-  handleEnhancedInteractiveTerminal(socket, io);
+  // handleEnhancedInteractiveTerminal(socket, io);
 
   // Handle room joining
   socket.on('join-room', async (data) => {

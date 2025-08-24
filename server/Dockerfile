@@ -17,6 +17,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
+# Rebuild native modules for the container environment
+RUN npm rebuild node-pty
+
 # Copy the rest of the source
 COPY . .
 

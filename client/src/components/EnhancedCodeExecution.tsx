@@ -130,7 +130,7 @@ print("Code execution completed! 🎉")`);
 
       console.log('Sending basic code execution request:', requestBody);
 
-      const response = await fetch('http://localhost:5000/api/execute', {
+      const response = await fetch('http://localhost:5001/api/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ print("Code execution completed! 🎉")`);
       let errorMessage = (error as Error).message;
       
       if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5000';
+        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
       } else if (errorMessage.includes('Unexpected token')) {
         errorMessage = 'Server returned invalid response. This usually means the server is not running or there\'s a configuration issue.';
       }
@@ -209,7 +209,7 @@ print("Code execution completed! 🎉")`);
         sessionId
       });
 
-      const response = await fetch('http://localhost:5000/api/execute/with-files', {
+      const response = await fetch('http://localhost:5001/api/execute/with-files', {
         method: 'POST',
         body: formData
       });
@@ -255,7 +255,7 @@ print("Code execution completed! 🎉")`);
       let errorMessage = (error as Error).message;
       
       if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5000';
+        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
       }
       
       setTerminalOutput(`Failed to execute code: ${errorMessage}`);
@@ -267,7 +267,7 @@ print("Code execution completed! 🎉")`);
   // Load session files
   const loadSessionFiles = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/execute/files/${sessionId}`);
+      const response = await fetch(`http://localhost:5001/api/execute/files/${sessionId}`);
       const result = await response.json();
       
       if (result.success) {
@@ -281,7 +281,7 @@ print("Code execution completed! 🎉")`);
   // Download file
   const downloadFile = useCallback(async (filename: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/execute/files/${sessionId}/${filename}`);
+      const response = await fetch(`http://localhost:5001/api/execute/files/${sessionId}/${filename}`);
       
       if (response.ok) {
         const blob = await response.blob();
@@ -327,7 +327,7 @@ print("Code execution completed! 🎉")`);
         sessionId
       };
 
-      const response = await fetch('http://localhost:5000/api/execute/interactive', {
+      const response = await fetch('http://localhost:5001/api/execute/interactive', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +362,7 @@ print("Code execution completed! 🎉")`);
     setInteractiveSession(prev => prev ? { ...prev, status: 'running' } : null);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/execute/interactive/${interactiveSession.sessionId}/input`, {
+      const response = await fetch(`http://localhost:5001/api/execute/interactive/${interactiveSession.sessionId}/input`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -392,7 +392,7 @@ print("Code execution completed! 🎉")`);
     if (!interactiveSession) return;
 
     try {
-      await fetch(`http://localhost:5000/api/execute/interactive/${interactiveSession.sessionId}`, {
+      await fetch(`http://localhost:5001/api/execute/interactive/${interactiveSession.sessionId}`, {
         method: 'DELETE'
       });
 

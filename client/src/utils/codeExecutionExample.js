@@ -63,7 +63,7 @@ async function executeCodeBasic(language, code, input = '') {
     console.log('Sending code execution request:', requestBody);
 
     // Send request to API
-    const response = await fetch('http://localhost:5000/api/execute', {
+    const response = await fetch('http://localhost:5001/api/execute', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,7 +90,7 @@ async function executeCodeBasic(language, code, input = '') {
     let errorMessage = error.message;
     
     if (errorMessage.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5000';
+      errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
     } else if (errorMessage.includes('Unexpected token')) {
       errorMessage = 'Server returned invalid response. This usually means the server is not running or there\'s a configuration issue.';
     }
@@ -138,7 +138,7 @@ async function executeCodeAuthenticated(language, code, input = '', token) {
     console.log('Sending authenticated code execution request:', requestBody);
 
     // Send request to authenticated endpoint
-    const response = await fetch('http://localhost:5000/api/execute/secure', {
+    const response = await fetch('http://localhost:5001/api/execute/secure', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ async function executeCodeAuthenticated(language, code, input = '', token) {
     let errorMessage = error.message;
     
     if (errorMessage.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5000';
+      errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
     } else if (errorMessage.includes('401')) {
       errorMessage = 'Authentication failed. Please log in again.';
     }
@@ -210,7 +210,7 @@ async function executeCodeWithLimits(language, code, input = '', timeout = 5000,
     console.log('Sending code execution request with limits:', requestBody);
 
     // Send request to API
-    const response = await fetch('http://localhost:5000/api/execute', {
+    const response = await fetch('http://localhost:5001/api/execute', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ async function executeCodeWithLimits(language, code, input = '', timeout = 5000,
     let errorMessage = error.message;
     
     if (errorMessage.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5000';
+      errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
     }
     
     return {

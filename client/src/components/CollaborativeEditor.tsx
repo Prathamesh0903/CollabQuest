@@ -152,7 +152,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const loadFiles = async () => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
         }
@@ -176,7 +176,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const createDefaultFile = async () => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -339,7 +339,7 @@ puts greet("World")`
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -383,7 +383,7 @@ puts greet("World")`
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/folder`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/folder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -416,7 +416,7 @@ puts greet("World")`
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/file/${file.path}`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
         }
@@ -440,7 +440,7 @@ puts greet("World")`
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/file/${currentFile}`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${currentFile}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -486,7 +486,7 @@ puts greet("World")`
         socketRef.current.disconnect();
       }
 
-      socketRef.current = io('http://localhost:5000', {
+      socketRef.current = io('http://localhost:5001', {
         query: { sessionId: currentSessionId },
         // In dev, socket auth is optional on server side. Provide token if available.
         auth: { token: (await currentUser?.getIdToken?.()) || '' },
@@ -949,7 +949,7 @@ puts greet("World")`
       }
 
       // Also execute locally for immediate feedback
-      const response = await fetch(`http://localhost:5000/api/execute`, {
+      const response = await fetch(`http://localhost:5001/api/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1010,7 +1010,7 @@ puts greet("World")`
       let errorMessage = (error as Error).message;
       
       if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5000';
+        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
       } else if (errorMessage.includes('Unexpected token')) {
         errorMessage = 'Server returned invalid response. This usually means the server is not running or there\'s a configuration issue.';
       }
@@ -1129,7 +1129,7 @@ puts greet("World")`
         formData.append('files', file, file.webkitRelativePath || file.name);
       }
       
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/import-files`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/import-files`, {
         method: 'POST',
         headers: {
           // 'Authorization': `Bearer ${token}`
@@ -1194,7 +1194,7 @@ puts greet("World")`
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/files/session/${currentSessionId}/import-local`, {
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/import-local`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
