@@ -28,7 +28,7 @@ RUN useradd -m -u 10001 appuser && chown -R appuser /app
 USER appuser
 
 # Expose the API port
-EXPOSE 5000
+EXPOSE 5001
 
 # Entrypoint handles signals properly
 ENTRYPOINT ["dumb-init", "--"]

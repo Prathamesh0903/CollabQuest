@@ -4,8 +4,8 @@
   "description": "Secure code execution service for collaborative platform",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env PORT=5001 node index.js",
-    "dev": "cross-env PORT=5001 nodemon index.js",
+    "start": "cross-env PORT=5002 node index.js",
+    "dev": "cross-env PORT=5002 nodemon index.js",
     "test": "node ../test-code-execution.js"
   },
   "keywords": [
