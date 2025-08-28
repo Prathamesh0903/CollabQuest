@@ -36,8 +36,7 @@ const featureCards = [
     desc: 'Practice DSA questions and get interview ready',
     button: 'Start Prep',
     animationClass: 'card-animate-results',
-  }
-  ,
+  },
   {
     key: 'Hackathons',
     icon: '👥',

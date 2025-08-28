@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './DSASheet.css';
+import { API_BASE } from '../../utils/api';
 
 interface Problem {
   id: string;
@@ -29,243 +30,43 @@ const DSASheet: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Enhanced mock data - replace with API call
+  // Load real problems from API and group by category
   useEffect(() => {
-    // Simulate API call
-    const fetchData = async () => {
+    const load = async () => {
       try {
-        // TODO: Replace with actual API call
-        const mockTopics: Topic[] = [
-          {
-            id: 'arrays',
-            name: 'Arrays',
-            description: 'Master array manipulation and algorithms',
-            isExpanded: true,
-            problems: [
-              {
-                id: 'two-sum',
-                title: 'Two Sum',
-                difficulty: 'Easy',
-                tags: ['Array', 'Hash Table'],
-                isCompleted: false,
-                url: '/problem/two-sum',
-                description: 'Find two numbers that add up to a target'
-              },
-              {
-                id: 'best-time-to-buy-and-sell-stock',
-                title: 'Best Time to Buy and Sell Stock',
-                difficulty: 'Easy',
-                tags: ['Array', 'Dynamic Programming'],
-                isCompleted: false,
-                url: '/problem/best-time-to-buy-and-sell-stock',
-                description: 'Find the maximum profit from buying and selling'
-              },
-              {
-                id: 'contains-duplicate',
-                title: 'Contains Duplicate',
-                difficulty: 'Easy',
-                tags: ['Array', 'Hash Table'],
-                isCompleted: false,
-                url: '/problem/contains-duplicate',
-                description: 'Check if array contains any duplicates'
-              },
-              {
-                id: 'product-of-array-except-self',
-                title: 'Product of Array Except Self',
-                difficulty: 'Medium',
-                tags: ['Array', 'Prefix Sum'],
-                isCompleted: false,
-                url: '/problem/product-of-array-except-self',
-                description: 'Calculate product of array except current element'
-              },
-              {
-                id: 'maximum-subarray',
-                title: 'Maximum Subarray',
-                difficulty: 'Medium',
-                tags: ['Array', 'Dynamic Programming'],
-                isCompleted: false,
-                url: '/problem/maximum-subarray',
-                description: 'Find the contiguous subarray with maximum sum'
-              }
-            ]
-          },
-          {
-            id: 'strings',
-            name: 'Strings',
-            description: 'String manipulation and pattern matching',
-            isExpanded: false,
-            problems: [
-              {
-                id: 'valid-anagram',
-                title: 'Valid Anagram',
-                difficulty: 'Easy',
-                tags: ['String', 'Hash Table', 'Sorting'],
-                isCompleted: false,
-                url: '/problem/valid-anagram',
-                description: 'Check if two strings are anagrams'
-              },
-              {
-                id: 'longest-substring-without-repeating-characters',
-                title: 'Longest Substring Without Repeating Characters',
-                difficulty: 'Medium',
-                tags: ['String', 'Sliding Window', 'Hash Table'],
-                isCompleted: false,
-                url: '/problem/longest-substring-without-repeating-characters',
-                description: 'Find longest substring with unique characters'
-              },
-              {
-                id: 'palindrome-number',
-                title: 'Palindrome Number',
-                difficulty: 'Easy',
-                tags: ['String', 'Math'],
-                isCompleted: false,
-                url: '/problem/palindrome-number',
-                description: 'Check if a number is a palindrome'
-              }
-            ]
-          },
-          {
-            id: 'linked-lists',
-            name: 'Linked Lists',
-            description: 'Linked list operations and algorithms',
-            isExpanded: false,
-            problems: [
-              {
-                id: 'reverse-linked-list',
-                title: 'Reverse Linked List',
-                difficulty: 'Easy',
-                tags: ['Linked List', 'Recursion'],
-                isCompleted: false,
-                url: '/problem/reverse-linked-list',
-                description: 'Reverse a singly linked list'
-              },
-              {
-                id: 'detect-cycle',
-                title: 'Linked List Cycle',
-                difficulty: 'Easy',
-                tags: ['Linked List', 'Two Pointers'],
-                isCompleted: false,
-                url: '/problem/linked-list-cycle',
-                description: 'Detect if linked list has a cycle'
-              },
-              {
-                id: 'merge-two-sorted-lists',
-                title: 'Merge Two Sorted Lists',
-                difficulty: 'Easy',
-                tags: ['Linked List', 'Recursion'],
-                isCompleted: false,
-                url: '/problem/merge-two-sorted-lists',
-                description: 'Merge two sorted linked lists'
-              }
-            ]
-          },
-          {
-            id: 'trees',
-            name: 'Trees',
-            description: 'Binary trees and tree traversal',
-            isExpanded: false,
-            problems: [
-              {
-                id: 'maximum-depth-of-binary-tree',
-                title: 'Maximum Depth of Binary Tree',
-                difficulty: 'Easy',
-                tags: ['Tree', 'DFS', 'Recursion'],
-                isCompleted: false,
-                url: '/problem/maximum-depth-of-binary-tree',
-                description: 'Find the maximum depth of a binary tree'
-              },
-              {
-                id: 'validate-binary-search-tree',
-                title: 'Validate Binary Search Tree',
-                difficulty: 'Medium',
-                tags: ['Tree', 'DFS', 'Recursion'],
-                isCompleted: false,
-                url: '/problem/validate-binary-search-tree',
-                description: 'Check if binary tree is a valid BST'
-              },
-              {
-                id: 'invert-binary-tree',
-                title: 'Invert Binary Tree',
-                difficulty: 'Easy',
-                tags: ['Tree', 'DFS', 'Recursion'],
-                isCompleted: false,
-                url: '/problem/invert-binary-tree',
-                description: 'Invert a binary tree'
-              }
-            ]
-          },
-          {
-            id: 'dynamic-programming',
-            name: 'Dynamic Programming',
-            description: 'Optimization problems and memoization',
-            isExpanded: false,
-            problems: [
-              {
-                id: 'climbing-stairs',
-                title: 'Climbing Stairs',
-                difficulty: 'Easy',
-                tags: ['Dynamic Programming', 'Math'],
-                isCompleted: false,
-                url: '/problem/climbing-stairs',
-                description: 'Find ways to climb n stairs'
-              },
-              {
-                id: 'house-robber',
-                title: 'House Robber',
-                difficulty: 'Medium',
-                tags: ['Dynamic Programming'],
-                isCompleted: false,
-                url: '/problem/house-robber',
-                description: 'Rob houses for maximum profit'
-              },
-              {
-                id: 'coin-change',
-                title: 'Coin Change',
-                difficulty: 'Medium',
-                tags: ['Dynamic Programming'],
-                isCompleted: false,
-                url: '/problem/coin-change',
-                description: 'Find minimum coins needed for amount'
-              }
-            ]
-          },
-          {
-            id: 'graphs',
-            name: 'Graphs',
-            description: 'Graph algorithms and traversal',
-            isExpanded: false,
-            problems: [
-              {
-                id: 'number-of-islands',
-                title: 'Number of Islands',
-                difficulty: 'Medium',
-                tags: ['Graph', 'DFS', 'BFS'],
-                isCompleted: false,
-                url: '/problem/number-of-islands',
-                description: 'Count number of islands in grid'
-              },
-              {
-                id: 'course-schedule',
-                title: 'Course Schedule',
-                difficulty: 'Medium',
-                tags: ['Graph', 'Topological Sort', 'DFS'],
-                isCompleted: false,
-                url: '/problem/course-schedule',
-                description: 'Check if course schedule is possible'
-              }
-            ]
+        const res = await fetch(`${API_BASE}/dsa/problems?limit=500`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const items = Array.isArray(json.items) ? json.items : [];
+        const byCategory: Record<string, Topic> = {};
+        for (const p of items) {
+          const catName = p?.category?.name || 'Misc';
+          const topicId = (p?.category?._id as string) || catName.toLowerCase().replace(/\s+/g, '-');
+          if (!byCategory[topicId]) {
+            byCategory[topicId] = {
+              id: topicId,
+              name: catName,
+              isExpanded: true,
+              problems: []
+            } as Topic;
           }
-        ];
-        
-        setTopics(mockTopics);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching DSA sheet:', error);
+          byCategory[topicId].problems.push({
+            id: p._id,
+            title: p.title,
+            difficulty: p.difficulty,
+            tags: p.tags || [],
+            isCompleted: false,
+            url: `/dsa-sheet/problem/${p._id}`
+          } as Problem);
+        }
+        setTopics(Object.values(byCategory));
+      } catch (e) {
+        console.error('Error loading DSA problems:', e);
+      } finally {
         setLoading(false);
       }
     };
-
-    fetchData();
+    load();
   }, []);
 
   const toggleTopic = (topicId: string) => {

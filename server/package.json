@@ -7,7 +7,11 @@
     "start": "cross-env PORT=5001 node server.js",
     "dev": "cross-env PORT=5001 nodemon server.js",
     "test": "jest",
-    "test:execution": "node ../test-code-execution.js"
+    "test:execution": "node ../test-code-execution.js",
+    "lint": "eslint \"**/*.js\"",
+    "lint:fix": "eslint \"**/*.js\" --fix",
+    "lint:dsa": "eslint \"routes/dsa.js\" \"models/dsa/**/*.js\" \"utils/dsaSeedSample.js\"",
+    "lint:dsa:fix": "eslint \"routes/dsa.js\" \"models/dsa/**/*.js\" \"utils/dsaSeedSample.js\" --fix"
   },
   "keywords": [
     "nodejs",
@@ -39,7 +43,14 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.34.0",
     "cross-env": "^7.0.3",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "globals": "^16.3.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.3"

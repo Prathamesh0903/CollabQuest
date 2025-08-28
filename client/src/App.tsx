@@ -12,6 +12,7 @@ import QuizPage from './components/QuizPage';
 import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
 import DSASheet from './components/DSASheet/DSASheet';
+import DSAProblemPage from './components/DSASheet/DSAProblemPage';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import './App.css';
@@ -125,6 +126,7 @@ const App: React.FC = () => {
         <Route path="/battle" element={<PrivateRoute><BattleLanding /></PrivateRoute>} />
         <Route path="/battle/play" element={<PrivateRoute><BattlePlay /></PrivateRoute>} />
         <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />
+        <Route path="/dsa-sheet/problem/:id" element={<PrivateRoute><DSAProblemPage /></PrivateRoute>} />
       </Routes>
     </Router>
   );
