@@ -18,6 +18,7 @@ const messageRoutes = require('./routes/messages');
 const fileRoutes = require('./routes/files');
 const collaborativeSessionRoutes = require('./routes/collaborativeSessions');
 const codeExecutionRoutes = require('./routes/codeExecution');
+const codeExecutionPluginRoutes = require('./routes/codeExecutionPlugin');
 const dsaRoutes = require('./routes/dsa');
 
 const { socketAuth } = require('./middleware/auth');
@@ -62,6 +63,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/collaborative-sessions', collaborativeSessionRoutes);
 app.use('/api/execute', codeExecutionRoutes);
+app.use('/api/execute/plugin', codeExecutionPluginRoutes);
 app.use('/api/dsa', dsaRoutes);
 
 // Health check endpoint

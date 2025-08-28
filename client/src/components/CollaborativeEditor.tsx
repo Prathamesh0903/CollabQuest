@@ -8,6 +8,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import VSCodeSidebar from './VSCodeSidebar';
 import UserAvatar from './UserAvatar';
 import ConcurrentExecutionHandler from './ConcurrentExecutionHandler';
+import { getLanguageFromExtension, getFileExtension, getDefaultCode } from '../utils/monacoConfig';
 import './CollaborativeEditor.css';
 
 // Extend HTMLInputElement interface for webkitdirectory
@@ -123,6 +124,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [showLocalFolderModal, setShowLocalFolderModal] = useState<boolean>(false);
   const [localFolderPath, setLocalFolderPath] = useState<string>('');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [showHiddenFiles, setShowHiddenFiles] = useState<boolean>(false);
 
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
@@ -199,122 +201,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     }
   };
 
-  // Get file extension from language
-  const getFileExtension = (lang: string): string => {
-    const extensions: { [key: string]: string } = {
-      javascript: 'js',
-      typescript: 'ts',
-      python: 'py',
-      java: 'java',
-      cpp: 'cpp',
-      csharp: 'cs',
-      go: 'go',
-      rust: 'rs',
-      php: 'php',
-      ruby: 'rb'
-    };
-    return extensions[lang] || 'js';
-  };
 
-  // Get default code for language
-  const getDefaultCode = (lang: string): string => {
-    const defaults: { [key: string]: string } = {
-      javascript: `// Welcome to collaborative JavaScript coding!
-console.log("Hello, World!");
-
-function greet(name) {
-  return \`Hello, \${name}!\`;
-}
-
-// Start coding with your team!`,
-      python: `# Welcome to collaborative Python coding!
-print("Hello, World!")
-
-def greet(name):
-    return f"Hello, {name}!"
-
-# Start coding with your team!`,
-      java: `// Welcome to collaborative Java coding!
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-    }
-    
-    public static String greet(String name) {
-        return "Hello, " + name + "!";
-    }
-}`,
-      cpp: `// Welcome to collaborative C++ coding!
-#include <iostream>
-#include <string>
-
-using namespace std;
-
-int main() {
-    cout << "Hello, World!" << endl;
-    return 0;
-}`,
-      csharp: `// Welcome to collaborative C# coding!
-using System;
-
-class Program {
-    static void Main() {
-        Console.WriteLine("Hello, World!");
-    }
-}`,
-      typescript: `// Welcome to collaborative TypeScript coding!
-interface Greeting {
-    name: string;
-    message: string;
-}
-
-function greet(name: string): Greeting {
-    return {
-        name,
-        message: \`Hello, \${name}!\`
-    };
-}
-
-console.log(greet("World"));
-`,
-      go: `// Welcome to collaborative Go coding!
-package main
-
-import "fmt"
-
-func greet(name string) string {
-    return fmt.Sprintf("Hello, %s!", name)
-}
-
-func main() {
-    fmt.Println(greet("World"))
-}`,
-      rust: `// Welcome to collaborative Rust coding!
-fn greet(name: &str) -> String {
-    format!("Hello, {}!", name)
-}
-
-fn main() {
-    println!("{}", greet("World"));
-}`,
-      php: `<?php
-// Welcome to collaborative PHP coding!
-function greet($name) {
-    return "Hello, " . $name . "!";
-}
-
-echo greet("World");
-?>`,
-      ruby: `# Welcome to collaborative Ruby coding!
-def greet(name)
-  "Hello, #{name}!"
-end
-
-puts greet("World")`
-    };
-    
-    return defaults[lang] || defaults.javascript;
-  };
 
   // Create new file
   const createNewFile = async () => {
@@ -346,16 +233,38 @@ puts greet("World")`
           // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          fileName,
+          filename: fileName,
           language: newFileLanguage
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        setFiles(data.files);
+        
+        // Refresh the files list to include the new file
+        await loadFiles();
+        
         setShowNewFileModal(false);
         setNewFileName('');
+        
+        // Automatically open the newly created file
+        const newFile = data.file;
+        if (newFile) {
+          setCurrentFile(newFile.path);
+          // Use default code for the new file since it's a fresh file
+          const defaultCode = getDefaultCode(newFileLanguage);
+          setCode(defaultCode);
+          setLanguage(newFileLanguage as 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby');
+          
+          // Update the editor model if it exists
+          if (editorRef.current) {
+            const model = editorRef.current.getModel();
+            if (model) {
+              model.setValue(defaultCode);
+            }
+          }
+        }
+        
         showSuccess('Success', `File "${fileName}" created successfully`);
       } else {
         const errorData = await response.json();
@@ -426,7 +335,18 @@ puts greet("World")`
         const data = await response.json();
         setCurrentFile(file.path);
         setCode(data.content);
-        setLanguage((file.language || 'javascript') as any);
+        
+        // Detect language from file extension
+        const detectedLanguage = getLanguageFromExtension(file.path);
+        setLanguage(detectedLanguage as any);
+        
+        // Update Monaco editor language if editor is mounted
+        if (editorRef.current) {
+          const model = editorRef.current.getModel();
+          if (model) {
+            (window as any).monaco.editor.setModelLanguage(model, detectedLanguage);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to open file:', error);
@@ -844,6 +764,15 @@ puts greet("World")`
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
     
+    // Ensure proper language detection for the current file
+    if (currentFile) {
+      const detectedLanguage = getLanguageFromExtension(currentFile);
+      if (detectedLanguage !== language) {
+        setLanguage(detectedLanguage as any);
+        (window as any).monaco.editor.setModelLanguage(editor.getModel(), detectedLanguage);
+      }
+    }
+    
     // Set up change listener with debouncing
     let changeTimeout: NodeJS.Timeout;
     let editingTimeout: NodeJS.Timeout;
@@ -1142,6 +1071,17 @@ puts greet("World")`
         setFiles(data.files);
         setShowLocalFolderModal(false);
         setLocalFolderPath('');
+        
+        // Automatically open the first imported file
+        if (data.files.length > 0) {
+          const firstFile = data.files.find((file: FileItem) => file.type === 'file');
+          if (firstFile) {
+            setCurrentFile(firstFile.path);
+            setCode(getDefaultCode(firstFile.language || 'javascript'));
+            setLanguage((firstFile.language || 'javascript') as 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby');
+          }
+        }
+        
         showSuccess('Files Imported', 'Local files imported successfully!');
       } else {
         const errorData = await response.json();
@@ -1189,6 +1129,128 @@ puts greet("World")`
     createNewFolder();
   };
 
+  // Delete file
+  const handleDeleteFile = async (file: FileItem) => {
+    try {
+      // const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}`, {
+        method: 'DELETE',
+        headers: {
+          // 'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        if (currentFile === file.path) {
+          setCurrentFile('');
+          setCode('');
+        }
+        showSuccess('File Deleted', `File "${file.name}" deleted successfully`);
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.error || 'Failed to delete file');
+      }
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      showError('Error', 'Failed to delete file');
+    }
+  };
+
+  // Rename file
+  const handleRenameFile = async (file: FileItem, newName: string) => {
+    try {
+      // const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}/rename`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          newName: newName
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        if (currentFile === file.path) {
+          setCurrentFile(data.newPath);
+        }
+        showSuccess('File Renamed', `File renamed to "${newName}" successfully`);
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.error || 'Failed to rename file');
+      }
+    } catch (error) {
+      console.error('Failed to rename file:', error);
+      showError('Error', 'Failed to rename file');
+    }
+  };
+
+  // Duplicate file
+  const handleDuplicateFile = async (file: FileItem) => {
+    try {
+      // const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}/duplicate`, {
+        method: 'POST',
+        headers: {
+          // 'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files);
+        showSuccess('File Duplicated', `File "${file.name}" duplicated successfully`);
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.error || 'Failed to duplicate file');
+      }
+    } catch (error) {
+      console.error('Failed to duplicate file:', error);
+      showError('Error', 'Failed to duplicate file');
+    }
+  };
+
+  // Download file
+  const handleDownloadFile = async (file: FileItem) => {
+    try {
+      // const token = await currentUser?.getIdToken();
+      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}`, {
+        headers: {
+          // 'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const content = await response.text();
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showSuccess('File Downloaded', `File "${file.name}" downloaded successfully`);
+      } else {
+        showError('Error', 'Failed to download file');
+      }
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      showError('Error', 'Failed to download file');
+    }
+  };
+
+  // Toggle hidden files
+  const handleToggleHiddenFiles = () => {
+    setShowHiddenFiles(!showHiddenFiles);
+  };
+
   const handleOpenLocalFolderSubmit = async () => {
     if (!localFolderPath.trim()) return;
     
@@ -1210,6 +1272,17 @@ puts greet("World")`
         setFiles(data.files);
         setShowLocalFolderModal(false);
         setLocalFolderPath('');
+        
+        // Automatically open the first imported file
+        if (data.files.length > 0) {
+          const firstFile = data.files.find((file: FileItem) => file.type === 'file');
+          if (firstFile) {
+            setCurrentFile(firstFile.path);
+            setCode(getDefaultCode(firstFile.language || 'javascript'));
+            setLanguage((firstFile.language || 'javascript') as 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby');
+          }
+        }
+        
         showSuccess('Folder Imported', 'Local folder imported successfully!');
       } else {
         const errorData = await response.json();
@@ -1459,13 +1532,19 @@ puts greet("World")`
           onNewFileClick={handleNewFileClick}
           onNewFolderClick={handleNewFolderClick}
           onOpenLocalFolder={handleOpenLocalFolder}
+          onDeleteFile={handleDeleteFile}
+          onRenameFile={handleRenameFile}
+          onDuplicateFile={handleDuplicateFile}
+          onDownloadFile={handleDownloadFile}
+          onToggleHiddenFiles={handleToggleHiddenFiles}
+          showHiddenFiles={showHiddenFiles}
         />
         
         {/* VS Code Style Editor Area */}
         <div className={`vscode-editor-container ${showSidebar ? 'with-sidebar' : ''}`}>
           <Editor
             height="100%"
-            defaultLanguage={language}
+            defaultLanguage={currentFile ? getLanguageFromExtension(currentFile) : language}
             defaultValue={code || getDefaultCode(language)}
             theme={theme}
             onMount={handleEditorDidMount}
