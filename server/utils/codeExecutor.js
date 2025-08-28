@@ -95,15 +95,51 @@ async function executeWithMockExecutor(language, sourceCode, input) {
       stderr = error.message + '\n';
     }
   } else if (language === 'python') {
-    // Simple Python mock execution
-    if (sourceCode.includes('print(')) {
-      const matches = sourceCode.match(/print\(([^)]+)\)/g);
-      if (matches) {
-        stdout = matches.map(match => {
-          const content = match.replace('print(', '').replace(')', '');
-          return content.replace(/['"]/g, '') + '\n';
-        }).join('');
+    // Enhanced Python mock execution: handle simple assignments and arithmetic in print
+    try {
+      const variables = Object.create(null);
+
+      // Parse simple integer/float assignments (e.g., a = 5, b=7)
+      const assignmentRegex = /^\s*([a-zA-Z_]\w*)\s*=\s*(-?\d+(?:\.\d+)?)\s*$/gm;
+      let assignMatch;
+      while ((assignMatch = assignmentRegex.exec(sourceCode)) !== null) {
+        const name = assignMatch[1];
+        const value = assignMatch[2];
+        variables[name] = Number(value);
       }
+
+      const printRegex = /print\(([^)]+)\)/g;
+      let printMatch;
+      while ((printMatch = printRegex.exec(sourceCode)) !== null) {
+        let expr = printMatch[1].trim();
+
+        // Replace variables with values
+        expr = expr.replace(/[a-zA-Z_]\w*/g, (id) => {
+          return Object.prototype.hasOwnProperty.call(variables, id) ? String(variables[id]) : id;
+        });
+
+        // Strip quotes for string literals to mimic print behavior in this mock
+        const isStringLiteral = /^(?:['"]).*['"]$/.test(expr);
+        if (isStringLiteral) {
+          stdout += expr.replace(/^['"]/,'').replace(/['"]$/,'') + '\n';
+          continue;
+        }
+
+        // Allow only safe characters for arithmetic evaluation
+        if (/^[0-9+\-*/().\s]+$/.test(expr)) {
+          try {
+            // eslint-disable-next-line no-eval
+            const value = eval(expr);
+            stdout += String(value) + '\n';
+          } catch (_) {
+            stdout += expr + '\n';
+          }
+        } else {
+          stdout += expr.replace(/['"]/g, '') + '\n';
+        }
+      }
+    } catch (error) {
+      stderr = 'Python mock error: ' + error.message + '\n';
     }
   } else if (language === 'java') {
     // Java mock execution
@@ -114,65 +150,51 @@ async function executeWithMockExecutor(language, sourceCode, input) {
       } else if (!sourceCode.includes('public static void main(String[] args)')) {
         stderr = 'Error: Java code must contain a main method\n';
       } else {
-        // Extract System.out.println statements
-        const printMatches = sourceCode.match(/System\.out\.println\([^)]*\)/g);
+        // Capture simple variable declarations and assignments (int a = 5, b = 7;)
+        const variables = Object.create(null);
+        const declRegex = /int\s+([^;]+);/g;
+        let declMatch;
+        while ((declMatch = declRegex.exec(sourceCode)) !== null) {
+          const segment = declMatch[1];
+          const parts = segment.split(',');
+          for (const part of parts) {
+            const m = part.match(/([a-zA-Z_]\w*)\s*=\s*(-?\d+)/);
+            if (m) {
+              variables[m[1]] = Number(m[2]);
+            }
+          }
+        }
+
+        // Extract System.out.println statements and evaluate
+        const printMatches = sourceCode.match(/System\.out\.println\(([^)]*)\)/g);
         if (printMatches) {
           stdout = printMatches.map(match => {
-            // Extract the content inside println()
-            const content = match.replace(/System\.out\.println\(/g, '').replace(/\)/g, '');
-            
-            // Handle different types of println content
-            let result = '';
-            
-            // Check if it's a simple string literal
+            let content = match.replace(/System\.out\.println\(/, '').replace(/\)$/, '').trim();
+
+            // String literal
             const stringMatch = content.match(/^["']([^"']*)["']$/);
             if (stringMatch) {
-              result = stringMatch[1];
-            } else {
-              // Handle string concatenation and expressions
-              let processedContent = content;
-              
-              // Handle simple arithmetic expressions in parentheses
-              const arithmeticMatches = processedContent.match(/\((\d+)\s*\+\s*(\d+)\)/g);
-              if (arithmeticMatches) {
-                arithmeticMatches.forEach(expr => {
-                  const numbers = expr.match(/(\d+)\s*\+\s*(\d+)/);
-                  if (numbers) {
-                    const a = parseInt(numbers[1]);
-                    const b = parseInt(numbers[2]);
-                    processedContent = processedContent.replace(expr, (a + b).toString());
-                  }
-                });
-              }
-              
-              // Handle string concatenation patterns
-              if (processedContent.includes('+') && processedContent.includes('"')) {
-                // Pattern: "text" + expression + "text"
-                const parts = processedContent.split('+').map(part => part.trim());
-                const processedParts = parts.map(part => {
-                  // Remove quotes from string literals
-                  const stringPart = part.match(/^["']([^"']*)["']$/);
-                  if (stringPart) {
-                    return stringPart[1];
-                  }
-                  // Handle arithmetic expressions
-                  if (part.match(/^\d+$/)) {
-                    return part;
-                  }
-                  // Handle variable references (simplified)
-                  if (part === 'name' && input) {
-                    return input;
-                  }
-                  return part.replace(/["']/g, '');
-                });
-                result = processedParts.join('');
-              } else {
-                // For non-string expressions, try to evaluate
-                result = processedContent.replace(/["']/g, '');
+              return stringMatch[1] + '\n';
+            }
+
+            // Replace variable identifiers with values
+            content = content.replace(/[a-zA-Z_]\w*/g, (id) => {
+              return Object.prototype.hasOwnProperty.call(variables, id) ? String(variables[id]) : id;
+            });
+
+            // Allow only arithmetic characters for evaluation
+            if (/^[0-9+\-*/().\s]+$/.test(content)) {
+              try {
+                // eslint-disable-next-line no-eval
+                const value = eval(content);
+                return String(value) + '\n';
+              } catch (_) {
+                return content.replace(/["']/g, '') + '\n';
               }
             }
-            
-            return result + '\n';
+
+            // Fallback: strip quotes and output
+            return content.replace(/["']/g, '') + '\n';
           }).join('');
         }
         

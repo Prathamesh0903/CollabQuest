@@ -116,6 +116,43 @@ class DockerExecutor {
     }
   }
 
+  async executeCodeWithConfig(dockerConfig, sourceCode, input = '', timeout = 30000) {
+    const executionId = uuidv4();
+    const executionDir = path.join(this.tempDir, executionId);
+    const startTime = Date.now();
+    let runtimeLogs = [];
+    try {
+      await fs.mkdir(executionDir, { recursive: true });
+      const filename = dockerConfig.filename || 'Main.java';
+      const filePath = path.join(executionDir, filename);
+      await fs.writeFile(filePath, sourceCode, 'utf8');
+
+      runtimeLogs.push({
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        message: 'Starting execution with explicit docker config',
+        details: { image: dockerConfig.image, filename }
+      });
+
+      const result = await this.runInContainerWithMonitoring(
+        executionDir,
+        dockerConfig.image,
+        dockerConfig.runCommand,
+        dockerConfig.compileCommand,
+        input,
+        runtimeLogs
+      );
+
+      return { ...result, runtime_logs: runtimeLogs };
+    } catch (error) {
+      const enhanced = new Error(error.message);
+      enhanced.runtime_logs = runtimeLogs;
+      throw enhanced;
+    } finally {
+      try { await fs.rm(executionDir, { recursive: true, force: true }); } catch {}
+    }
+  }
+
   async executeCodeWithFiles(language, sourceCode, input, uploadedFiles, sessionId, timeout = 10000, memoryLimit = '256MB') {
     const executionId = uuidv4();
     const executionDir = path.join(this.tempDir, executionId);
@@ -661,22 +698,33 @@ class DockerExecutor {
   }
 
   async getExecOutput(stream) {
+    // Docker exec output is multiplexed when TTY is disabled; demux it properly
+    const { PassThrough } = require('stream');
     return new Promise((resolve) => {
       let stdout = '';
       let stderr = '';
-      
-      stream.on('data', (chunk) => {
-        const data = chunk.toString();
-        if (data.includes('stdout')) {
-          stdout += data.split('stdout')[1] || '';
-        } else if (data.includes('stderr')) {
-          stderr += data.split('stderr')[1] || '';
-        } else {
-          stdout += data;
-        }
+      const stdoutStream = new PassThrough();
+      const stderrStream = new PassThrough();
+
+      stdoutStream.on('data', (chunk) => {
+        stdout += chunk.toString();
       });
-      
+      stderrStream.on('data', (chunk) => {
+        stderr += chunk.toString();
+      });
+
+      // Use docker modem to demultiplex the hijacked stream
+      try {
+        this.docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+      } catch (_) {
+        // Fallback: treat all data as stdout if demux not available
+        stream.on('data', (chunk) => { stdout += chunk.toString(); });
+      }
+
       stream.on('end', () => {
+        // Ensure streams are flushed
+        stdoutStream.end();
+        stderrStream.end();
         resolve({ stdout, stderr });
       });
     });

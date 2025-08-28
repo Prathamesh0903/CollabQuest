@@ -64,6 +64,7 @@ class JavaPlugin extends LanguagePlugin {
       filename: 'Main.java',
       runCommand: ['java', 'Main'],
       compileCommand: ['javac', 'Main.java'],
+      timeout: 30000,
       setupCommands: [
         'apk add --no-cache gcc musl-dev'
       ],

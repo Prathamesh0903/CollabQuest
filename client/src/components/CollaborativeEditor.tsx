@@ -77,6 +77,16 @@ interface FileItem {
   updatedAt?: Date;
 }
 
+// Local file entity map used by the editor, keyed by a stable UUID
+interface FileEntity {
+  id: string;
+  name: string;
+  path: string;
+  language?: string;
+  content: string;
+  version: number;
+}
+
 interface SessionState {
   code: string;
   language: string;
@@ -100,6 +110,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   
   const socketRef = useRef<any>(null);
   const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
@@ -116,6 +127,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [shareableLink, setShareableLink] = useState<string>('');
   const [files, setFiles] = useState<FileItem[]>([]);
+  // New: files map keyed by UUID and currently active file id
+  const [filesById, setFilesById] = useState<Record<string, FileEntity>>({});
+  const [activeFileId, setActiveFileId] = useState<string>('');
   const [showNewFileModal, setShowNewFileModal] = useState<boolean>(false);
   const [newFileName, setNewFileName] = useState<string>('');
   const [newFileLanguage, setNewFileLanguage] = useState<string>('javascript');
@@ -163,10 +177,32 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       if (response.ok) {
         const data = await response.json();
         setFiles(data.files || []);
-        
-        // If no files exist, create a default file
-        if (data.files.length === 0) {
+        // Build local map keyed by UUID and choose an active file
+        const map: Record<string, FileEntity> = {};
+        (data.files || []).forEach((f: FileItem) => {
+          const id = f.id || (globalThis.crypto && 'randomUUID' in globalThis.crypto ? (globalThis.crypto as any).randomUUID() : `f_${Math.random().toString(36).slice(2)}`);
+          map[id] = {
+            id,
+            name: f.name,
+            path: f.path,
+            language: f.language,
+            content: '',
+            version: 0
+          };
+        });
+        setFilesById(map);
+        // If no files exist, create a default file; else open first file to hydrate content
+        if ((data.files || []).length === 0) {
           await createDefaultFile();
+        } else {
+          const first = (data.files || [])[0];
+          // find the matching id in map
+          const entry = Object.values(map).find(e => e.path === first.path);
+          if (entry) {
+            setActiveFileId(entry.id);
+            setCurrentFile(first.path);
+            await openFile({ ...first, id: entry.id });
+          }
         }
       }
     } catch (error) {
@@ -192,9 +228,28 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       
       if (response.ok) {
         const data = await response.json();
-        setFiles([data.file]);
+        setFiles(prev => {
+          const list = prev || [];
+          const exists = list.some(f => f.path === data.file.path);
+          return exists ? list : [...list, data.file];
+        });
         setCurrentFile(data.file.path);
-        setCode(getDefaultCode(language));
+        const id = (globalThis.crypto && 'randomUUID' in globalThis.crypto ? (globalThis.crypto as any).randomUUID() : `f_${Math.random().toString(36).slice(2)}`);
+        const defaultCode = getDefaultCode(language);
+        // Add to map without overwriting others
+        setFilesById(prev => ({
+          ...prev,
+          [id]: {
+            id,
+            name: data.file.name,
+            path: data.file.path,
+            language: language,
+            content: defaultCode,
+            version: 0
+          }
+        }));
+        setActiveFileId(id);
+        setCode(defaultCode);
       }
     } catch (error) {
       console.error('Failed to create default file:', error);
@@ -241,27 +296,56 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       if (response.ok) {
         const data = await response.json();
         
-        // Refresh the files list to include the new file
-        await loadFiles();
-        
+        // Do not reload; add into map without overwriting others
         setShowNewFileModal(false);
         setNewFileName('');
+        // Append to sidebar files list immediately
+        if (data.file) {
+          setFiles(prev => {
+            const list = prev || [];
+            const exists = list.some(f => f.path === data.file.path);
+            return exists ? list : [...list, data.file];
+          });
+        }
         
-        // Automatically open the newly created file
+        // Add new file to map with fresh UUID
         const newFile = data.file;
         if (newFile) {
           setCurrentFile(newFile.path);
-          // Use default code for the new file since it's a fresh file
           const defaultCode = getDefaultCode(newFileLanguage);
+          const id = (globalThis.crypto && 'randomUUID' in globalThis.crypto ? (globalThis.crypto as any).randomUUID() : `f_${Math.random().toString(36).slice(2)}`);
+          setFilesById(prev => ({
+            ...prev,
+            [id]: {
+              id,
+              name: newFile.name,
+              path: newFile.path,
+              language: newFileLanguage,
+              content: defaultCode,
+              version: 0
+            }
+          }));
+          setActiveFileId(id);
           setCode(defaultCode);
           setLanguage(newFileLanguage as 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby');
           
-          // Update the editor model if it exists
-          if (editorRef.current) {
-            const model = editorRef.current.getModel();
-            if (model) {
-              model.setValue(defaultCode);
-            }
+          if (editorRef.current && (monacoRef.current || (window as any).monaco)) {
+            const model = ensureModelForFile(newFile.path, newFileLanguage, defaultCode);
+            editorRef.current.setModel(model);
+          }
+          if (socketRef.current && connectionStatus === 'connected') {
+            socketRef.current.emit('session:file-create', {
+              roomId: currentSessionId,
+              file: {
+                id,
+                name: newFile.name,
+                path: newFile.path,
+                language: newFileLanguage,
+                content: defaultCode,
+                version: 0
+              },
+              userId: currentUser?.uid
+            });
           }
         }
         
@@ -335,17 +419,39 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         const data = await response.json();
         setCurrentFile(file.path);
         setCode(data.content);
+        setFilesById(prev => {
+          // ensure an id exists for this file in the map
+          let foundId = Object.values(prev).find(e => e.path === file.path)?.id;
+          if (!foundId) {
+            foundId = (globalThis.crypto && 'randomUUID' in globalThis.crypto ? (globalThis.crypto as any).randomUUID() : `f_${Math.random().toString(36).slice(2)}`);
+          }
+          const idStr = foundId as string;
+          const updated: Record<string, FileEntity> = { ...prev };
+          updated[idStr] = {
+            id: idStr,
+            name: file.name,
+            path: file.path,
+            language: file.language,
+            content: data.content,
+            version: (prev[idStr]?.version ?? 0)
+          };
+          return updated;
+        });
+        // Activate this file
+        let idToActivate = Object.values(filesById).find(e => e.path === file.path)?.id || file.id || '';
+        if (!idToActivate) {
+          idToActivate = Object.values(filesById).find(e => e.name === file.name && e.path === file.path)?.id || '';
+        }
+        if (idToActivate) setActiveFileId(idToActivate);
         
         // Detect language from file extension
         const detectedLanguage = getLanguageFromExtension(file.path);
         setLanguage(detectedLanguage as any);
         
-        // Update Monaco editor language if editor is mounted
-        if (editorRef.current) {
-          const model = editorRef.current.getModel();
-          if (model) {
-            (window as any).monaco.editor.setModelLanguage(model, detectedLanguage);
-          }
+        // Attach or create a Monaco model for this file and switch the editor model
+        if (editorRef.current && (monacoRef.current || (window as any).monaco)) {
+          const model = ensureModelForFile(file.path, detectedLanguage, data.content);
+          editorRef.current.setModel(model);
         }
       }
     } catch (error) {
@@ -367,12 +473,27 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           // 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          content: code
+          content: filesById[activeFileId]?.content ?? code
         })
       });
       
       if (response.ok) {
         showSuccess('File Saved', 'File saved successfully!');
+        if (socketRef.current && connectionStatus === 'connected' && activeFileId && filesById[activeFileId]) {
+          const f = filesById[activeFileId];
+          socketRef.current.emit('session:file-update', {
+            roomId: currentSessionId,
+            file: {
+              id: f.id,
+              name: f.name,
+              path: f.path,
+              language: f.language,
+              content: f.content,
+              version: f.version
+            },
+            userId: currentUser?.uid
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to save file:', error);
@@ -469,6 +590,16 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socket.on('session-state-sync', (state: SessionState) => {
         console.log('Received session state sync:', state);
         setCode(state.code);
+        if (activeFileId) {
+          setFilesById(prev => ({
+            ...prev,
+            [activeFileId]: {
+              ...(prev[activeFileId] || { id: activeFileId, name: currentFile.split('/').pop() || 'main', path: currentFile }),
+              content: state.code,
+              version: state.version ?? (prev[activeFileId]?.version ?? 0)
+            } as FileEntity
+          }));
+        }
         
         // Update editor if mounted
         if (editorRef.current) {
@@ -515,6 +646,16 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           if (model) {
             model.setValue(syncData.code);
             setCode(syncData.code);
+            if (activeFileId) {
+              setFilesById(prev => ({
+                ...prev,
+                [activeFileId]: {
+                  ...(prev[activeFileId] || { id: activeFileId, name: currentFile.split('/').pop() || 'main', path: currentFile }),
+                  content: syncData.code,
+                  version: syncData.version
+                } as FileEntity
+              }));
+            }
             showUserActivity(syncData.displayName, 'synced code');
           }
         }
@@ -528,6 +669,16 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           if (model) {
             model.setValue(data.currentCode);
             setCode(data.currentCode);
+            if (activeFileId) {
+              setFilesById(prev => ({
+                ...prev,
+                [activeFileId]: {
+                  ...(prev[activeFileId] || { id: activeFileId, name: currentFile.split('/').pop() || 'main', path: currentFile }),
+                  content: data.currentCode,
+                  version: data.currentVersion
+                } as FileEntity
+              }));
+            }
           }
         }
       });
@@ -761,16 +912,45 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     };
   }, [initializeSocket]);
 
-  const handleEditorDidMount = (editor: any) => {
+  // Build a stable Monaco URI for a file in this session
+  const getFileUri = (filePath: string) => {
+    const monaco = monacoRef.current || (window as any).monaco;
+    const normalizedPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    return monaco.Uri.parse(`file:///${currentSessionId}/${normalizedPath}`);
+  };
+
+  // Get or create a Monaco model for a given file
+  const ensureModelForFile = (filePath: string, lang: string, initialValue?: string) => {
+    const monaco = monacoRef.current || (window as any).monaco;
+    const uri = getFileUri(filePath);
+    let model = monaco.editor.getModel(uri);
+    if (!model) {
+      model = monaco.editor.createModel(initialValue ?? '', lang, uri);
+    } else {
+      const currentModeId = model.getModeId ? model.getModeId() : undefined;
+      if (currentModeId !== lang) {
+        monaco.editor.setModelLanguage(model, lang);
+      }
+      if (typeof initialValue === 'string' && model.getValue() !== initialValue) {
+        model.setValue(initialValue);
+      }
+    }
+    return model;
+  };
+
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
+    monacoRef.current = monaco;
     
     // Ensure proper language detection for the current file
     if (currentFile) {
       const detectedLanguage = getLanguageFromExtension(currentFile);
       if (detectedLanguage !== language) {
         setLanguage(detectedLanguage as any);
-        (window as any).monaco.editor.setModelLanguage(editor.getModel(), detectedLanguage);
       }
+      const content = (activeFileId && filesById[activeFileId]?.content) || code || getDefaultCode(detectedLanguage);
+      const model = ensureModelForFile(currentFile, detectedLanguage, content);
+      editor.setModel(model);
     }
     
     // Set up change listener with debouncing
@@ -807,6 +987,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         });
         
         setCode(currentCode);
+        if (activeFileId) {
+          setFilesById(prev => (
+            prev[activeFileId]
+              ? { ...prev, [activeFileId]: { ...prev[activeFileId], content: currentCode, version: (prev[activeFileId].version ?? 0) + 1 } }
+              : prev
+          ));
+        }
       }, 100); // Debounce changes by 100ms
       
       // Clear editing indicator after 2 seconds of inactivity
@@ -860,7 +1047,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   };
 
   const handleRunCode = useCallback(async () => {
-    if (!code.trim()) return;
+    const editorValue = editorRef.current?.getValue?.() ?? code;
+    if (!editorValue.trim()) return;
 
     setOutputLoading(true);
     setShowTerminal(true);
@@ -872,7 +1060,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         socketRef.current.emit('execute-code', {
           roomId: currentSessionId,
           language,
-          code,
+          code: editorValue,
           input: customInput
         });
       }
@@ -886,7 +1074,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         },
         body: JSON.stringify({
           language,
-          code,
+          code: editorValue,
           input: customInput
         })
       });
@@ -977,6 +1165,22 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         const newDefaultCode = getDefaultCode(newLanguage);
         model.setValue(newDefaultCode);
         setCode(newDefaultCode);
+        // Keep files map in sync with language switch
+        if (activeFileId) {
+          setFilesById(prev => (
+            prev[activeFileId]
+              ? {
+                  ...prev,
+                  [activeFileId]: {
+                    ...prev[activeFileId],
+                    language: newLanguage,
+                    content: newDefaultCode,
+                    version: (prev[activeFileId].version ?? 0) + 1
+                  }
+                }
+              : prev
+          ));
+        }
         
         // Notify other users about language change
         if (socketRef.current && connectionStatus === 'connected') {
@@ -1147,6 +1351,25 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           setCurrentFile('');
           setCode('');
         }
+        // Remove from files map
+        setFilesById(prev => {
+          const next = { ...prev };
+          const entry = Object.values(prev).find(e => e.path === file.path);
+          if (entry) {
+            if (socketRef.current && connectionStatus === 'connected') {
+              socketRef.current.emit('session:file-delete', {
+                roomId: currentSessionId,
+                file: { id: entry.id, name: entry.name, path: entry.path, language: entry.language, content: entry.content, version: entry.version },
+                userId: currentUser?.uid
+              });
+            }
+            delete (next as any)[entry.id];
+            if (activeFileId === entry.id) {
+              setActiveFileId('');
+            }
+          }
+          return next;
+        });
         showSuccess('File Deleted', `File "${file.name}" deleted successfully`);
       } else {
         const errorData = await response.json();
@@ -1179,6 +1402,34 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         if (currentFile === file.path) {
           setCurrentFile(data.newPath);
         }
+        // Update map entry name/path
+        setFilesById(prev => {
+          const next = { ...prev };
+          const entry = Object.values(prev).find(e => e.path === file.path);
+          if (entry) {
+            next[entry.id] = {
+              ...entry,
+              name: newName,
+              path: data.newPath || entry.path
+            };
+            if (socketRef.current && connectionStatus === 'connected') {
+              const f = next[entry.id];
+              socketRef.current.emit('session:file-rename', {
+                roomId: currentSessionId,
+                file: {
+                  id: f.id,
+                  name: f.name,
+                  path: f.path,
+                  language: f.language,
+                  content: f.content,
+                  version: f.version
+                },
+                userId: currentUser?.uid
+              });
+            }
+          }
+          return next;
+        });
         showSuccess('File Renamed', `File renamed to "${newName}" successfully`);
       } else {
         const errorData = await response.json();
@@ -1273,13 +1524,42 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         setShowLocalFolderModal(false);
         setLocalFolderPath('');
         
-        // Automatically open the first imported file
-        if (data.files.length > 0) {
-          const firstFile = data.files.find((file: FileItem) => file.type === 'file');
-          if (firstFile) {
+        // Add all imported files to the map without overwriting existing entries
+        if (data.files && data.files.length > 0) {
+          const importedFiles = data.files.filter((f: FileItem) => f.type === 'file');
+          let firstNewId = '';
+          setFilesById(prev => {
+            const next: Record<string, FileEntity> = { ...prev };
+            importedFiles.forEach((f: FileItem, idx: number) => {
+              const already = Object.values(prev).find(e => e.path === f.path);
+              if (!already) {
+                const id = (globalThis.crypto && 'randomUUID' in globalThis.crypto ? (globalThis.crypto as any).randomUUID() : `f_${Math.random().toString(36).slice(2)}`);
+                next[id] = {
+                  id,
+                  name: f.name,
+                  path: f.path,
+                  language: f.language,
+                  content: '',
+                  version: 0
+                };
+                if (socketRef.current && connectionStatus === 'connected') {
+                  socketRef.current.emit('session:file-create', {
+                    roomId: currentSessionId,
+                    file: next[id],
+                    userId: currentUser?.uid
+                  });
+                }
+                if (!firstNewId) firstNewId = id;
+              }
+            });
+            return next;
+          });
+          // Activate the first newly imported file
+          if (importedFiles.length > 0) {
+            const firstFile = importedFiles[0];
             setCurrentFile(firstFile.path);
-            setCode(getDefaultCode(firstFile.language || 'javascript'));
-            setLanguage((firstFile.language || 'javascript') as 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby');
+            setLanguage((firstFile.language || 'javascript') as any);
+            if (firstNewId) setActiveFileId(firstNewId);
           }
         }
         
@@ -1548,6 +1828,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
             defaultValue={code || getDefaultCode(language)}
             theme={theme}
             onMount={handleEditorDidMount}
+            value={activeFileId && filesById[activeFileId] ? filesById[activeFileId].content : code}
             options={{
               minimap: { enabled: true },
               fontSize: 14,

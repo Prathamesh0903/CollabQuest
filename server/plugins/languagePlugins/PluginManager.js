@@ -83,13 +83,11 @@ class PluginManager {
    * @param {Object} options - Execution options
    */
   async executeWithDocker(code, input, dockerConfig, options = {}) {
-    // This would integrate with your existing DockerExecutor
-    // For now, we'll return a mock result
     const DockerExecutor = require('../../utils/dockerExecutor');
     const dockerExecutor = new DockerExecutor();
-    
-    return await dockerExecutor.executeCode(
-      dockerConfig.language || 'unknown',
+    // Execute using explicit Docker configuration from the language plugin
+    return await dockerExecutor.executeCodeWithConfig(
+      dockerConfig,
       code,
       input,
       options.timeout || dockerConfig.timeout || 30000
