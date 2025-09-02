@@ -162,6 +162,39 @@
   animation: pulse 1s infinite;
 }
 
+.connection-indicator.error .connection-dot {
+  background: var(--vscode-error);
+  animation: pulse 0.5s infinite;
+}
+
+.connection-indicator.error {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: var(--vscode-error);
+  color: var(--vscode-error);
+}
+
+.retry-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-error);
+  color: var(--vscode-error);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+}
+
+.retry-btn:hover {
+  background: var(--vscode-error);
+  color: white;
+}
+
 .collaborators-info {
   display: flex;
   align-items: center;

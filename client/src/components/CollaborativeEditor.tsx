@@ -105,7 +105,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [language, setLanguage] = useState<'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby'>(initialLanguage);
   const [code, setCode] = useState(initialCode);
   const [theme, setTheme] = useState<'vs-dark' | 'vs-light'>('vs-dark');
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting' | 'error'>('disconnected');
   const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
   
   const socketRef = useRef<any>(null);
@@ -568,7 +568,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       socket.on('connect_error', (error: Error) => {
         console.error('Connection error:', error);
-        setConnectionStatus('disconnected');
+        setConnectionStatus('error');
       });
 
       socket.on('reconnect', (attemptNumber: number) => {
@@ -889,7 +889,28 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Error handling
       socket.on('error', (error: { message: string }) => {
         console.error('Socket error:', error);
-        showError('Connection Error', error.message);
+        setConnectionStatus('error');
+        
+        // Provide more specific error messages
+        if (error.message.includes('Authentication required')) {
+          showError('Authentication Error', 'Please log in again to continue collaborating');
+        } else if (error.message.includes('User authentication incomplete')) {
+          showError('Authentication Error', 'Please refresh the page and try again');
+        } else if (error.message.includes('Room ID is required')) {
+          showError('Room Error', 'Invalid room configuration. Please check the URL and try again');
+        } else if (error.message.includes('Failed to join collaborative room')) {
+          showError('Connection Error', 'Failed to join the collaborative room. Please try again or contact support');
+        } else {
+          showError('Connection Error', error.message || 'An unexpected error occurred');
+        }
+        
+        // Attempt to reconnect after a delay
+        setTimeout(() => {
+          if (connectionStatus === 'error') {
+            console.log('Attempting to reconnect after error...');
+            initializeSocket();
+          }
+        }, 5000);
       });
 
     } catch (error) {
@@ -1716,8 +1737,21 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
               <span className={`connection-indicator ${connectionStatus}`}>
                 <span className="connection-dot"></span>
                 {connectionStatus === 'connected' ? 'Connected' :
-                 connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Disconnected'}
+                 connectionStatus === 'reconnecting' ? 'Reconnecting...' :
+                 connectionStatus === 'error' ? 'Connection Error' : 'Disconnected'}
               </span>
+              {connectionStatus === 'error' && (
+                <button 
+                  className="retry-btn"
+                  onClick={() => {
+                    setConnectionStatus('reconnecting');
+                    initializeSocket();
+                  }}
+                  title="Retry Connection"
+                >
+                  🔄
+                </button>
+              )}
             </div>
             
             <div className="collaborators-info">

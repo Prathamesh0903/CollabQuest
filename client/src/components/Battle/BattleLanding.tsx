@@ -3,10 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import './BattleLanding.css';
 import BattleConfigModal from './BattleConfigModal';
 import Footer from '../Dashboard/Footer';
+import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../utils/api';
 
 const BattleLanding: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const [joinInput, setJoinInput] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -66,6 +73,7 @@ const BattleLanding: React.FC = () => {
           <p className="hero__subtitle">Face off in real-time on LeetCode-style problems. Track progress, race the clock, and climb the leaderboard.</p>
           <div className="hero__actions">
             <button className="cta" onClick={() => setIsModalOpen(true)}>Start Battle</button>
+            <button className="cta cta--ghost" style={{ marginLeft: 12 }} onClick={() => setIsJoinOpen(true)}>Join Battle</button>
           </div>
           
           <div className="hero__benefits">
@@ -190,6 +198,83 @@ const BattleLanding: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
+
+      {isJoinOpen && (
+        <div className="battle-config-modal-overlay">
+          <div className="battle-config-modal">
+            <div className="modal-header">
+              <div className="header-content">
+                <h2>🔗 Join Battle</h2>
+              </div>
+              <button className="close-btn" onClick={() => { setIsJoinOpen(false); setJoinError(null); }}>×</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="step-content">
+                <div className="step-header">
+                  <h3>Paste invite link or enter room code</h3>
+                  <p>Example link: {window.location.origin}/battle/join/ABC123</p>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <input
+                    type="text"
+                    value={joinInput}
+                    onChange={(e) => setJoinInput(e.target.value)}
+                    placeholder="Paste link or type code (e.g., ABC123)"
+                    className="share-link-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                {joinError && (
+                  <div style={{ color: '#f87171', marginTop: 8 }}>{joinError}</div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <div className="footer-content">
+                <button className="btn btn-secondary" onClick={() => setIsJoinOpen(false)}>Cancel</button>
+                <div className="step-info" />
+                <button
+                  className={`btn btn-primary ${joining ? 'loading' : ''}`}
+                  disabled={joining || !joinInput.trim()}
+                  onClick={async () => {
+                    try {
+                      setJoining(true);
+                      setJoinError(null);
+                      // Extract room code from link or raw input
+                      const input = joinInput.trim();
+                      const match = input.match(/battle\/join\/([A-Za-z0-9]+)/i);
+                      const roomCode = (match ? match[1] : input).toUpperCase();
+                      const token = await currentUser?.getIdToken();
+                      const res = await fetch(`${API_BASE}/battle/join`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          ...(token ? { Authorization: `Bearer ${token}` } : {})
+                        },
+                        body: JSON.stringify({ roomCode })
+                      });
+                      const data = await res.json();
+                      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to join');
+                      setIsJoinOpen(false);
+                      navigate('/battle/play', { state: { battleConfig: { roomCode }, roomId: data.roomId } });
+                    } catch (e: any) {
+                      setJoinError(e.message || 'Failed to join room');
+                    } finally {
+                      setJoining(false);
+                    }
+                  }}
+                >
+                  {joining ? 'Joining...' : 'Join'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

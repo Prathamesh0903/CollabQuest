@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from 'rea
 import Dashboard from './components/Dashboard';
 import BattleLanding from './components/Battle/BattleLanding';
 import BattlePlay from './components/Battle/BattlePlay';
+import BattleJoin from './components/Battle/BattleJoin';
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
 import QuizPage from './components/QuizPage';
-
 
 import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
@@ -115,7 +115,9 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>
+      
+      } />
 
         <Route path="/" element={<PrivateRoute><DashboardWrapper /></PrivateRoute>} />
         <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
@@ -125,6 +127,8 @@ const App: React.FC = () => {
         <Route path="/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
         <Route path="/battle" element={<PrivateRoute><BattleLanding /></PrivateRoute>} />
         <Route path="/battle/play" element={<PrivateRoute><BattlePlay /></PrivateRoute>} />
+        <Route path="/battle/join/:roomCode" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
+        <Route path="/battle/join" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
         <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />
         <Route path="/dsa-sheet/problem/:id" element={<PrivateRoute><DSAProblemPage /></PrivateRoute>} />
       </Routes>

@@ -199,9 +199,28 @@ const socketAuth = async (socket, next) => {
     await authenticateSocket(socket, next);
     
     if (socket.user) {
-      const user = await createOrUpdateUser(socket.user);
-      socket.user = user;
+      try {
+        const user = await createOrUpdateUser(socket.user);
+        socket.user = user;
+        console.log(`Socket authenticated for user: ${user.displayName} (${user._id})`);
+      } catch (error) {
+        console.error('Error creating/updating user in socket auth:', error);
+        // In development mode, allow connection with limited functionality
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Development mode: Allowing connection with limited functionality');
+          socket.user = {
+            uid: socket.user.uid || 'dev-user-' + Math.random().toString(36).substr(2, 9),
+            email: socket.user.email || 'dev@example.com',
+            displayName: socket.user.displayName || 'Development User',
+            picture: socket.user.picture || null,
+            _id: 'dev-' + Math.random().toString(36).substr(2, 9)
+          };
+        } else {
+          return next(new Error('Failed to create/update user'));
+        }
+      }
     }
+    next();
   } catch (error) {
     console.error('Socket auth middleware error:', error);
     next(new Error('Authentication failed'));

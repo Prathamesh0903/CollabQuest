@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import problems from './problems';
 import './BattleConfigModal.css';
+import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../utils/api';
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard';
 type QuestionSelection = 'random' | 'specific';
@@ -30,6 +32,7 @@ interface BattleConfig {
 
 const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [config, setConfig] = useState<BattleConfig>({
     difficulty: 'Easy',
@@ -41,28 +44,54 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+  const [roomId, setRoomId] = useState<string>('');
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   const totalSteps = 3;
 
-  // Generate room code when modal opens
+  // Stop polling when modal closes
   useEffect(() => {
-    if (isOpen) {
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      setConfig(prev => ({ ...prev, roomCode: code }));
-      
-      // Simulate opponents joining
-      simulateOpponentsJoining();
+    if (!isOpen && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
     }
   }, [isOpen]);
 
-  const simulateOpponentsJoining = () => {
-    setTimeout(() => {
-      setOpponents([
-        { id: '1', name: 'Alice', avatar: '👩‍💻', status: 'joined', isHost: true },
-        { id: '2', name: 'Bob', avatar: '👨‍💻', status: 'ready' }
-      ]);
-    }, 1500);
-  };
+  // Immediately create a battle room when modal opens (if not created yet)
+  useEffect(() => {
+    const ensureRoomOnOpen = async () => {
+      if (isOpen && !roomId && !isLoading) {
+        try {
+          setIsLoading(true);
+          const token = await currentUser?.getIdToken();
+          const res = await fetch(`${API_BASE}/battle/create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              difficulty: config.difficulty,
+              questionSelection: config.questionSelection,
+              selectedProblem: config.selectedProblem,
+              battleTime: config.battleTime
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setRoomId(data.roomId);
+            setConfig(prev => ({ ...prev, roomCode: data.roomCode }));
+          }
+        } catch (err) {
+          console.error('Create battle on open failed:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    ensureRoomOnOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const availableProblems = problems.filter(p => p.difficulty === config.difficulty);
 
@@ -83,14 +112,99 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
   };
 
   const handleStartBattle = async () => {
-    setIsLoading(true);
-    
-    // Simulate battle creation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    navigate('/battle/play', { state: { battleConfig: config } });
-    onClose();
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
+      const token = await currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/battle/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          difficulty: config.difficulty,
+          questionSelection: config.questionSelection,
+          selectedProblem: config.selectedProblem,
+          battleTime: config.battleTime
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to create battle');
+      setRoomId(data.roomId);
+      setConfig(prev => ({ ...prev, roomCode: data.roomCode }));
+      setCurrentStep(2);
+      setTimeout(startLobbyPolling, 200);
+    } catch (e) {
+      console.error('Create battle failed:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ensure a room exists when entering Share step (Step 2)
+  useEffect(() => {
+    const autoCreate = async () => {
+      if (currentStep === 2 && !roomId && !isLoading) {
+        try {
+          setIsLoading(true);
+          const token = await currentUser?.getIdToken();
+          const res = await fetch(`${API_BASE}/battle/create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              difficulty: config.difficulty,
+              questionSelection: config.questionSelection,
+              selectedProblem: config.selectedProblem,
+              battleTime: config.battleTime
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success && data.roomCode) {
+            setRoomId(data.roomId);
+            setConfig(prev => ({ ...prev, roomCode: data.roomCode }));
+            setTimeout(startLobbyPolling, 200);
+          } else {
+            console.warn('Battle create did not return roomCode yet');
+          }
+        } catch (err) {
+          console.error('Auto-create battle failed:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    autoCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
+
+  const startLobbyPolling = () => {
+    if (pollRef.current || !roomId) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const token = await currentUser?.getIdToken();
+        const res = await fetch(`${API_BASE}/battle/${roomId}/lobby`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.success && Array.isArray(data.participants)) {
+          const mapped: Opponent[] = data.participants.map((p: any) => ({
+            id: String(p.id),
+            name: p.name,
+            avatar: p.avatar || '👤',
+            status: 'joined',
+            isHost: p.role === 'host'
+          }));
+          setOpponents(mapped);
+          setCurrentStep(3);
+        }
+      } catch (_) {}
+    }, 1500);
   };
 
   const copyToClipboard = async (text: string, type: 'code' | 'link') => {
@@ -103,7 +217,9 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
     }
   };
 
-  const getShareLink = () => `${window.location.origin}/battle/join/${config.roomCode}`;
+  const getShareLink = () => config.roomCode
+    ? `${window.location.origin}/battle/join/${config.roomCode}`
+    : `${window.location.origin}/battle/join/`;
 
   const renderStepIndicator = () => (
     <div className="step-indicator">
@@ -258,13 +374,15 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
               <div className="link-display">
                 <input
                   type="text"
-                  value={getShareLink()}
+                  value={config.roomCode ? getShareLink() : 'Generating link...'}
                   readOnly
                   className="share-link-input"
                 />
                 <button 
                   className={`copy-button ${copied === 'link' ? 'copied' : ''}`}
                   onClick={() => copyToClipboard(getShareLink(), 'link')}
+                  disabled={!config.roomCode}
+                  title={!config.roomCode ? 'Please wait, generating room...' : 'Copy link'}
                 >
                   {copied === 'link' ? '✓ Copied' : '📋 Copy'}
                 </button>

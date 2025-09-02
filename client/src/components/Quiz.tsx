@@ -75,6 +75,8 @@ interface QuizStats {
   streak: number;
   maxStreak: number;
   difficulty: string;
+  hintsUsed: number;
+  livesRemaining: number;
 }
 
 // Default Quiz Configuration
@@ -82,6 +84,675 @@ const defaultQuizConfig: QuizConfig = {
   timeLimit: 20,
   questionCount: 10,
   difficulty: 'Medium'
+};
+
+// Dynamic Quiz Container Component
+const DynamicQuizContainer: React.FC<{
+  questions: Question[];
+  timeLimit: number;
+  onComplete: (score: number, totalQuestions: number, answers: UserAnswer[]) => void;
+  onClose: () => void;
+}> = ({ questions, timeLimit, onComplete, onClose }) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(timeLimit * 60);
+  const [isQuizActive, setIsQuizActive] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  
+  // User answers and stats
+  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
+  const [quizStats, setQuizStats] = useState<QuizStats>({
+    totalQuestions: questions.length,
+    correctAnswers: 0,
+    totalPoints: questions.reduce((sum, q) => sum + q.points, 0),
+    earnedPoints: 0,
+    accuracy: 0,
+    averageTime: 0,
+    timeRemaining: timeLimit * 60,
+    streak: 0,
+    maxStreak: 0,
+    difficulty: 'medium',
+    hintsUsed: 0,
+    livesRemaining: 3
+  });
+  
+  // Current question state
+  const [selectedAnswer, setSelectedAnswer] = useState<any>(null);
+  const [fillBlankAnswer, setFillBlankAnswer] = useState('');
+  const [matchingAnswers, setMatchingAnswers] = useState<string[]>([]);
+  const [codingAnswer, setCodingAnswer] = useState('');
+  const [showExplanation, setShowExplanation] = useState(false);
+  
+  // Power-ups and lives
+  const [powerUps, setPowerUps] = useState({
+    skipQuestion: 1,
+    timeFreeze: 1,
+    fiftyFifty: 2,
+    hint: 3
+  });
+  
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  
+  // Refs
+  const questionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const codingEditorRef = useRef<HTMLTextAreaElement>(null);
+
+  // Initialize quiz
+  useEffect(() => {
+    if (questions.length > 0) {
+      setIsQuizActive(true);
+      setQuestionStartTime(Date.now());
+    }
+  }, [questions]);
+
+  // Timer management
+  useEffect(() => {
+    if (isQuizActive && !isPaused && timeLeft > 0) {
+      sessionTimerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            handleTimeUp();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current);
+      }
+    };
+  }, [isQuizActive, isPaused, timeLeft]);
+
+  const handleTimeUp = () => {
+    setIsQuizActive(false);
+    calculateResults();
+    setShowResults(true);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handlePowerUp = (type: keyof typeof powerUps) => {
+    if (powerUps[type] <= 0) return;
+
+    setPowerUps(prev => ({ ...prev, [type]: prev[type] - 1 }));
+
+    switch (type) {
+      case 'skipQuestion':
+        handleNextQuestion();
+        break;
+      case 'timeFreeze':
+        setIsPaused(true);
+        setTimeout(() => setIsPaused(false), 10000); // 10 seconds
+        break;
+      case 'fiftyFifty':
+        // Eliminate two wrong options for multiple choice
+        break;
+      case 'hint':
+        setQuizStats(prev => ({ ...prev, hintsUsed: prev.hintsUsed + 1 }));
+        break;
+    }
+  };
+
+  const handleSubmitAnswer = () => {
+    const currentQ = questions[currentQuestionIndex];
+    const timeSpent = (Date.now() - questionStartTime) / 1000;
+    
+    let answer: any;
+    let isCorrect = false;
+    
+    switch (currentQ.type) {
+      case 'multiple-choice':
+        answer = selectedAnswer;
+        isCorrect = answer === currentQ.correctAnswer;
+        break;
+      case 'true-false':
+        answer = selectedAnswer;
+        isCorrect = answer === currentQ.correctAnswer;
+        break;
+      case 'fill-blank':
+        answer = fillBlankAnswer;
+        isCorrect = answer.toLowerCase().trim() === (currentQ.correctAnswer as string).toLowerCase().trim();
+        break;
+      case 'coding':
+        answer = codingAnswer;
+        isCorrect = false; // Placeholder
+        break;
+      case 'matching':
+        answer = matchingAnswers;
+        isCorrect = false; // Placeholder for matching logic
+        break;
+      default:
+        answer = null;
+        isCorrect = false;
+    }
+
+    const userAnswer: UserAnswer = {
+      questionId: currentQ.id,
+      answer,
+      timeSpent,
+      isCorrect,
+      points: isCorrect ? currentQ.points : 0
+    };
+
+    setUserAnswers(prev => [...prev, userAnswer]);
+    
+    // Update streak
+    if (isCorrect) {
+      const newStreak = currentStreak + 1;
+      setCurrentStreak(newStreak);
+      setQuizStats(prev => ({
+        ...prev,
+        maxStreak: Math.max(prev.maxStreak, newStreak)
+      }));
+    } else {
+      setCurrentStreak(0);
+      setQuizStats(prev => ({
+        ...prev,
+        livesRemaining: prev.livesRemaining - 1
+      }));
+    }
+
+    // Show explanation briefly
+    setShowExplanation(true);
+    setTimeout(() => {
+      setShowExplanation(false);
+      handleNextQuestion();
+    }, 3000);
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+      setSelectedAnswer(null);
+      setFillBlankAnswer('');
+      setMatchingAnswers([]);
+      setCodingAnswer('');
+      setShowExplanation(false);
+      setQuestionStartTime(Date.now());
+    } else {
+      // Quiz completed
+      setIsQuizActive(false);
+      calculateResults();
+      setShowResults(true);
+    }
+  };
+
+  const calculateResults = () => {
+    const correctAnswers = userAnswers.filter(a => a.isCorrect).length;
+    const earnedPoints = userAnswers.reduce((sum, a) => sum + a.points, 0);
+    const totalTime = userAnswers.reduce((sum, a) => sum + a.timeSpent, 0);
+    const averageTime = userAnswers.length > 0 ? totalTime / userAnswers.length : 0;
+    const accuracy = questions.length > 0 ? (correctAnswers / questions.length) * 100 : 0;
+
+    setQuizStats(prev => ({
+      ...prev,
+      correctAnswers,
+      earnedPoints,
+      accuracy,
+      averageTime,
+      timeRemaining: timeLeft
+    }));
+
+    onComplete(earnedPoints, questions.length, userAnswers);
+  };
+
+  const renderQuestionContent = () => {
+    const currentQ = questions[currentQuestionIndex];
+    if (!currentQ) return null;
+
+    switch (currentQ.type) {
+      case 'multiple-choice':
+        return (
+          <div className="options-grid">
+            {currentQ.options?.map((option, index) => (
+              <motion.button
+                key={index}
+                className={`option-button ${selectedAnswer === index ? 'selected' : ''} ${
+                  showExplanation ? 
+                    (index === currentQ.correctAnswer ? 'correct' : 
+                     selectedAnswer === index ? 'incorrect' : '') : ''
+                }`}
+                onClick={() => !showExplanation && setSelectedAnswer(index)}
+                disabled={showExplanation}
+                whileHover={{ scale: showExplanation ? 1 : 1.02 }}
+                whileTap={{ scale: showExplanation ? 1 : 0.98 }}
+                aria-describedby="question-text"
+                aria-pressed={selectedAnswer === index}
+              >
+                <span className="option-letter">
+                  {String.fromCharCode(65 + index)}
+                </span>
+                <span className="option-text">{option}</span>
+                {showExplanation && index === currentQ.correctAnswer && (
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                )}
+                {showExplanation && selectedAnswer === index && index !== currentQ.correctAnswer && (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </motion.button>
+            ))}
+          </div>
+        );
+
+      case 'true-false':
+        return (
+          <div className="true-false-grid">
+            <motion.button
+              className={`true-false-button ${selectedAnswer === true ? 'selected' : ''} ${
+                showExplanation ? 
+                  (true === currentQ.correctAnswer ? 'correct' : 
+                   selectedAnswer === true ? 'incorrect' : '') : ''
+              }`}
+              onClick={() => !showExplanation && setSelectedAnswer(true)}
+              disabled={showExplanation}
+              whileHover={{ scale: showExplanation ? 1 : 1.02 }}
+              whileTap={{ scale: showExplanation ? 1 : 0.98 }}
+            >
+              True
+              {showExplanation && true === currentQ.correctAnswer && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </motion.button>
+            <motion.button
+              className={`true-false-button ${selectedAnswer === false ? 'selected' : ''} ${
+                showExplanation ? 
+                  (false === currentQ.correctAnswer ? 'correct' : 
+                   selectedAnswer === false ? 'incorrect' : '') : ''
+              }`}
+              onClick={() => !showExplanation && setSelectedAnswer(false)}
+              disabled={showExplanation}
+              whileHover={{ scale: showExplanation ? 1 : 1.02 }}
+              whileTap={{ scale: showExplanation ? 1 : 0.98 }}
+            >
+              False
+              {showExplanation && false === currentQ.correctAnswer && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </motion.button>
+          </div>
+        );
+
+      case 'fill-blank':
+        return (
+          <div className="fill-blank-container">
+            <input
+              type="text"
+              className="fill-blank-input"
+              value={fillBlankAnswer}
+              onChange={(e) => setFillBlankAnswer(e.target.value)}
+              placeholder="Enter your answer..."
+              disabled={showExplanation}
+              aria-describedby="question-text"
+            />
+            {showExplanation && (
+              <div className="explanation">
+                <strong>Correct Answer:</strong> {currentQ.correctAnswer}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'coding':
+        return (
+          <div className="coding-container">
+            <div className="code-editor-container">
+              <div className="code-editor-header">
+                <Code className="w-4 h-4" />
+                {currentQ.language?.toUpperCase()} Code Editor
+              </div>
+              <textarea
+                ref={codingEditorRef}
+                className="code-editor"
+                value={codingAnswer}
+                onChange={(e) => setCodingAnswer(e.target.value)}
+                placeholder="Write your code here..."
+                disabled={showExplanation}
+              />
+            </div>
+            {currentQ.testCases && (
+              <div className="test-cases">
+                <h4>Test Cases:</h4>
+                {currentQ.testCases.map((testCase, index) => (
+                  <div key={index} className="test-case">
+                    <strong>Test {index + 1}:</strong> {testCase.description}<br />
+                    <strong>Input:</strong> {testCase.input}<br />
+                    <strong>Expected Output:</strong> {testCase.expectedOutput}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'matching':
+        return (
+          <div className="matching-container">
+            <div className="matching-pairs">
+              {currentQ.options?.map((option, index) => (
+                <div key={index} className="matching-pair">
+                  <span className="matching-term">{option}</span>
+                  <input
+                    type="text"
+                    value={matchingAnswers[index] || ''}
+                    onChange={(e) => {
+                      const newAnswers = [...matchingAnswers];
+                      newAnswers[index] = e.target.value;
+                      setMatchingAnswers(newAnswers);
+                    }}
+                    placeholder="Enter matching term..."
+                    className="matching-input"
+                    disabled={showExplanation}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      default:
+        return <div className="error">Unsupported question type</div>;
+    }
+  };
+
+  const canSubmit = () => {
+    const currentQ = questions[currentQuestionIndex];
+    if (!currentQ) return false;
+
+    switch (currentQ.type) {
+      case 'multiple-choice':
+      case 'true-false':
+        return selectedAnswer !== null;
+      case 'fill-blank':
+        return fillBlankAnswer.trim() !== '';
+      case 'coding':
+        return codingAnswer.trim() !== '';
+      case 'matching':
+        return matchingAnswers.some(a => a.trim() !== '');
+      default:
+        return false;
+    }
+  };
+
+  if (showResults) {
+    return (
+      <motion.div 
+        className="advanced-quiz-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="quiz-results">
+          <motion.div 
+            className="results-card"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="results-header">
+              <Trophy className="w-16 h-16 text-yellow-500 mb-4" />
+              <h2 className="results-title">Quiz Complete!</h2>
+              <p className="results-subtitle">Great job on completing the advanced quiz</p>
+            </div>
+            
+            <div className="results-stats">
+              <div className="stat-item">
+                <span className="stat-label">Score</span>
+                <span className="stat-value">
+                  {quizStats.earnedPoints}/{quizStats.totalPoints}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Accuracy</span>
+                <span className="stat-value">
+                  {Math.round(quizStats.accuracy)}%
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Time Used</span>
+                <span className="stat-value">{formatTime(timeLimit * 60 - timeLeft)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Max Streak</span>
+                <span className="stat-value">{quizStats.maxStreak}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Lives Left</span>
+                <span className="stat-value">{quizStats.livesRemaining}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Hints Used</span>
+                <span className="stat-value">{quizStats.hintsUsed}</span>
+              </div>
+            </div>
+
+            <div className="results-actions">
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  setShowResults(false);
+                  setCurrentQuestionIndex(0);
+                  setUserAnswers([]);
+                  setTimeLeft(timeLimit * 60);
+                  setIsQuizActive(true);
+                  setQuizStats(prev => ({
+                    ...prev,
+                    correctAnswers: 0,
+                    earnedPoints: 0,
+                    accuracy: 0,
+                    streak: 0,
+                    maxStreak: 0,
+                    hintsUsed: 0,
+                    livesRemaining: 3
+                  }));
+                }}
+              >
+                Retake Quiz
+              </button>
+              <button 
+                className="btn-secondary"
+                onClick={onClose}
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!isQuizActive) {
+    return (
+      <motion.div 
+        className="advanced-quiz-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="quiz-start">
+          <motion.div 
+            className="start-card"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="start-header">
+              <Brain className="w-16 h-16 text-blue-500 mb-4" />
+              <h2 className="start-title">Advanced Quiz</h2>
+              <p className="start-subtitle">Test your knowledge with advanced questions</p>
+            </div>
+            
+            <div className="quiz-info">
+              <div className="info-item">
+                <BookOpen className="w-5 h-5" />
+                <span>{questions.length} Questions</span>
+              </div>
+              <div className="info-item">
+                <Clock className="w-5 h-5" />
+                <span>{timeLimit} Minutes</span>
+              </div>
+              <div className="info-item">
+                <Target className="w-5 h-5" />
+                <span>{quizStats.totalPoints} Total Points</span>
+              </div>
+            </div>
+
+            <div className="start-actions">
+              <button 
+                className="btn-primary"
+                onClick={() => setIsQuizActive(true)}
+              >
+                Start Quiz
+              </button>
+              <button 
+                className="btn-secondary"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  const currentQ = questions[currentQuestionIndex];
+
+  return (
+    <motion.div 
+      className="advanced-quiz-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <div className="quiz-header">
+        <div className="quiz-header-left">
+          <button 
+            className="back-button"
+            onClick={onClose}
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Exit Quiz
+          </button>
+          
+          <div className="quiz-info">
+            <h2 className="quiz-title">Advanced Quiz</h2>
+            <div className="quiz-meta">
+              <span className="question-counter">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </span>
+              <div className="timer">
+                <Clock className="w-4 h-4" />
+                {formatTime(timeLeft)}
+              </div>
+              <div className="difficulty-badge">
+                {currentQ.difficulty}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="quiz-header-right">
+          <div className="lives-container">
+            {[...Array(3)].map((_, i) => (
+              <Heart
+                key={i}
+                className={`w-5 h-5 ${i < quizStats.livesRemaining ? 'text-red-500' : 'text-gray-300'}`}
+                fill={i < quizStats.livesRemaining ? 'currentColor' : 'none'}
+              />
+            ))}
+          </div>
+
+          <div className="streak-container">
+            <Zap className="w-5 h-5 text-yellow-500" />
+            <span>{currentStreak}</span>
+          </div>
+
+          <button 
+            className="pause-button"
+            onClick={() => setIsPaused(!isPaused)}
+          >
+            {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="quiz-content">
+        <div className="power-ups-container">
+          {Object.entries(powerUps).map(([type, count]) => (
+            <button
+              key={type}
+              className={`power-up-btn ${count > 0 ? 'available' : 'disabled'}`}
+              onClick={() => handlePowerUp(type as keyof typeof powerUps)}
+              disabled={count <= 0}
+              title={`${type.replace(/([A-Z])/g, ' $1').toLowerCase()} (${count} left)`}
+            >
+              {type === 'skipQuestion' && <Zap className="w-4 h-4" />}
+              {type === 'timeFreeze' && <Pause className="w-4 h-4" />}
+              {type === 'fiftyFifty' && <Target className="w-4 h-4" />}
+              {type === 'hint' && <Lightbulb className="w-4 h-4" />}
+              <span className="power-up-count">{count}</span>
+            </button>
+          ))}
+        </div>
+
+        <motion.div 
+          className="question-card"
+          key={currentQuestionIndex}
+          initial={{ x: 300, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -300, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="question-header">
+            <span className="question-number">Question {currentQuestionIndex + 1}</span>
+            <span className="question-type">{currentQ.type.replace('-', ' ').toUpperCase()}</span>
+          </div>
+          
+          <div className="question-text" id="question-text">
+            {currentQ.question}
+          </div>
+          
+          {renderQuestionContent()}
+          
+          {currentQ.explanation && showExplanation && (
+            <div className="explanation">
+              <h4>Explanation:</h4>
+              <p>{currentQ.explanation}</p>
+            </div>
+          )}
+          
+          <div className="question-actions">
+            <button 
+              className="btn-submit"
+              onClick={handleSubmitAnswer}
+              disabled={!canSubmit() || showExplanation}
+            >
+              {showExplanation ? 'Next Question' : 'Submit Answer'}
+            </button>
+            
+            {powerUps.hint > 0 && (
+              <button 
+                className="btn-hint"
+                onClick={() => handlePowerUp('hint')}
+                disabled={showExplanation}
+              >
+                <Lightbulb className="w-4 h-4" />
+                Hint ({powerUps.hint})
+              </button>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
 };
 
 // Advanced questions for advanced mode
@@ -238,7 +909,9 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     timeRemaining: 0,
     streak: 0,
     maxStreak: 0,
-    difficulty: 'medium'
+    difficulty: 'medium',
+    hintsUsed: 0,
+    livesRemaining: 3
   });
   const [isPaused, setIsPaused] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -749,6 +1422,32 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     );
   }
 
+  if (isQuizActive && selectedCategory && isAdvanced) {
+    return (
+      <DynamicQuizContainer
+        questions={advancedQuestions}
+        timeLimit={quizConfig.timeLimit}
+        onComplete={(score, totalQuestions, answers) => {
+          setScore(score);
+          setUserAnswers(answers);
+          setShowResults(true);
+          setIsQuizActive(false);
+          if (onComplete) {
+            onComplete(score, totalQuestions);
+          }
+        }}
+        onClose={() => {
+          setSelectedCategory(null);
+          setIsQuizActive(false);
+          setShowResults(false);
+          if (onClose) {
+            onClose();
+          }
+        }}
+      />
+    );
+  }
+
   if (isQuizActive && selectedCategory) {
     return (
       <motion.div 
@@ -769,15 +1468,15 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
               }}
             >
               <ChevronLeft className="w-5 h-5" />
-              {isAdvanced ? 'Exit Quiz' : 'Back to Categories'}
+              Back to Categories
             </button>
             
             <div className="quiz-info">
               <h2 className="quiz-title">{selectedCategory.title}</h2>
               <div className="quiz-meta">
-                              <span className="question-counter">
-                Question {currentQuestion + 1} of {advancedQuestions.length}
-              </span>
+                <span className="question-counter">
+                  Question {currentQuestion + 1} of {advancedQuestions.length}
+                </span>
                 <div className="timer">
                   <Clock className="w-4 h-4" />
                   {formatTime(timeLeft)}

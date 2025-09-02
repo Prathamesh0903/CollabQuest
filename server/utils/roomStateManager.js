@@ -4,6 +4,7 @@ const Room = require('../models/Room');
 const roomStates = new Map();
 const roomCodeToId = new Map();
 const roomExpirations = new Map();
+const battleEndTimers = new Map();
 
 // Redis client (optional)
 let redisClient = null;
@@ -48,7 +49,8 @@ const createRoomState = (roomId, language = 'javascript', mode = 'collaborative'
   cursors: new Map(),
   chatMessages: [],
   isActive: true,
-  createdAt: new Date()
+  createdAt: new Date(),
+  battle: undefined
 });
 
 // Get default code for language
@@ -261,6 +263,52 @@ const updateRoomState = async (roomId, updates) => {
   return state;
 };
 
+// Schedule battle end for a room after a duration (in ms). Sets state.battle.ended.
+const scheduleBattleEnd = (roomId, durationMs) => {
+  if (battleEndTimers.has(roomId)) {
+    clearTimeout(battleEndTimers.get(roomId));
+    battleEndTimers.delete(roomId);
+  }
+  const timer = setTimeout(async () => {
+    try {
+      const state = roomStates.get(roomId);
+      if (state && state.battle && !state.battle.ended) {
+        state.battle.ended = true;
+        state.battle.endedAt = new Date();
+        await updateRoomState(roomId, { battle: state.battle });
+      }
+    } catch (e) {
+      // noop
+    } finally {
+      battleEndTimers.delete(roomId);
+    }
+  }, Math.max(0, durationMs | 0));
+  battleEndTimers.set(roomId, timer);
+};
+
+// Prune inactive participants based on lastSeen in Room doc; marks participant inactive in DB and removes from state.users
+const pruneInactiveParticipants = async (roomId, maxIdleMs = 5 * 60 * 1000) => {
+  const room = await Room.findById(roomId);
+  if (!room) return;
+  const now = Date.now();
+  let changed = false;
+  room.participants.forEach(p => {
+    const last = p.lastSeen ? new Date(p.lastSeen).getTime() : 0;
+    if (p.isActive && last && (now - last) > maxIdleMs) {
+      p.isActive = false;
+      changed = true;
+    }
+  });
+  if (changed) await room.save();
+  const state = roomStates.get(roomId);
+  if (state) {
+    for (const uid of Array.from(state.users)) {
+      const stillActive = room.participants.some(p => p.isActive && p.userId.toString() === uid.toString());
+      if (!stillActive) state.users.delete(uid);
+    }
+  }
+};
+
 // Remove user from room
 const removeUserFromRoom = async (roomId, userId) => {
   const state = roomStates.get(roomId);
@@ -353,6 +401,10 @@ const startCleanupScheduler = () => {
         roomExpirations.delete(roomId);
       }
     }
+    // Periodically prune inactive participants
+    for (const roomId of roomStates.keys()) {
+      pruneInactiveParticipants(roomId).catch(() => {});
+    }
   }, 60 * 1000); // Check every minute
 };
 
@@ -374,5 +426,7 @@ module.exports = {
   getActiveRooms,
   getRoomStats,
   createRoomState,
-  getDefaultCode
+  getDefaultCode,
+  scheduleBattleEnd,
+  pruneInactiveParticipants
 }; 

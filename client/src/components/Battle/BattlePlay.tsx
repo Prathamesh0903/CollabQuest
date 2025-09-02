@@ -1,14 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import './BattlePlay.css';
 import problems from './problems';
+import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../utils/api';
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
 const BattlePlay: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser } = useAuth();
+  const editorValueRef = useRef<string>('');
   const battleConfig = location.state?.battleConfig;
   
   const [difficulty, setDifficulty] = useState<Difficulty>(battleConfig?.difficulty || 'Easy');
@@ -30,6 +34,48 @@ const BattlePlay: React.FC = () => {
     }, 1000);
     return () => clearInterval(id);
   }, []);
+
+  const runTests = async () => {
+    const roomId = location.state?.roomId || location.state?.battleConfig?.roomId;
+    if (!roomId) return;
+    try {
+      const token = await currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/battle/${roomId}/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ code: editorValueRef.current })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to run tests');
+      alert(`Passed ${data.passed}/${data.total} test cases`);
+    } catch (e: any) {
+      alert(e.message || 'Failed to run tests');
+    }
+  };
+
+  const submitSolution = async () => {
+    const roomId = location.state?.roomId || location.state?.battleConfig?.roomId;
+    if (!roomId) return;
+    try {
+      const token = await currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/battle/${roomId}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ code: editorValueRef.current })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit');
+      alert(`Submitted! Score: ${data.score} (${data.passed}/${data.total})`);
+    } catch (e: any) {
+      alert(e.message || 'Failed to submit');
+    }
+  };
 
   return (
     <div className="battle-play">
@@ -83,8 +129,8 @@ const BattlePlay: React.FC = () => {
           <div className="editor-header">
             <div className="timer">⏱ {Math.floor(timer/60).toString().padStart(2,'0')}:{(timer%60).toString().padStart(2,'0')}</div>
             <div className="actions">
-              <button className="cta cta--secondary">Run</button>
-              <button className="cta">Submit</button>
+              <button className="cta cta--secondary" onClick={runTests}>Run</button>
+              <button className="cta" onClick={submitSolution}>Submit</button>
             </div>
           </div>
           <div className="editor-container">
@@ -94,6 +140,7 @@ const BattlePlay: React.FC = () => {
               defaultLanguage={language}
               defaultValue={language === 'javascript' ? problem.templates.javascript : problem.templates.python}
               options={{ minimap: { enabled: true }, fontSize: 14, wordWrap: 'on', automaticLayout: true }}
+              onChange={(value) => { editorValueRef.current = value || ''; }}
             />
           </div>
         </section>

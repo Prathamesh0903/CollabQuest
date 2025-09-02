@@ -292,6 +292,19 @@ const handleSocketConnection = (socket, io) => {
         return;
       }
 
+      // Ensure user has database _id property
+      if (!socket.user._id) {
+        console.error('User missing _id property:', socket.user);
+        socket.emit('error', { message: 'User authentication incomplete. Please refresh and try again.' });
+        return;
+      }
+
+      // Validate roomId
+      if (!roomId) {
+        socket.emit('error', { message: 'Room ID is required' });
+        return;
+      }
+
       // Join socket to collaborative editing room
       socket.join(`collab-room:${roomId}`);
       
@@ -323,7 +336,7 @@ const handleSocketConnection = (socket, io) => {
       // Get users in the room with detailed info
       const roomSockets = await io.in(`collab-room:${roomId}`).fetchSockets();
       const usersInRoom = roomSockets
-        .filter(s => s.user)
+        .filter(s => s.user && s.user._id)
         .map(s => ({
           userId: s.user._id.toString(),
           displayName: s.user.displayName || s.user.email || 'Anonymous',
@@ -365,10 +378,10 @@ const handleSocketConnection = (socket, io) => {
 
       socket.emit('selections-sync', currentSelections);
 
-      console.log(`User ${socket.user.displayName} joined collaborative room ${roomId}`);
+      console.log(`User ${socket.user.displayName} (${socket.user._id}) joined collaborative room ${roomId}`);
     } catch (error) {
       console.error('Error joining collaborative room:', error);
-      socket.emit('error', { message: 'Failed to join collaborative room' });
+      socket.emit('error', { message: 'Failed to join collaborative room: ' + (error.message || 'Unknown error') });
     }
   });
 
