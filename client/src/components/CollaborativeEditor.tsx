@@ -546,23 +546,26 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         reconnectAttemptsRef.current = 0;
         showSuccess('Connected', 'Successfully connected to the server');
         
-        // Join the collaborative session
-        socket.emit('join-collab-room', { roomId: currentSessionId, language });
+        // Join the collaborative session with explicit user info
+        socket.emit('join-collab-room', {
+          roomId: currentSessionId,
+          language,
+          userInfo: {
+            userId: currentUser?.uid,
+            displayName: currentUser?.displayName || currentUser?.email || 'Anonymous',
+            avatar: currentUser?.photoURL || undefined
+          }
+        });
       });
 
       socket.on('disconnect', (reason: string) => {
         console.log('Disconnected from server:', reason);
         setConnectionStatus('disconnected');
         
-        // Handle reconnection for unexpected disconnections
-        if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-          setConnectionStatus('reconnecting');
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-              reconnectAttemptsRef.current++;
-              socket.connect();
-            }
-          }, 2000);
+        // Clear any existing reconnection timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
         }
       });
 
@@ -919,17 +922,22 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     }
   }, [currentUser, currentSessionId, language, showSuccess, showError, showInfo]);
 
-  // Initialize socket on mount
+  // Initialize socket on component mount
   useEffect(() => {
     initializeSocket();
-
+    
     return () => {
+      // Cleanup function to prevent memory leaks
+      if (socketRef.current) {
+        console.log('Cleaning up socket connection');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      reconnectAttemptsRef.current = 0;
     };
   }, [initializeSocket]);
 
@@ -1603,17 +1611,22 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     // Create cursor decorations
     const cursorDecorations = Object.values(remoteCursors).map((cursor: CursorInfo) => ({
       range: new (window as any).monaco.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),
-      options: {
-        className: 'remote-cursor',
-        afterContentClassName: 'remote-cursor-label',
-        stickiness: 1,
-        inlineClassName: '',
-        beforeContentClassName: '',
-        overviewRuler: {
-          color: cursor.color || '#ff00ff',
-          position: 2
+              options: {
+          className: 'remote-cursor',
+          afterContentClassName: 'remote-cursor-label',
+          stickiness: 1,
+          inlineClassName: '',
+          beforeContentClassName: '',
+          overviewRuler: {
+            color: cursor.color || '#ff00ff',
+            position: 2
+          },
+          // Add custom data attributes for user information
+          hoverMessage: {
+            value: `**${cursor.displayName}**\n\n*Collaborator*`,
+            isTrusted: true
+          }
         }
-      }
     }));
 
     // Create selection decorations
@@ -1630,6 +1643,11 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         overviewRuler: {
           color: selection.color || '#ff00ff',
           position: 1
+        },
+        // Add custom data attributes for user information
+        hoverMessage: {
+          value: `**${selection.displayName}**\n\n*Selection*`,
+          isTrusted: true
         }
       }
     }));
@@ -1755,7 +1773,29 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
             </div>
             
             <div className="collaborators-info">
-              <span className="collaborators-count">{activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}</span>
+              <div className="collaborators-header">
+                <span className="collaborators-count">{activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}</span>
+                {activeUsers.length > 0 && (
+                  <div className="collaborators-tooltip">
+                    <div className="tooltip-content">
+                      <div className="tooltip-title">Active Collaborators</div>
+                      {activeUsers.map(user => (
+                        <div key={user.userId} className="tooltip-user">
+                          <UserAvatar
+                            user={user}
+                            size="small"
+                            showStatus={true}
+                            showName={false}
+                          />
+                          <span className="tooltip-username">{user.displayName}</span>
+                          {user.isTyping && <span className="typing-indicator">✏️</span>}
+                          {user.isEditing && <span className="editing-indicator">📝</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="collaborators-list">
                 {activeUsers.slice(0, 3).map(user => (
                   <UserAvatar

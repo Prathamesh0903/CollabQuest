@@ -7,11 +7,11 @@ const Submission = require('../models/Submission');
 const roomStateManager = require('../utils/roomStateManager');
 const { calculateScore } = require('../utils/scoring');
 const vm = require('vm');
-
+                                                        
 const router = express.Router();
 
 // Helpers for input validation and participant checks
-const isValidHexId = (s) => typeof s === 'string' && /^[a-fA-F0-9]{24}$/.test(s);
+const isValidHexId = (s) => typeof s === 'string' && /^[a-fA-F0-9]{24}$/.test(s);                                      
 const sanitizeRoomCode = (code) => (typeof code === 'string' ? code.toUpperCase().trim().slice(0, 8) : '');
 const sanitizeDifficulty = (d) => ({ Easy: 'Easy', Medium: 'Medium', Hard: 'Hard' }[d] || 'Easy');
 const resolveUserId = (req) => {

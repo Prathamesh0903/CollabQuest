@@ -285,7 +285,7 @@ const handleSocketConnection = (socket, io) => {
   // Enhanced collaborative editing room joining
   socket.on('join-collab-room', async (data) => {
     try {
-      const { roomId, language = 'javascript' } = data;
+      const { roomId, language = 'javascript', userInfo } = data;
       
       if (!socket.user) {
         socket.emit('error', { message: 'Authentication required' });
@@ -303,6 +303,24 @@ const handleSocketConnection = (socket, io) => {
       if (!roomId) {
         socket.emit('error', { message: 'Room ID is required' });
         return;
+      }
+
+      // If client provided userInfo, prefer it for display in development or when missing
+      try {
+        if (userInfo && typeof userInfo === 'object') {
+          const isDev = process.env.NODE_ENV === 'development';
+          const isDefaultDevName = socket.user.displayName === 'Development User';
+          const shouldOverrideName = !socket.user.displayName || isDev || isDefaultDevName;
+          const shouldOverrideAvatar = !socket.user.avatar || isDev || isDefaultDevName;
+          if (shouldOverrideName && userInfo.displayName) {
+            socket.user.displayName = userInfo.displayName;
+          }
+          if (shouldOverrideAvatar && userInfo.avatar) {
+            socket.user.avatar = userInfo.avatar;
+          }
+        }
+      } catch (e) {
+        console.warn('Non-fatal: failed to apply client userInfo override:', e?.message || e);
       }
 
       // Join socket to collaborative editing room
@@ -349,6 +367,25 @@ const handleSocketConnection = (socket, io) => {
 
       // Broadcast updated user list to all users in the room
       io.in(`collab-room:${roomId}`).emit('users-in-room', usersInRoom);
+
+      // Emit user joined notification to all users in the room (including the new user)
+      const userJoinedData = {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        joinedAt: new Date(),
+        totalUsers: usersInRoom.length
+      };
+      
+      // Notify other users that someone joined
+      socket.to(`collab-room:${roomId}`).emit('user-joined-room', userJoinedData);
+      
+      // Send confirmation to the joining user
+      socket.emit('user-joined-confirmation', {
+        ...userJoinedData,
+        message: `Successfully joined room ${roomId}`,
+        existingUsers: usersInRoom.filter(u => u.userId !== socket.user._id.toString())
+      });
 
       // Send current cursors to the new user
       const currentCursors = Array.from(userCursors.entries())
@@ -488,6 +525,26 @@ const handleSocketConnection = (socket, io) => {
 
       // Broadcast updated user list to all users in the session
       io.in(`collaborative-session:${sessionId}`).emit('users-in-session', usersInSession);
+      
+      // Emit user joined notification to all users in the session
+      const userJoinedData = {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        joinedAt: new Date(),
+        totalUsers: usersInSession.length,
+        sessionId: sessionId
+      };
+      
+      // Notify other users that someone joined
+      socket.to(`collaborative-session:${sessionId}`).emit('user-joined-session', userJoinedData);
+      
+      // Send confirmation to the joining user
+      socket.emit('user-joined-session-confirmation', {
+        ...userJoinedData,
+        message: `Successfully joined session ${sessionId}`,
+        existingUsers: usersInSession.filter(u => u.userId !== socket.user._id.toString())
+      });
 
       // Send current cursors to the new user
       const currentCursors = Array.from(userCursors.entries())
@@ -1219,10 +1276,20 @@ const handleSocketConnection = (socket, io) => {
       io.in(`collab-room:${roomId}`).emit('users-in-room', usersInRoom);
 
       // Notify other users that this user left
-      socket.to(`collab-room:${roomId}`).emit('user-left-collab-room', {
+      const userLeftData = {
         userId: socket.user._id.toString(),
         displayName: socket.user.displayName || socket.user.email || 'Anonymous',
-        avatar: socket.user.avatar
+        avatar: socket.user.avatar,
+        leftAt: new Date(),
+        totalUsers: usersInRoom.length
+      };
+      
+      socket.to(`collab-room:${roomId}`).emit('user-left-collab-room', userLeftData);
+      
+      // Send confirmation to the leaving user
+      socket.emit('user-left-confirmation', {
+        ...userLeftData,
+        message: `Successfully left room ${roomId}`
       });
 
       console.log(`User ${socket.user.displayName} left collaborative room ${roomId}`);
@@ -1282,6 +1349,24 @@ const handleSocketConnection = (socket, io) => {
       // Enhanced collaborator leave notification
       await broadcastCollaboratorUpdate(sessionId, socket.user._id.toString(), 'leave', {
         leftAt: new Date()
+      });
+      
+      // Emit user left notification to all users in the session
+      const userLeftData = {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        leftAt: new Date(),
+        totalUsers: usersInSession.length,
+        sessionId: sessionId
+      };
+      
+      socket.to(`collaborative-session:${sessionId}`).emit('user-left-session', userLeftData);
+      
+      // Send confirmation to the leaving user
+      socket.emit('user-left-session-confirmation', {
+        ...userLeftData,
+        message: `Successfully left session ${sessionId}`
       });
 
       console.log(`User ${socket.user.displayName} left collaborative session ${sessionId}`);

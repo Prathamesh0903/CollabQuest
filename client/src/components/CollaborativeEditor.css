@@ -206,6 +206,77 @@
 .collaborators-count {
   font-weight: 500;
   color: var(--vscode-text);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.collaborators-count:hover {
+  color: var(--vscode-accent);
+}
+
+.collaborators-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--vscode-sidebar-bg);
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.collaborators-header:hover .collaborators-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tooltip-title {
+  font-weight: 600;
+  color: var(--vscode-text);
+  font-size: 13px;
+  border-bottom: 1px solid var(--vscode-border);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.tooltip-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.tooltip-username {
+  font-size: 12px;
+  color: var(--vscode-text);
+  flex: 1;
+}
+
+.typing-indicator,
+.editing-indicator {
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.typing-indicator {
+  color: var(--vscode-warning);
+}
+
+.editing-indicator {
+  color: var(--vscode-info);
 }
 
 .collaborators-list {
@@ -661,50 +732,84 @@
 /* Remote Cursor and Selection Styles */
 .remote-cursor {
   background-color: transparent !important;
-  border-left: 2px solid;
+  border-left: 3px solid;
   border-left-color: var(--cursor-color, #ff00ff);
   position: relative;
   z-index: 10;
+  animation: cursor-pulse 2s infinite;
 }
 
-.remote-cursor-label::after {
-  content: attr(data-user);
-  position: absolute;
-  top: -20px;
-  left: 0;
-  background: var(--cursor-color, #ff00ff);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  opacity: 0.9;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.remote-cursor-label::before {
+.remote-cursor::before {
   content: '';
   position: absolute;
   top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: -1.5px;
   width: 0;
   height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid var(--cursor-color, #ff00ff);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--cursor-color, #ff00ff);
   z-index: 1000;
+  opacity: 0.9;
 }
 
 .remote-selection {
-  background-color: rgba(255, 0, 255, 0.1) !important;
-  border: 1px solid rgba(255, 0, 255, 0.3) !important;
+  background-color: rgba(255, 0, 255, 0.15) !important;
+  border: 2px solid rgba(255, 0, 255, 0.4) !important;
   position: relative;
   z-index: 5;
+  border-radius: 2px;
+}
+
+/* Cursor pulse animation */
+@keyframes cursor-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Enhanced cursor colors for better visibility */
+.remote-cursor[data-user-color="#FF6B6B"] {
+  --cursor-color: #FF6B6B;
+}
+
+.remote-cursor[data-user-color="#4ECDC4"] {
+  --cursor-color: #4ECDC4;
+}
+
+.remote-cursor[data-user-color="#45B7D1"] {
+  --cursor-color: #45B7D1;
+}
+
+.remote-cursor[data-user-color="#96CEB4"] {
+  --cursor-color: #96CEB4;
+}
+
+.remote-cursor[data-user-color="#FFEAA7"] {
+  --cursor-color: #FFEAA7;
+}
+
+.remote-cursor[data-user-color="#DDA0DD"] {
+  --cursor-color: #DDA0DD;
+}
+
+.remote-cursor[data-user-color="#98D8C8"] {
+  --cursor-color: #98D8C8;
+}
+
+.remote-cursor[data-user-color="#F7DC6F"] {
+  --cursor-color: #F7DC6F;
+}
+
+.remote-cursor[data-user-color="#BB8FCE"] {
+  --cursor-color: #BB8FCE;
+}
+
+.remote-cursor[data-user-color="#85C1E9"] {
+  --cursor-color: #85C1E9;
 }
 
 /* User Avatar Styles */
