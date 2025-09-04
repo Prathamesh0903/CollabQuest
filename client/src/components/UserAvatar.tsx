@@ -14,6 +14,10 @@ interface UserAvatarProps {
   showStatus?: boolean;
   showName?: boolean;
   className?: string;
+  onFollow?: () => void;
+  onUnfollow?: () => void;
+  isFollowing?: boolean;
+  canFollow?: boolean;
 }
 
 const UserAvatar: React.FC<UserAvatarProps> = ({
@@ -21,7 +25,11 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   size = 'medium',
   showStatus = true,
   showName = false,
-  className = ''
+  className = '',
+  onFollow,
+  onUnfollow,
+  isFollowing = false,
+  canFollow = true
 }) => {
   const getInitials = (name: string) => {
     return name
@@ -47,9 +55,32 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     }
   };
 
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!canFollow) return;
+    
+    if (isFollowing) {
+      if (onUnfollow) {
+        onUnfollow();
+      }
+    } else {
+      if (onFollow) {
+        onFollow();
+      }
+    }
+  };
+
   return (
-    <div className={`user-avatar-container ${getSizeClass()} ${className}`}>
-      <div className={`user-avatar ${getStatusClass()}`}>
+    <div 
+      className={`user-avatar-container ${getSizeClass()} ${className} ${isFollowing ? 'following' : ''}`}
+    >
+      <div 
+        className={`user-avatar ${getStatusClass()} ${canFollow ? 'clickable' : ''}`}
+        onClick={handleAvatarClick}
+        title={canFollow ? (isFollowing ? `Click to unfollow ${user.displayName}` : `Click to follow ${user.displayName}`) : ''}
+      >
         {user.avatar ? (
           <img src={user.avatar} alt={user.displayName} />
         ) : (
@@ -58,9 +89,24 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         {showStatus && (
           <div className={`status-indicator ${getStatusClass()}`} />
         )}
+        
+        {/* Follow indicator overlay */}
+        {isFollowing && (
+          <div className="following-overlay">
+            <span className="following-icon">👁️</span>
+          </div>
+        )}
       </div>
+      
       {showName && (
         <span className="user-name">{user.displayName}</span>
+      )}
+      
+      {/* Follow indicator badge */}
+      {isFollowing && (
+        <div className="following-badge" title={`Following ${user.displayName}`}>
+          👁️
+        </div>
       )}
     </div>
   );

@@ -139,6 +139,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const [localFolderPath, setLocalFolderPath] = useState<string>('');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [showHiddenFiles, setShowHiddenFiles] = useState<boolean>(false);
+  const [followingUser, setFollowingUser] = useState<string | null>(null);
+  // Track room-wide version for server-side concurrency control
+  const roomVersionRef = useRef<number>(0);
 
   // Toast notifications
   const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
@@ -589,10 +592,41 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         setConnectionStatus('disconnected');
       });
 
+      // Collab room state synchronization (on join/reconnect)
+      socket.on('room-state-sync', (state: { code: string; language: string; version: number; lastModified?: string; lastExecution?: any }) => {
+        console.log('Received room state sync:', state);
+        // Initialize local editor and version with room state
+        if (typeof state.version === 'number') {
+          roomVersionRef.current = state.version;
+        }
+        setLanguage(state.language as any);
+        setCode(state.code);
+        if (activeFileId) {
+          setFilesById(prev => ({
+            ...prev,
+            [activeFileId]: {
+              ...(prev[activeFileId] || { id: activeFileId, name: currentFile.split('/').pop() || 'main', path: currentFile }),
+              content: state.code,
+              version: state.version ?? (prev[activeFileId]?.version ?? 0)
+            } as FileEntity
+          }));
+        }
+        if (editorRef.current) {
+          const model = editorRef.current.getModel();
+          if (model && model.getValue() !== state.code) {
+            model.setValue(state.code);
+          }
+        }
+      });
+
       // Session state synchronization
       socket.on('session-state-sync', (state: SessionState) => {
         console.log('Received session state sync:', state);
         setCode(state.code);
+        // Sync room version from server
+        if (typeof state.version === 'number') {
+          roomVersionRef.current = state.version;
+        }
         if (activeFileId) {
           setFilesById(prev => ({
             ...prev,
@@ -619,6 +653,10 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Code change events
       socket.on('code-change', (change: EditorChange & { userId: string; displayName: string; version: number; timestamp: Date }) => {
         console.log('Received code change:', change);
+        // Update room version from incoming change
+        if (typeof change.version === 'number') {
+          roomVersionRef.current = change.version;
+        }
         
         if (editorRef.current && change.userId !== currentUser?.uid) {
           const model = editorRef.current.getModel();
@@ -643,6 +681,10 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Full code sync events
       socket.on('code-sync', (syncData: { code: string; version: number; userId: string; displayName: string; timestamp: Date }) => {
         console.log('Received code sync:', syncData);
+        // Sync room version from server
+        if (typeof syncData.version === 'number') {
+          roomVersionRef.current = syncData.version;
+        }
         
         if (editorRef.current && syncData.userId !== currentUser?.uid) {
           const model = editorRef.current.getModel();
@@ -667,6 +709,10 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Version mismatch handling
       socket.on('version-mismatch', (data: { currentVersion: number; currentCode: string }) => {
         console.log('Version mismatch detected, syncing...');
+        // Update local room version to server's current version
+        if (typeof data.currentVersion === 'number') {
+          roomVersionRef.current = data.currentVersion;
+        }
         if (editorRef.current) {
           const model = editorRef.current.getModel();
           if (model) {
@@ -1009,8 +1055,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                 endColumn: change.range.endColumn,
               },
               text: change.text,
-              sessionId: currentSessionId,
-              version: 0
+              roomId: currentSessionId,
+              version: roomVersionRef.current
             });
           }
         });
@@ -1531,6 +1577,18 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     setShowHiddenFiles(!showHiddenFiles);
   };
 
+  // Handle follow user
+  const handleFollowUser = (userId: string, displayName: string) => {
+    setFollowingUser(userId);
+    showSuccess('Following', `You are now following ${displayName}`);
+  };
+
+  // Handle unfollow user
+  const handleUnfollowUser = (userId: string, displayName: string) => {
+    setFollowingUser(null);
+    showSuccess('Unfollowed', `You are no longer following ${displayName}`);
+  };
+
   const handleOpenLocalFolderSubmit = async () => {
     if (!localFolderPath.trim()) return;
     
@@ -1786,6 +1844,10 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                             size="small"
                             showStatus={true}
                             showName={false}
+                            onFollow={() => handleFollowUser(user.userId, user.displayName)}
+                            onUnfollow={() => handleUnfollowUser(user.userId, user.displayName)}
+                            isFollowing={followingUser === user.userId}
+                            canFollow={user.userId !== currentUser?.uid}
                           />
                           <span className="tooltip-username">{user.displayName}</span>
                           {user.isTyping && <span className="typing-indicator">✏️</span>}

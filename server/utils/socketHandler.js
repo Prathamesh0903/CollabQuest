@@ -282,6 +282,164 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
+  // Handle follow user functionality
+  socket.on('follow-user', async (data) => {
+    try {
+      const { roomId, followedUserId, followerUserId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // For collaborative sessions, we'll use the sessionId as roomId
+      // Check if the user is in the collaborative session
+      const sessionState = sessionStates.get(roomId);
+      if (!sessionState) {
+        // Try room state as fallback
+        const roomState = roomStates.get(roomId);
+        if (!roomState) {
+          socket.emit('error', { message: 'Session/Room not found' });
+          return;
+        }
+        
+        // Check if both users are in the room
+        if (!roomState.users.has(followedUserId) || !roomState.users.has(followerUserId)) {
+          socket.emit('error', { message: 'One or both users not found in session' });
+          return;
+        }
+      } else {
+        // Check if both users are in the session
+        if (!sessionState.users.has(followedUserId) || !sessionState.users.has(followerUserId)) {
+          socket.emit('error', { message: 'One or both users not found in session' });
+          return;
+        }
+      }
+
+      // Get user information
+      const followedUser = activeConnections.get(followedUserId)?.user;
+      const followerUser = activeConnections.get(followerUserId)?.user;
+
+      if (!followedUser || !followerUser) {
+        socket.emit('error', { message: 'User information not found' });
+        return;
+      }
+
+      // Emit follow confirmation to the follower
+      socket.emit('user-following', {
+        followerId: followerUserId,
+        followedId: followedUserId,
+        displayName: followedUser.displayName || followedUser.email || 'Anonymous'
+      });
+
+      // Notify the followed user that someone is following them
+      const followedSocket = io.sockets.sockets.get(Array.from(io.sockets.sockets.keys()).find(socketId => {
+        const socket = io.sockets.sockets.get(socketId);
+        return socket.user && socket.user._id.toString() === followedUserId;
+      }));
+      
+      if (followedSocket) {
+        followedSocket.emit('user-being-followed', {
+          followerId: followerUserId,
+          followerName: followerUser.displayName || followerUser.email || 'Anonymous',
+          timestamp: new Date()
+        });
+      }
+
+      console.log(`User ${followerUser.displayName} started following ${followedUser.displayName} in session ${roomId}`);
+    } catch (error) {
+      console.error('Error handling follow user:', error);
+      socket.emit('error', { message: 'Failed to follow user' });
+    }
+  });
+
+  // Handle unfollow user functionality
+  socket.on('unfollow-user', async (data) => {
+    try {
+      const { roomId, followedUserId, followerUserId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // For collaborative sessions, we'll use the sessionId as roomId
+      // Check if the user is in the collaborative session
+      const sessionState = sessionStates.get(roomId);
+      if (!sessionState) {
+        // Try room state as fallback
+        const roomState = roomStates.get(roomId);
+        if (!roomState) {
+          socket.emit('error', { message: 'Session/Room not found' });
+          return;
+        }
+      }
+
+      // Get user information
+      const followedUser = activeConnections.get(followedUserId)?.user;
+      const followerUser = activeConnections.get(followerUserId)?.user;
+
+      if (!followedUser || !followerUser) {
+        socket.emit('error', { message: 'User information not found' });
+        return;
+      }
+
+      // Emit unfollow confirmation to the follower
+      socket.emit('user-unfollowed', {
+        followerId: followerUserId,
+        followedId: followedUserId,
+        displayName: followedUser.displayName || followedUser.email || 'Anonymous'
+      });
+
+      console.log(`User ${followerUser.displayName} stopped following ${followedUser.displayName} in session ${roomId}`);
+    } catch (error) {
+      console.error('Error handling unfollow user:', error);
+      socket.emit('error', { message: 'Failed to unfollow user' });
+    }
+  });
+
+  // Handle followed user changes (for real-time following)
+  socket.on('followed-user-change', async (data) => {
+    try {
+      const { roomId, userId, displayName, range, text, version } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Broadcast the change to all users following this user in the same session
+      // Try both collaborative session and room contexts
+      const sessionState = sessionStates.get(roomId);
+      if (sessionState) {
+        // Collaborative session context
+        socket.to(`collaborative-session:${roomId}`).emit('followed-user-change', {
+          userId,
+          displayName,
+          range,
+          text,
+          version,
+          timestamp: new Date()
+        });
+      } else {
+        // Regular room context
+        socket.to(`collab-room:${roomId}`).emit('followed-user-change', {
+          userId,
+          displayName,
+          range,
+          text,
+          version,
+          timestamp: new Date()
+        });
+      }
+
+      console.log(`Followed user change broadcasted for ${displayName} in session/room ${roomId}`);
+    } catch (error) {
+      console.error('Error handling followed user change:', error);
+      socket.emit('error', { message: 'Failed to broadcast followed user change' });
+    }
+  });
+
   // Enhanced collaborative editing room joining
   socket.on('join-collab-room', async (data) => {
     try {

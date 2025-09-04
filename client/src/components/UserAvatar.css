@@ -140,6 +140,81 @@
   }
 }
 
+.user-avatar-container.large .following-badge {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  top: -6px;
+  right: -6px;
+}
+
+@keyframes followingPulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(14, 99, 156, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Click-based follow functionality */
+.user-avatar.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-avatar.clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.user-avatar.clickable:active {
+  transform: scale(0.98);
+}
+
+/* Following state highlighting */
+.user-avatar-container.following .user-avatar {
+  border: 3px solid var(--vscode-button-bg, #0e639c);
+  box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
+  animation: followingPulse 2s infinite;
+}
+
+.user-avatar-container.following .user-avatar:hover {
+  border-color: var(--vscode-button-hover-bg, #1177bb);
+  box-shadow: 0 0 0 3px rgba(17, 119, 187, 0.4), 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Following overlay */
+.following-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(14, 99, 156, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.following-icon {
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.user-avatar-container.small .following-icon {
+  font-size: 10px;
+}
+
+.user-avatar-container.large .following-icon {
+  font-size: 18px;
+}
+
 /* Tooltip */
 .user-avatar-container {
   position: relative;
