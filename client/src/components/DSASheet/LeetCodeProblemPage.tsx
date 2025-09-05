@@ -484,74 +484,27 @@ int main() {
     <div className="leetcode-problem-page">
       {/* Header */}
       <div className="problem-header">
-        {/* Left Section - Logo and Navigation */}
+        {/* Left Section - Problem Title and Meta */}
         <div className="header-left">
-          <div className="logo-section">
-            <button 
-              className="logo-button"
-              onClick={() => navigate('/dsa-sheet')}
-              title="DSA Sheet"
-            >
-              <span className="logo-icon">📚</span>
-            </button>
-          </div>
-          
-          <div className="navigation-buttons">
-            <button 
-              className={`nav-btn prev-btn ${!prevProblem ? 'disabled' : ''}`}
-              onClick={() => prevProblem && navigate(`/dsa-sheet/problem/${prevProblem._id}`)}
-              disabled={!prevProblem}
-              title="Previous Problem"
-            >
-              <span className="nav-icon">←</span>
-            </button>
-            <button 
-              className={`nav-btn next-btn ${!nextProblem ? 'disabled' : ''}`}
-              onClick={() => nextProblem && navigate(`/dsa-sheet/problem/${nextProblem._id}`)}
-              disabled={!nextProblem}
-              title="Next Problem"
-            >
-              <span className="nav-icon">→</span>
-            </button>
-            <button 
-              className="nav-btn random-btn"
-              onClick={() => {
-                // Random problem selection logic
-                const randomIndex = Math.floor(Math.random() * allProblems.length);
-                const randomProblem = allProblems[randomIndex];
-                if (randomProblem) {
-                  navigate(`/dsa-sheet/problem/${randomProblem._id}`);
-                }
-              }}
-              title="Random Problem"
-            >
-              <span className="nav-icon">🔀</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Center Section - Problem Title and Meta */}
-        <div className="header-center">
+          {/* Problem Title and Meta */}
           <div className="problem-title-section">
             <h1 className="problem-title">
               {problem.problemNumber}. {problem.title}
             </h1>
-            <div className="problem-meta">
-              <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
-                {problem.difficulty}
-              </span>
-              {problem.category && (
-                <span className="category-badge">{problem.category.name}</span>
-              )}
-              {isSolved && (
-                <span className="solved-badge">✓ Solved</span>
-              )}
-            </div>
+            <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
+              {problem.difficulty}
+            </span>
+            {problem.category && (
+              <span className="category-badge">{problem.category.name}</span>
+            )}
+            {isSolved && (
+              <span className="solved-badge">✓ Solved</span>
+            )}
           </div>
         </div>
 
-        {/* Right Section - Action Buttons */}
-        <div className="header-right">
+        {/* Center Section - Run/Submit */}
+        <div className="header-center">
           <div className="action-buttons">
             <button 
               className="run-btn"
@@ -572,151 +525,226 @@ int main() {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Main Content - Tabbed Layout */}
-      <div className="problem-content">
-        {/* Tab Navigation */}
-        <div className="tab-navigation">
-          <div className="tab-container">
+        {/* Right Section - Book + Navigation Icons */}
+        <div className="header-right">
+          <div className="logo-section">
             <button 
-              className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
-              onClick={() => setActiveTab('description')}
+              className="logo-button"
+              onClick={() => navigate('/dsa-sheet')}
+              title="DSA Sheet"
             >
-              <span className="tab-icon">📝</span>
-              <span className="tab-text">Description</span>
+              <span className="logo-icon">📚</span>
+            </button>
+          </div>
+          <div className="navigation-buttons">
+            <button 
+              className={`nav-btn prev-btn ${!prevProblem ? 'disabled' : ''}`}
+              onClick={() => prevProblem && navigate(`/dsa-sheet/problem/${prevProblem._id}`)}
+              disabled={!prevProblem}
+              title="Previous Problem"
+            >
+              <span className="nav-icon">←</span>
             </button>
             <button 
-              className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('submissions')}
+              className={`nav-btn next-btn ${!nextProblem ? 'disabled' : ''}`}
+              onClick={() => nextProblem && navigate(`/dsa-sheet/problem/${nextProblem._id}`)}
+              disabled={!nextProblem}
+              title="Next Problem"
             >
-              <span className="tab-icon">📋</span>
-              <span className="tab-text">Submissions</span>
+              <span className="nav-icon">→</span>
             </button>
-            <div className="tab-slider" style={{ 
-              transform: `translateX(${activeTab === 'description' ? '0%' : '100%'})` 
-            }}></div>
+            <button 
+              className="nav-btn random-btn"
+              onClick={() => {
+                const randomIndex = Math.floor(Math.random() * allProblems.length);
+                const randomProblem = allProblems[randomIndex];
+                if (randomProblem) navigate(`/dsa-sheet/problem/${randomProblem._id}`);
+              }}
+              title="Random Problem"
+            >
+              <span className="nav-icon">🔀</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Tab Content */}
-        {activeTab === 'description' ? (
-          <PanelGroup direction="horizontal">
-          {/* Left Panel - Problem Description */}
+      {/* Main Content - Split Panels with toolbar row at top of each panel */}
+      <div className="problem-content">
+        <PanelGroup direction="horizontal">
+          {/* Left Panel - Tab Content (Description or Submissions) */}
           <Panel defaultSize={50} minSize={30}>
-            <div className="problem-description-panel">
-              <div className="problem-statement">
-                <h2>Problem Statement</h2>
-                <div className="problem-text">
-                  {problem.description}
+            {/* Left panel toolbar (Row 2 - Tabs) */}
+            <div className="panel-toolbar left-panel-toolbar">
+              <div className="tab-navigation">
+                <div className="tab-container">
+                  <button 
+                    className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('description')}
+                  >
+                    <span className="tab-icon">📝</span>
+                    <span className="tab-text">Description</span>
+                  </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('submissions')}
+                  >
+                    <span className="tab-icon">📋</span>
+                    <span className="tab-text">Submissions</span>
+                  </button>
+                  <div className="tab-slider" style={{ 
+                    transform: `translateX(${activeTab === 'description' ? '0%' : '100%'})` 
+                  }}></div>
                 </div>
-              </div>
-
-              {problem.testCases && problem.testCases.length > 0 && (
-                <div className="examples-section">
-                  <h2>Examples</h2>
-                  {problem.testCases
-                    .filter(tc => !tc.isHidden)
-                    .map((tc, idx) => (
-                      <div key={idx} className="example-item">
-                        <div className="example-label">Example {idx + 1}:</div>
-                        <div className="example-content">
-                          <div className="example-input">
-                            <strong>Input:</strong> <code>{tc.input}</code>
-                          </div>
-                          <div className="example-output">
-                            <strong>Output:</strong> <code>{tc.expectedOutput}</code>
-                          </div>
-                          {tc.description && (
-                            <div className="example-explanation">
-                              <strong>Explanation:</strong> {tc.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              <div className="constraints-section">
-                <h2>Constraints</h2>
-                <div className="constraints-text">
-                  See examples and problem statement for constraints.
-                </div>
-              </div>
-
-              {/* Hints Section */}
-              <div className="hints-section">
-                <details className="hints-details">
-                  <summary className="hints-summary">
-                    <h2>Hints</h2>
-                  </summary>
-                  <div className="hints-content">
-                    <p>No hints available yet.</p>
-                  </div>
-                </details>
               </div>
             </div>
+            {activeTab === 'description' ? (
+              <div className="problem-description-panel">
+                <div className="problem-statement">
+                  <h2>Problem Statement</h2>
+                  <div className="problem-text">
+                    {problem.description}
+                  </div>
+                </div>
+
+                {problem.testCases && problem.testCases.length > 0 && (
+                  <div className="examples-section">
+                    <h2>Examples</h2>
+                    {problem.testCases
+                      .filter(tc => !tc.isHidden)
+                      .map((tc, idx) => (
+                        <div key={idx} className="example-item">
+                          <div className="example-label">Example {idx + 1}:</div>
+                          <div className="example-content">
+                            <div className="example-input">
+                              <strong>Input:</strong> <code>{tc.input}</code>
+                            </div>
+                            <div className="example-output">
+                              <strong>Output:</strong> <code>{tc.expectedOutput}</code>
+                            </div>
+                            {tc.description && (
+                              <div className="example-explanation">
+                                <strong>Explanation:</strong> {tc.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                <div className="constraints-section">
+                  <h2>Constraints</h2>
+                  <div className="constraints-text">
+                    See examples and problem statement for constraints.
+                  </div>
+                </div>
+
+                {/* Hints Section */}
+                <div className="hints-section">
+                  <details className="hints-details">
+                    <summary className="hints-summary">
+                      <h2>Hints</h2>
+                    </summary>
+                    <div className="hints-content">
+                      <p>No hints available yet.</p>
+                    </div>
+                  </details>
+                </div>
+              </div>
+            ) : (
+              /* Submissions Tab Content */
+              <div className="submissions-tab">
+                <div className="submissions-header">
+                  <h2>Submission History</h2>
+                  <button 
+                    className="refresh-button"
+                    onClick={() => {
+                      const demoUserId = '68b9b6507ebf2bdb220894bb';
+                      refreshSubmissions(demoUserId);
+                    }}
+                    disabled={loadingSubs}
+                  >
+                    {loadingSubs ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                
+                <div className="submissions-list">
+                  {loadingSubs ? (
+                    <div className="loading">Loading submissions...</div>
+                  ) : submissions.length === 0 ? (
+                    <div className="no-submissions">
+                      <p>No submissions yet.</p>
+                      <p>Write your solution and click Submit to see your submission history here.</p>
+                    </div>
+                  ) : (
+                    submissions.map((submission) => (
+                      <div key={submission._id} className="submission-item">
+                        <div className="submission-header">
+                          <span className="submission-language">{submission.language}</span>
+                          <span className={`submission-status ${submission.status}`}>
+                            {submission.status}
+                          </span>
+                        </div>
+                        <div className="submission-details">
+                          <span>{new Date(submission.submitted_at).toLocaleString()}</span>
+                          <span>{submission.executionTime}ms</span>
+                          <span>{submission.memoryUsage}MB</span>
+                          <span>Score: {Math.round(submission.score)}</span>
+                        </div>
+                        {submission.status === 'ACCEPTED' && (
+                          <div className="solved-badge">✓ Solved</div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </Panel>
 
           <PanelResizeHandle className="resize-handle" />
 
-          {/* Right Panel - Code Editor and Results */}
+          {/* Right Panel - Code Editor (Always Visible) */}
           <Panel defaultSize={50} minSize={30}>
             <div className="code-panel">
-              {/* Utility Strip */}
-              <div className="editor-utility-strip">
-                <div className="utility-left">
-                  <div className="language-selector">
-                    <select 
-                      value={language} 
-                      onChange={(e) => {
-                        setLanguage(e.target.value);
-                        // Code will be updated by useEffect
-                      }}
-                      className="language-dropdown"
-                    >
-                      <option value="javascript">JavaScript</option>
-                      <option value="java">Java</option>
-                      <option value="cpp">C++</option>
-                    </select>
-                  </div>
+              {/* Right panel toolbar (Row 2 - Language + utilities) */}
+              <div className="panel-toolbar right-panel-toolbar">
+                <div className="language-selector">
+                  <select 
+                    value={language} 
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="language-dropdown"
+                  >
+                    <option value="javascript">JavaScript</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                  </select>
                 </div>
                 <div className="utility-right">
                   <button 
                     className="utility-btn"
-                    onClick={() => {
-                      // Copy code functionality
-                      navigator.clipboard.writeText(code);
-                    }}
+                    onClick={() => navigator.clipboard.writeText(code)}
                     title="Copy Code"
                   >
                     <span className="utility-icon">📋</span>
                   </button>
                   <button 
                     className="utility-btn"
-                    onClick={() => {
-                      // Reset to default code
-                      const defaultCode = getStarterCode(language);
-                      setCode(defaultCode);
-                    }}
+                    onClick={() => setCode(getStarterCode(language))}
                     title="Reset to Default"
                   >
                     <span className="utility-icon">🔄</span>
                   </button>
                   <button 
                     className="utility-btn"
-                    onClick={() => {
-                      // Full screen toggle
-                      // Implementation for full screen
-                    }}
+                    onClick={() => {}}
                     title="Full Screen"
                   >
                     <span className="utility-icon">⛶</span>
                   </button>
                 </div>
               </div>
-
               <PanelGroup direction="vertical">
                 {/* Code Editor Panel */}
                 <Panel defaultSize={60} minSize={30}>
@@ -820,63 +848,14 @@ int main() {
                 </Panel>
               </PanelGroup>
 
-          {submitMsg && (
-            <div className={`submit-message ${submitMsg.includes('successfully') ? 'success' : 'error'}`}>
-              {submitMsg}
-            </div>
-          )}
+              {submitMsg && (
+                <div className={`submit-message ${submitMsg.includes('successfully') ? 'success' : 'error'}`}>
+                  {submitMsg}
+                </div>
+              )}
             </div>
           </Panel>
         </PanelGroup>
-        ) : (
-          /* Submissions Tab */
-          <div className="submissions-tab">
-            <div className="submissions-header">
-              <h2>Submission History</h2>
-              <button 
-                className="refresh-button"
-                onClick={() => {
-                  const demoUserId = '68b9b6507ebf2bdb220894bb';
-                  refreshSubmissions(demoUserId);
-                }}
-                disabled={loadingSubs}
-              >
-                {loadingSubs ? 'Loading...' : 'Refresh'}
-              </button>
-            </div>
-            
-            <div className="submissions-list">
-              {loadingSubs ? (
-                <div className="loading">Loading submissions...</div>
-              ) : submissions.length === 0 ? (
-                <div className="no-submissions">
-                  <p>No submissions yet.</p>
-                  <p>Write your solution and click Submit to see your submission history here.</p>
-                </div>
-              ) : (
-                submissions.map((submission) => (
-                  <div key={submission._id} className="submission-item">
-                    <div className="submission-header">
-                      <span className="submission-language">{submission.language}</span>
-                      <span className={`submission-status ${submission.status}`}>
-                        {submission.status}
-                      </span>
-                    </div>
-                    <div className="submission-details">
-                      <span>{new Date(submission.submitted_at).toLocaleString()}</span>
-                      <span>{submission.executionTime}ms</span>
-                      <span>{submission.memoryUsage}MB</span>
-                      <span>Score: {Math.round(submission.score)}</span>
-                    </div>
-                    {submission.status === 'ACCEPTED' && (
-                      <div className="solved-badge">✓ Solved</div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
