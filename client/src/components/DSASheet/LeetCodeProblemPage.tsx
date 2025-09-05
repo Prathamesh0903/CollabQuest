@@ -488,75 +488,80 @@ int main() {
           <h1 className="problem-title">
             {problem.problemNumber}. {problem.title}
           </h1>
-          <div className="problem-meta">
-            <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
-              {problem.difficulty}
-            </span>
-            {problem.category && (
-              <span className="category-badge">{problem.category.name}</span>
-            )}
-            {isSolved && (
-              <span className="solved-badge-header">✓ Solved</span>
-            )}
-          </div>
         </div>
         
         {/* Navigation Controls - Left Side */}
         <div className="problem-navigation">
           <button 
-            className="nav-button back-to-sheet"
+            className="nav-button back-to-sheet-icon"
             onClick={() => navigate('/dsa-sheet')}
+            title="Back to Sheet"
           >
-            ← Back to Sheet
+            ←
           </button>
           <button 
             className={`nav-button prev ${!prevProblem ? 'disabled' : ''}`}
             onClick={() => prevProblem && navigate(`/dsa-sheet/problem/${prevProblem._id}`)}
             disabled={!prevProblem}
+            title="Previous Problem"
           >
-            ← Previous
+            ←
           </button>
           <button 
             className={`nav-button next ${!nextProblem ? 'disabled' : ''}`}
             onClick={() => nextProblem && navigate(`/dsa-sheet/problem/${nextProblem._id}`)}
             disabled={!nextProblem}
+            title="Next Problem"
           >
-            Next →
+            →
           </button>
         </div>
 
-        {/* Editor Actions - Right Side */}
-        <div className="header-actions">
-          <div className="language-selector">
-            <select 
-              value={language} 
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                // Code will be updated by useEffect
-              }}
-              className="language-dropdown"
-            >
-              <option value="javascript">JavaScript</option>
-              <option value="java">Java</option>
-              <option value="cpp">C++</option>
-            </select>
-          </div>
-          <div className="editor-actions">
-            <button 
-              className="run-button"
-              onClick={runTestCases}
-              disabled={!code.trim() || isRunningTests}
-            >
-              {isRunningTests ? 'Running...' : 'Run'}
-            </button>
-            <button 
-              className="submit-button"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-            >
-              Submit
-            </button>
-          </div>
+        {/* Problem Meta - Center */}
+        <div className="problem-meta-center">
+          <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
+            {problem.difficulty}
+          </span>
+          {problem.category && (
+            <span className="category-badge">{problem.category.name}</span>
+          )}
+          {isSolved && (
+            <span className="solved-badge-header">✓ Solved</span>
+          )}
+        </div>
+
+        {/* Language Selector - Right Center */}
+        <div className="language-selector-container">
+          <select 
+            value={language} 
+            onChange={(e) => {
+              setLanguage(e.target.value);
+              // Code will be updated by useEffect
+            }}
+            className="language-dropdown"
+          >
+            <option value="javascript">JavaScript</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+          </select>
+        </div>
+
+        {/* Editor Actions - Far Right */}
+        <div className="editor-actions">
+          <button 
+            className="run-button"
+            onClick={runTestCases}
+            disabled={!code.trim() || isRunningTests}
+          >
+            {isRunningTests ? 'Running...' : 'Run'}
+          </button>
+          <button 
+            className="submit-button"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+          >
+            Submit
+          </button>
         </div>
       </div>
 

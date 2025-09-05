@@ -30,28 +30,39 @@
   border-bottom: 1px solid #404040;
   padding: 1rem 2rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .problem-title-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex: 1;
+  min-width: 200px;
 }
 
 .problem-navigation {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-.header-actions {
+.problem-meta-center {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.language-selector-container {
+  display: flex;
+  align-items: center;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .nav-button {
@@ -59,10 +70,14 @@
   color: #ffffff;
   border: none;
   border-radius: 4px;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.6rem;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-button:hover:not(.disabled) {
@@ -74,13 +89,15 @@
   cursor: not-allowed;
 }
 
-.nav-button.back-to-sheet {
-  background: #00b8a3;
-  color: #ffffff;
+.nav-button.back-to-sheet-icon {
+  background: #007acc;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
 }
 
-.nav-button.back-to-sheet:hover {
-  background: #00a693;
+.nav-button.back-to-sheet-icon:hover {
+  background: #005a9e;
 }
 
 .problem-title {
@@ -463,15 +480,24 @@
   background: #404040;
   color: #ffffff;
   border: 1px solid #555;
-  border-radius: 4px;
-  padding: 0.5rem;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.language-dropdown:hover {
+  background: #4a4a4a;
+  border-color: #666;
 }
 
 .language-dropdown:focus {
   outline: none;
-  border-color: #00b8a3;
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
 .editor-actions {
