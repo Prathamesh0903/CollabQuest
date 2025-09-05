@@ -13,6 +13,7 @@ import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
 import DSASheet from './components/DSASheet/DSASheet';
 import DSAProblemPage from './components/DSASheet/DSAProblemPage';
+import LeetCodeProblemPage from './components/DSASheet/LeetCodeProblemPage';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import './App.css';
@@ -130,7 +131,7 @@ const App: React.FC = () => {
         <Route path="/battle/join/:roomCode" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
         <Route path="/battle/join" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
         <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />
-        <Route path="/dsa-sheet/problem/:id" element={<PrivateRoute><DSAProblemPage /></PrivateRoute>} />
+        <Route path="/dsa-sheet/problem/:id" element={<PrivateRoute><LeetCodeProblemPage /></PrivateRoute>} />
       </Routes>
     </Router>
   );

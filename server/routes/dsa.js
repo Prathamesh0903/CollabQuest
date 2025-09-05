@@ -50,12 +50,12 @@ router.get('/problems', async (req, res) => {
     }
 
     const [items, total] = await Promise.all([
-      DSAProblem.find(filter)
-        .select('title difficulty category tags acceptanceRate isActive created_at')
-        .populate('category', 'name slug')
-        .sort({ created_at: -1 })
-        .skip(skip)
-        .limit(limit),
+          DSAProblem.find(filter)
+      .select('problemNumber title difficulty category tags acceptanceRate isActive created_at functionName')
+      .populate('category', 'name slug')
+      .sort({ problemNumber: 1 })
+      .skip(skip)
+      .limit(limit),
       DSAProblem.countDocuments(filter)
     ]);
 

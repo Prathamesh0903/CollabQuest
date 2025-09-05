@@ -167,7 +167,10 @@ const DSASheet: React.FC = () => {
               onClick={() => toggleTopic(topic.id)}
             >
               <div>
-                <h3>{topic.name}</h3>
+                <h3>
+                  {topic.name}
+                  <span className="dsa-badge" style={{ marginLeft: 8 }}>{topic.problems.length}</span>
+                </h3>
                 {topic.description && (
                   <p style={{ 
                     margin: '0.5rem 0 0 0', 

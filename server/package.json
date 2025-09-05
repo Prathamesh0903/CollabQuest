@@ -11,7 +11,8 @@
     "lint": "eslint \"**/*.js\"",
     "lint:fix": "eslint \"**/*.js\" --fix",
     "lint:dsa": "eslint \"routes/dsa.js\" \"models/dsa/**/*.js\" \"utils/dsaSeedSample.js\"",
-    "lint:dsa:fix": "eslint \"routes/dsa.js\" \"models/dsa/**/*.js\" \"utils/dsaSeedSample.js\" --fix"
+    "lint:dsa:fix": "eslint \"routes/dsa.js\" \"models/dsa/**/*.js\" \"utils/dsaSeedSample.js\" --fix",
+    "seed:dsa": "node scripts/seed-dsa.js"
   },
   "keywords": [
     "nodejs",
@@ -39,6 +40,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "node-pty": "^1.0.0",
+    "react-resizable-panels": "^3.0.5",
     "socket.io": "^4.7.4",
     "uuid": "^9.0.1"
   },

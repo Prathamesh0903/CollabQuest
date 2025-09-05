@@ -20,6 +20,7 @@ export default function ProblemDetail({ problemId }: Props) {
   const [data, setData] = useState<Problem | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'statement' | 'examples' | 'constraints'>('statement');
 
   useEffect(() => {
     if (!problemId) return;
@@ -49,8 +50,24 @@ export default function ProblemDetail({ problemId }: Props) {
     <div className="dsa-card" style={{ display: 'grid', gap: 12 }}>
       <h2 className="dsa-title">{data.title}</h2>
       <div className="dsa-meta">{data.category?.name} • {data.difficulty}</div>
-      <div>{data.description}</div>
-      {data.testCases && data.testCases.length > 0 && (
+
+      <div className="dsa-tabs" style={{ display: 'flex', gap: 8 }}>
+        {(['statement','examples','constraints'] as const).map((tab) => (
+          <button
+            key={tab}
+            className={`dsa-chip ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'statement' && (
+        <div>{data.description}</div>
+      )}
+
+      {activeTab === 'examples' && data.testCases && data.testCases.length > 0 && (
         <div>
           <h4 className="dsa-subtitle">Examples</h4>
           <ul style={{ margin: 0, paddingLeft: 18 }}>
@@ -69,6 +86,10 @@ export default function ProblemDetail({ problemId }: Props) {
               ))}
           </ul>
         </div>
+      )}
+
+      {activeTab === 'constraints' && (
+        <div className="dsa-meta">See examples and problem statement for constraints.</div>
       )}
     </div>
   );

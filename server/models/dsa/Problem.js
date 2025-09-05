@@ -8,6 +8,7 @@ const testCaseSchema = new mongoose.Schema({
 });
 
 const dsaProblemSchema = new mongoose.Schema({
+  problemNumber: { type: Number, required: true, unique: true, index: true },
   title: { type: String, required: true, trim: true, index: true },
   description: { type: String, required: true },
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], required: true, index: true },
@@ -15,6 +16,16 @@ const dsaProblemSchema = new mongoose.Schema({
   tags: [{ type: String, trim: true, index: true }],
   acceptanceRate: { type: Number, default: 0, min: 0, max: 100 },
   testCases: { type: [testCaseSchema], default: [] },
+  starterCode: {
+    javascript: { type: String, default: '' },
+    java: { type: String, default: '' },
+    cpp: { type: String, default: '' }
+  },
+  functionName: {
+    javascript: { type: String, default: '' },
+    java: { type: String, default: '' },
+    cpp: { type: String, default: '' }
+  },
   solution: { type: String, default: '' },
   isActive: { type: Boolean, default: true, index: true },
   created_at: { type: Date, default: Date.now }

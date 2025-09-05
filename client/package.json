@@ -26,6 +26,7 @@
     "react-countdown": "^2.3.6",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
+    "react-resizable-panels": "^3.0.5",
     "react-router-dom": "^7.6.3",
     "react-scripts": "5.0.1",
     "react-simple-typewriter": "^5.0.1",
