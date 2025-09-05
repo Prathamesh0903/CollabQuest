@@ -31,11 +31,11 @@
 .problem-header {
   background: #2d2d2d;
   border-bottom: 1px solid #404040;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
+  min-height: 70px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -106,7 +106,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  padding-left: 1rem;
+  padding-left: 2rem;
 }
 
 .problem-title-section {
@@ -116,8 +116,8 @@
 .problem-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 12px;
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 
@@ -129,7 +129,7 @@
 .action-buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .nav-button {
@@ -172,6 +172,7 @@
   font-weight: 600;
   margin: 0;
   color: #ffffff;
+  line-height: 1.2;
 }
 
 .problem-meta {
@@ -258,8 +259,9 @@
   height: 3px;
   background: #00b8a3;
   transition: transform 0.3s ease;
-  width: 50%;
+  width: calc(50% - 1.5rem);
   border-radius: 2px 2px 0 0;
+  margin-left: 1.5rem;
 }
 
 .tab-button {
@@ -274,7 +276,7 @@
   align-items: center;
   gap: 8px;
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
   position: relative;
 }
 
@@ -638,12 +640,13 @@
   color: #ffffff;
   border: 1px solid #555;
   border-radius: 6px;
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   min-width: 120px;
   transition: all 0.2s ease;
+  height: 32px;
 }
 
 .language-dropdown:hover {
@@ -714,14 +717,12 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   transition: all 0.2s ease;
   height: 36px;
   box-shadow: 0 2px 4px rgba(0, 184, 163, 0.2);
   position: relative;
   z-index: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -767,7 +768,7 @@
 .editor-utility-strip {
   background: #2d2d2d;
   border-bottom: 1px solid #404040;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
