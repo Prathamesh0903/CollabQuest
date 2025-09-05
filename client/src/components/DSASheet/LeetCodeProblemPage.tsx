@@ -488,6 +488,17 @@ int main() {
           <h1 className="problem-title">
             {problem.problemNumber}. {problem.title}
           </h1>
+          <div className="problem-meta-left">
+            <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
+              {problem.difficulty}
+            </span>
+            {problem.category && (
+              <span className="category-badge">{problem.category.name}</span>
+            )}
+            {isSolved && (
+              <span className="solved-badge-header">✓ Solved</span>
+            )}
+          </div>
         </div>
         
         {/* Navigation Controls - Left Side */}
@@ -497,7 +508,7 @@ int main() {
             onClick={() => navigate('/dsa-sheet')}
             title="Back to Sheet"
           >
-            ←
+            🏠
           </button>
           <button 
             className={`nav-button prev ${!prevProblem ? 'disabled' : ''}`}
@@ -505,7 +516,7 @@ int main() {
             disabled={!prevProblem}
             title="Previous Problem"
           >
-            ←
+            ◀
           </button>
           <button 
             className={`nav-button next ${!nextProblem ? 'disabled' : ''}`}
@@ -513,48 +524,15 @@ int main() {
             disabled={!nextProblem}
             title="Next Problem"
           >
-            →
+            ▶
           </button>
         </div>
 
-        {/* Problem Meta - Center */}
-        <div className="problem-meta-center">
-          <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
-            {problem.difficulty}
-          </span>
-          {problem.category && (
-            <span className="category-badge">{problem.category.name}</span>
-          )}
-          {isSolved && (
-            <span className="solved-badge-header">✓ Solved</span>
-          )}
-        </div>
-
-        {/* Language Selector - Right Center */}
-        <div className="language-selector-container">
-          <select 
-            value={language} 
-            onChange={(e) => {
-              setLanguage(e.target.value);
-              // Code will be updated by useEffect
-            }}
-            className="language-dropdown"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-          </select>
-        </div>
+        {/* Spacer to push right content */}
+        <div className="header-spacer"></div>
 
         {/* Editor Actions - Far Right */}
         <div className="editor-actions">
-          <button 
-            className="run-button"
-            onClick={runTestCases}
-            disabled={!code.trim() || isRunningTests}
-          >
-            {isRunningTests ? 'Running...' : 'Run'}
-          </button>
           <button 
             className="submit-button"
             onClick={handleSubmit}
@@ -569,18 +547,43 @@ int main() {
       <div className="problem-content">
         {/* Tab Navigation */}
         <div className="tab-navigation">
-          <button 
-            className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
-            onClick={() => setActiveTab('description')}
-          >
-            Description
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('submissions')}
-          >
-            Submissions
-          </button>
+          <div className="tab-buttons">
+            <button 
+              className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
+              onClick={() => setActiveTab('description')}
+            >
+              Description
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('submissions')}
+            >
+              Submissions
+            </button>
+          </div>
+          <div className="tab-actions">
+            <div className="language-selector-container">
+              <select 
+                value={language} 
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                  // Code will be updated by useEffect
+                }}
+                className="language-dropdown"
+              >
+                <option value="javascript">JavaScript</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+              </select>
+            </div>
+            <button 
+              className="run-button"
+              onClick={runTestCases}
+              disabled={!code.trim() || isRunningTests}
+            >
+              ▶️ {isRunningTests ? 'Running...' : 'Run'}
+            </button>
+          </div>
         </div>
 
         {/* Tab Content */}

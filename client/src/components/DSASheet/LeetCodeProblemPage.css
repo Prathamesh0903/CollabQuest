@@ -37,7 +37,14 @@
 .problem-title-section {
   display: flex;
   align-items: center;
+  gap: 12px;
   min-width: 200px;
+}
+
+.problem-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .problem-navigation {
@@ -46,17 +53,8 @@
   gap: 4px;
 }
 
-.problem-meta-center {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.header-spacer {
   flex: 1;
-  justify-content: center;
-}
-
-.language-selector-container {
-  display: flex;
-  align-items: center;
 }
 
 .editor-actions {
@@ -164,9 +162,21 @@
 /* Tab Navigation */
 .tab-navigation {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: #2d2d2d;
   border-bottom: 1px solid #404040;
-  padding: 0;
+  padding: 0 1rem;
+}
+
+.tab-buttons {
+  display: flex;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .tab-button {
@@ -380,6 +390,17 @@
   background: #555;
 }
 
+.resize-handle-vertical {
+  background: #404040;
+  height: 4px;
+  cursor: row-resize;
+  transition: background 0.2s;
+}
+
+.resize-handle-vertical:hover {
+  background: #555;
+}
+
 /* Left Panel - Problem Description */
 .problem-description-panel {
   background: #1a1a1a;
@@ -517,12 +538,16 @@
 }
 
 .run-button {
-  background: #404040;
+  background: #22c55e;
   color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .run-button:hover:not(:disabled) {
-  background: #555;
+  background: #16a34a;
+  transform: translateY(-1px);
 }
 
 .submit-button {
@@ -561,16 +586,17 @@
 
 .code-editor-container {
   flex: 1;
-  min-height: 500px;
+  height: 100%;
   border-bottom: 1px solid #404040;
 }
 
 /* Results Section */
 .results-section {
   background: #2d2d2d;
-  max-height: 300px;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .results-header {
