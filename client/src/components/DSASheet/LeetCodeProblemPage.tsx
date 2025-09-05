@@ -501,7 +501,7 @@ int main() {
           </div>
         </div>
         
-        {/* Navigation Controls */}
+        {/* Navigation Controls - Left Side */}
         <div className="problem-navigation">
           <button 
             className="nav-button back-to-sheet"
@@ -523,6 +523,40 @@ int main() {
           >
             Next →
           </button>
+        </div>
+
+        {/* Editor Actions - Right Side */}
+        <div className="header-actions">
+          <div className="language-selector">
+            <select 
+              value={language} 
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                // Code will be updated by useEffect
+              }}
+              className="language-dropdown"
+            >
+              <option value="javascript">JavaScript</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+            </select>
+          </div>
+          <div className="editor-actions">
+            <button 
+              className="run-button"
+              onClick={runTestCases}
+              disabled={!code.trim() || isRunningTests}
+            >
+              {isRunningTests ? 'Running...' : 'Run'}
+            </button>
+            <button 
+              className="submit-button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+            >
+              Submit
+            </button>
+          </div>
         </div>
       </div>
 
@@ -609,45 +643,12 @@ int main() {
           {/* Right Panel - Code Editor and Results */}
           <Panel defaultSize={50} minSize={30}>
             <div className="code-panel">
-          {/* Code Editor Header */}
-          <div className="editor-header">
-            <div className="language-selector">
-              <select 
-                value={language} 
-                onChange={(e) => {
-                  setLanguage(e.target.value);
-                  // Code will be updated by useEffect
-                }}
-                className="language-dropdown"
-              >
-                <option value="javascript">JavaScript</option>
-                <option value="java">Java</option>
-                <option value="cpp">C++</option>
-              </select>
-            </div>
-            <div className="editor-actions">
-              <button 
-                className="run-button"
-                onClick={runTestCases}
-                disabled={!code.trim() || isRunningTests}
-              >
-                {isRunningTests ? 'Running...' : 'Run'}
-              </button>
-              <button 
-                className="submit-button"
-                onClick={handleSubmit}
-                disabled={!canSubmit}
-              >
-                Submit
-              </button>
-            </div>
-          </div>
 
 
           {/* Code Editor */}
           <div className="code-editor-container">
             <Editor
-              height="400px"
+              height="500px"
               defaultLanguage={language === 'cpp' ? 'cpp' : language === 'javascript' || language === 'typescript' ? 'javascript' : language}
               language={language === 'cpp' ? 'cpp' : language === 'javascript' || language === 'typescript' ? 'javascript' : language}
               theme="vs-dark"
