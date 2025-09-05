@@ -532,9 +532,9 @@ int main() {
             <button 
               className="logo-button"
               onClick={() => navigate('/dsa-sheet')}
-              title="DSA Sheet"
+              title="Back to DSA Sheet"
             >
-              <span className="logo-icon">📚</span>
+              <span className="logo-icon">🏠</span>
             </button>
           </div>
           <div className="navigation-buttons">
