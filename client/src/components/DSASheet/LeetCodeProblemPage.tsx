@@ -484,62 +484,93 @@ int main() {
     <div className="leetcode-problem-page">
       {/* Header */}
       <div className="problem-header">
-        <div className="problem-title-section">
-          <h1 className="problem-title">
-            {problem.problemNumber}. {problem.title}
-          </h1>
-          <div className="problem-meta-left">
-            <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
-              {problem.difficulty}
-            </span>
-            {problem.category && (
-              <span className="category-badge">{problem.category.name}</span>
-            )}
-            {isSolved && (
-              <span className="solved-badge-header">✓ Solved</span>
-            )}
+        {/* Left Section - Logo and Navigation */}
+        <div className="header-left">
+          <div className="logo-section">
+            <button 
+              className="logo-button"
+              onClick={() => navigate('/dsa-sheet')}
+              title="DSA Sheet"
+            >
+              <span className="logo-icon">📚</span>
+            </button>
+          </div>
+          
+          <div className="navigation-buttons">
+            <button 
+              className={`nav-btn prev-btn ${!prevProblem ? 'disabled' : ''}`}
+              onClick={() => prevProblem && navigate(`/dsa-sheet/problem/${prevProblem._id}`)}
+              disabled={!prevProblem}
+              title="Previous Problem"
+            >
+              <span className="nav-icon">←</span>
+            </button>
+            <button 
+              className={`nav-btn next-btn ${!nextProblem ? 'disabled' : ''}`}
+              onClick={() => nextProblem && navigate(`/dsa-sheet/problem/${nextProblem._id}`)}
+              disabled={!nextProblem}
+              title="Next Problem"
+            >
+              <span className="nav-icon">→</span>
+            </button>
+            <button 
+              className="nav-btn random-btn"
+              onClick={() => {
+                // Random problem selection logic
+                const randomIndex = Math.floor(Math.random() * allProblems.length);
+                const randomProblem = allProblems[randomIndex];
+                if (randomProblem) {
+                  navigate(`/dsa-sheet/problem/${randomProblem._id}`);
+                }
+              }}
+              title="Random Problem"
+            >
+              <span className="nav-icon">🔀</span>
+            </button>
           </div>
         </div>
-        
-        {/* Navigation Controls - Left Side */}
-        <div className="problem-navigation">
-          <button 
-            className="nav-button back-to-sheet-icon"
-            onClick={() => navigate('/dsa-sheet')}
-            title="Back to Sheet"
-          >
-            🏠
-          </button>
-          <button 
-            className={`nav-button prev ${!prevProblem ? 'disabled' : ''}`}
-            onClick={() => prevProblem && navigate(`/dsa-sheet/problem/${prevProblem._id}`)}
-            disabled={!prevProblem}
-            title="Previous Problem"
-          >
-            ◀
-          </button>
-          <button 
-            className={`nav-button next ${!nextProblem ? 'disabled' : ''}`}
-            onClick={() => nextProblem && navigate(`/dsa-sheet/problem/${nextProblem._id}`)}
-            disabled={!nextProblem}
-            title="Next Problem"
-          >
-            ▶
-          </button>
+
+        {/* Center Section - Problem Title and Meta */}
+        <div className="header-center">
+          <div className="problem-title-section">
+            <h1 className="problem-title">
+              {problem.problemNumber}. {problem.title}
+            </h1>
+            <div className="problem-meta">
+              <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
+                {problem.difficulty}
+              </span>
+              {problem.category && (
+                <span className="category-badge">{problem.category.name}</span>
+              )}
+              {isSolved && (
+                <span className="solved-badge">✓ Solved</span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Spacer to push right content */}
-        <div className="header-spacer"></div>
-
-        {/* Editor Actions - Far Right */}
-        <div className="editor-actions">
-          <button 
-            className="submit-button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
-            Submit
-          </button>
+        {/* Right Section - Action Buttons */}
+        <div className="header-right">
+          <div className="action-buttons">
+            <button 
+              className="run-btn"
+              onClick={runTestCases}
+              disabled={!code.trim() || isRunningTests}
+              title="Run Code"
+            >
+              <span className="btn-icon">▶</span>
+              <span className="btn-text">Run</span>
+            </button>
+            <button 
+              className="submit-btn"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              title="Submit Solution"
+            >
+              Submit
+            </button>
+          </div>
         </div>
       </div>
 
@@ -547,42 +578,24 @@ int main() {
       <div className="problem-content">
         {/* Tab Navigation */}
         <div className="tab-navigation">
-          <div className="tab-buttons">
+          <div className="tab-container">
             <button 
               className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
               onClick={() => setActiveTab('description')}
             >
-              Description
+              <span className="tab-icon">📝</span>
+              <span className="tab-text">Description</span>
             </button>
             <button 
               className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
               onClick={() => setActiveTab('submissions')}
             >
-              Submissions
+              <span className="tab-icon">📋</span>
+              <span className="tab-text">Submissions</span>
             </button>
-          </div>
-          <div className="tab-actions">
-            <div className="language-selector-container">
-              <select 
-                value={language} 
-                onChange={(e) => {
-                  setLanguage(e.target.value);
-                  // Code will be updated by useEffect
-                }}
-                className="language-dropdown"
-              >
-                <option value="javascript">JavaScript</option>
-                <option value="java">Java</option>
-                <option value="cpp">C++</option>
-              </select>
-            </div>
-            <button 
-              className="run-button"
-              onClick={runTestCases}
-              disabled={!code.trim() || isRunningTests}
-            >
-              ▶️ {isRunningTests ? 'Running...' : 'Run'}
-            </button>
+            <div className="tab-slider" style={{ 
+              transform: `translateX(${activeTab === 'description' ? '0%' : '100%'})` 
+            }}></div>
           </div>
         </div>
 
@@ -651,102 +664,161 @@ int main() {
           {/* Right Panel - Code Editor and Results */}
           <Panel defaultSize={50} minSize={30}>
             <div className="code-panel">
-
-
-          {/* Code Editor */}
-          <div className="code-editor-container">
-            <Editor
-              height="500px"
-              defaultLanguage={language === 'cpp' ? 'cpp' : language === 'javascript' || language === 'typescript' ? 'javascript' : language}
-              language={language === 'cpp' ? 'cpp' : language === 'javascript' || language === 'typescript' ? 'javascript' : language}
-              theme="vs-dark"
-              value={code}
-              onChange={(v) => setCode(v || '')}
-              options={{ 
-                minimap: { enabled: false }, 
-                fontSize: 14, 
-                wordWrap: 'on',
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                automaticLayout: true
-              }}
-            />
-          </div>
-
-          {/* Test Results */}
-          <div className="results-section">
-            <div className="results-header">
-              <h3>Test Results</h3>
-            </div>
-
-            <div className="results-content">
-                <div className="test-results">
-                  {testResults.length === 0 ? (
-                    <div className="no-results">
-                      Click "Run" to test your solution against the test cases.
-                    </div>
-                  ) : (
-                    <div className="test-results-list">
-                      {/* Analytics Summary */}
-                      <div className="test-analytics">
-                        <div className="analytics-summary">
-                          <span className="passed-count">
-                            ✓ {testResults.filter(r => r.passed).length} passed
-                          </span>
-                          <span className="failed-count">
-                            ✗ {testResults.filter(r => !r.passed).length} failed
-                          </span>
-                          <span className="total-count">
-                            {testResults.length} total
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {testResults.map((result, idx) => (
-                        <div key={idx} className={`test-result-item ${result.passed ? 'passed' : 'failed'}`}>
-                          <div className="test-result-header">
-                            <span className="test-case-number">Test Case {idx + 1}</span>
-                            <span className={`test-status ${result.passed ? 'passed' : 'failed'}`}>
-                              {result.passed ? '✓ Passed' : '✗ Failed'}
-                            </span>
-                          </div>
-                          <div className="test-result-details">
-                            <div className="test-input">
-                              <strong>Input:</strong> 
-                              <div className="test-code-block">
-                                <code>{result.input}</code>
-                              </div>
-                            </div>
-                            <div className="test-expected">
-                              <strong>Expected Output:</strong> 
-                              <div className="test-code-block">
-                                <code>{result.expectedOutput}</code>
-                              </div>
-                            </div>
-                            {result.actualOutput && (
-                              <div className="test-actual">
-                                <strong>Your Output:</strong> 
-                                <div className="test-code-block">
-                                  <code>{result.actualOutput}</code>
-                                </div>
-                              </div>
-                            )}
-                            {result.error && (
-                              <div className="test-error">
-                                <strong>Error:</strong> 
-                                <div className="test-code-block error-block">
-                                  <span className="error-text">{result.error}</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {/* Utility Strip */}
+              <div className="editor-utility-strip">
+                <div className="utility-left">
+                  <div className="language-selector">
+                    <select 
+                      value={language} 
+                      onChange={(e) => {
+                        setLanguage(e.target.value);
+                        // Code will be updated by useEffect
+                      }}
+                      className="language-dropdown"
+                    >
+                      <option value="javascript">JavaScript</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                    </select>
+                  </div>
                 </div>
-            </div>
-          </div>
+                <div className="utility-right">
+                  <button 
+                    className="utility-btn"
+                    onClick={() => {
+                      // Copy code functionality
+                      navigator.clipboard.writeText(code);
+                    }}
+                    title="Copy Code"
+                  >
+                    <span className="utility-icon">📋</span>
+                  </button>
+                  <button 
+                    className="utility-btn"
+                    onClick={() => {
+                      // Reset to default code
+                      const defaultCode = getStarterCode(language);
+                      setCode(defaultCode);
+                    }}
+                    title="Reset to Default"
+                  >
+                    <span className="utility-icon">🔄</span>
+                  </button>
+                  <button 
+                    className="utility-btn"
+                    onClick={() => {
+                      // Full screen toggle
+                      // Implementation for full screen
+                    }}
+                    title="Full Screen"
+                  >
+                    <span className="utility-icon">⛶</span>
+                  </button>
+                </div>
+              </div>
+
+              <PanelGroup direction="vertical">
+                {/* Code Editor Panel */}
+                <Panel defaultSize={60} minSize={30}>
+                  <div className="code-editor-container">
+                    <Editor
+                      height="100%"
+                      defaultLanguage={language === 'cpp' ? 'cpp' : language === 'javascript' || language === 'typescript' ? 'javascript' : language}
+                      language={language === 'cpp' ? 'cpp' : language === 'javascript' || language === 'typescript' ? 'javascript' : language}
+                      theme="vs-dark"
+                      value={code}
+                      onChange={(v) => setCode(v || '')}
+                      options={{ 
+                        minimap: { enabled: false }, 
+                        fontSize: 14, 
+                        wordWrap: 'on',
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true
+                      }}
+                    />
+                  </div>
+                </Panel>
+
+                <PanelResizeHandle className="resize-handle-vertical" />
+
+                {/* Test Results Panel */}
+                <Panel defaultSize={40} minSize={20}>
+                  <div className="results-section">
+                    <div className="results-header">
+                      <h3>Test Results</h3>
+                    </div>
+
+                    <div className="results-content">
+                      <div className="test-results">
+                        {testResults.length === 0 ? (
+                          <div className="no-results">
+                            Click "Run" to test your solution against the test cases.
+                          </div>
+                        ) : (
+                          <div className="test-results-list">
+                            {/* Analytics Summary */}
+                            <div className="test-analytics">
+                              <div className="analytics-summary">
+                                <span className="passed-count">
+                                  ✓ {testResults.filter(r => r.passed).length} passed
+                                </span>
+                                <span className="failed-count">
+                                  ✗ {testResults.filter(r => !r.passed).length} failed
+                                </span>
+                                <span className="total-count">
+                                  {testResults.length} total
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {testResults.map((result, idx) => (
+                              <div key={idx} className={`test-result-item ${result.passed ? 'passed' : 'failed'}`}>
+                                <div className="test-result-header">
+                                  <span className="test-case-number">Test Case {idx + 1}</span>
+                                  <span className={`test-status ${result.passed ? 'passed' : 'failed'}`}>
+                                    {result.passed ? '✓ Passed' : '✗ Failed'}
+                                  </span>
+                                </div>
+                                <div className="test-result-details">
+                                  <div className="test-input">
+                                    <strong>Input:</strong> 
+                                    <div className="test-code-block">
+                                      <code>{result.input}</code>
+                                    </div>
+                                  </div>
+                                  <div className="test-expected">
+                                    <strong>Expected Output:</strong> 
+                                    <div className="test-code-block">
+                                      <code>{result.expectedOutput}</code>
+                                    </div>
+                                  </div>
+                                  {result.actualOutput && (
+                                    <div className="test-actual">
+                                      <strong>Your Output:</strong> 
+                                      <div className="test-code-block">
+                                        <code>{result.actualOutput}</code>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {result.error && (
+                                    <div className="test-error">
+                                      <strong>Error:</strong> 
+                                      <div className="test-code-block error-block">
+                                        <span className="error-text">{result.error}</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Panel>
+              </PanelGroup>
 
           {submitMsg && (
             <div className={`submit-message ${submitMsg.includes('successfully') ? 'success' : 'error'}`}>
