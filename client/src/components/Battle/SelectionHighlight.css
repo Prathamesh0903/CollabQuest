@@ -1,0 +1,208 @@
+/* Monaco Editor Selection Highlighting Styles */
+
+/* User selection highlight background */
+.user-selection-highlight {
+  background-color: rgba(78, 205, 196, 0.15) !important;
+  border: 1px solid rgba(78, 205, 196, 0.4) !important;
+  border-radius: 2px !important;
+  position: relative !important;
+}
+
+/* User selection glyph margin indicator */
+.user-selection-glyph {
+  background-color: #4ECDC4 !important;
+  width: 3px !important;
+  margin-left: 2px !important;
+  border-radius: 1px !important;
+}
+
+/* Hover effect for user selections */
+.user-selection-highlight:hover {
+  background-color: rgba(78, 205, 196, 0.25) !important;
+  border-color: rgba(78, 205, 196, 0.6) !important;
+}
+
+/* Different colors for different users */
+.user-selection-highlight[data-user-color="#FF6B6B"] {
+  background-color: rgba(255, 107, 107, 0.15) !important;
+  border-color: rgba(255, 107, 107, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#4ECDC4"] {
+  background-color: rgba(78, 205, 196, 0.15) !important;
+  border-color: rgba(78, 205, 196, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#45B7D1"] {
+  background-color: rgba(69, 183, 209, 0.15) !important;
+  border-color: rgba(69, 183, 209, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#96CEB4"] {
+  background-color: rgba(150, 206, 180, 0.15) !important;
+  border-color: rgba(150, 206, 180, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#FFEAA7"] {
+  background-color: rgba(255, 234, 167, 0.15) !important;
+  border-color: rgba(255, 234, 167, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#DDA0DD"] {
+  background-color: rgba(221, 160, 221, 0.15) !important;
+  border-color: rgba(221, 160, 221, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#98D8C8"] {
+  background-color: rgba(152, 216, 200, 0.15) !important;
+  border-color: rgba(152, 216, 200, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#F7DC6F"] {
+  background-color: rgba(247, 220, 111, 0.15) !important;
+  border-color: rgba(247, 220, 111, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#BB8FCE"] {
+  background-color: rgba(187, 143, 206, 0.15) !important;
+  border-color: rgba(187, 143, 206, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#85C1E9"] {
+  background-color: rgba(133, 193, 233, 0.15) !important;
+  border-color: rgba(133, 193, 233, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#F8C471"] {
+  background-color: rgba(248, 196, 113, 0.15) !important;
+  border-color: rgba(248, 196, 113, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#82E0AA"] {
+  background-color: rgba(130, 224, 170, 0.15) !important;
+  border-color: rgba(130, 224, 170, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#F1948A"] {
+  background-color: rgba(241, 148, 138, 0.15) !important;
+  border-color: rgba(241, 148, 138, 0.4) !important;
+}
+
+.user-selection-highlight[data-user-color="#D7BDE2"] {
+  background-color: rgba(215, 189, 226, 0.15) !important;
+  border-color: rgba(215, 189, 226, 0.4) !important;
+}
+
+/* Glyph margin colors for different users */
+.user-selection-glyph[data-user-color="#FF6B6B"] {
+  background-color: #FF6B6B !important;
+}
+
+.user-selection-glyph[data-user-color="#4ECDC4"] {
+  background-color: #4ECDC4 !important;
+}
+
+.user-selection-glyph[data-user-color="#45B7D1"] {
+  background-color: #45B7D1 !important;
+}
+
+.user-selection-glyph[data-user-color="#96CEB4"] {
+  background-color: #96CEB4 !important;
+}
+
+.user-selection-glyph[data-user-color="#FFEAA7"] {
+  background-color: #FFEAA7 !important;
+}
+
+.user-selection-glyph[data-user-color="#DDA0DD"] {
+  background-color: #DDA0DD !important;
+}
+
+.user-selection-glyph[data-user-color="#98D8C8"] {
+  background-color: #98D8C8 !important;
+}
+
+.user-selection-glyph[data-user-color="#F7DC6F"] {
+  background-color: #F7DC6F !important;
+}
+
+.user-selection-glyph[data-user-color="#BB8FCE"] {
+  background-color: #BB8FCE !important;
+}
+
+.user-selection-glyph[data-user-color="#85C1E9"] {
+  background-color: #85C1E9 !important;
+}
+
+.user-selection-glyph[data-user-color="#F8C471"] {
+  background-color: #F8C471 !important;
+}
+
+.user-selection-glyph[data-user-color="#82E0AA"] {
+  background-color: #82E0AA !important;
+}
+
+.user-selection-glyph[data-user-color="#F1948A"] {
+  background-color: #F1948A !important;
+}
+
+.user-selection-glyph[data-user-color="#D7BDE2"] {
+  background-color: #D7BDE2 !important;
+}
+
+/* Animation for new selections */
+@keyframes selectionPulse {
+  0% {
+    background-color: rgba(78, 205, 196, 0.3);
+    border-color: rgba(78, 205, 196, 0.6);
+  }
+  50% {
+    background-color: rgba(78, 205, 196, 0.2);
+    border-color: rgba(78, 205, 196, 0.5);
+  }
+  100% {
+    background-color: rgba(78, 205, 196, 0.15);
+    border-color: rgba(78, 205, 196, 0.4);
+  }
+}
+
+.user-selection-highlight.new {
+  animation: selectionPulse 0.5s ease-out;
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .user-selection-highlight {
+    background-color: rgba(78, 205, 196, 0.1) !important;
+    border-color: rgba(78, 205, 196, 0.3) !important;
+  }
+  
+  .user-selection-highlight:hover {
+    background-color: rgba(78, 205, 196, 0.2) !important;
+    border-color: rgba(78, 205, 196, 0.5) !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .user-selection-highlight {
+    border-width: 2px !important;
+    border-style: solid !important;
+  }
+  
+  .user-selection-glyph {
+    width: 4px !important;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .user-selection-highlight.new {
+    animation: none;
+  }
+  
+  .user-selection-highlight {
+    transition: none !important;
+  }
+}
+

@@ -21,7 +21,7 @@ const submissionSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Made optional for anonymous submissions in testing
   },
   problem: {
     type: mongoose.Schema.Types.ObjectId,
@@ -88,6 +88,27 @@ const submissionSchema = new mongoose.Schema({
   notes: String // User's notes about the solution
 }, {
   timestamps: true
+});
+
+// Store incremental code changes captured during the coding session
+// Each change records the affected range and text along with a timestamp
+// Optionally, clients may include lightweight metadata like version or linesChanged
+submissionSchema.add({
+  codeChanges: [
+    new mongoose.Schema({
+      timestamp: { type: Date, default: Date.now },
+      range: {
+        startLineNumber: { type: Number },
+        startColumn: { type: Number },
+        endLineNumber: { type: Number },
+        endColumn: { type: Number }
+      },
+      text: { type: String },
+      version: { type: Number },
+      linesChanged: { type: Number },
+      userId: { type: String } // for collaborative contexts or anonymous ids
+    }, { _id: false })
+  ]
 });
 
 // Indexes for better query performance

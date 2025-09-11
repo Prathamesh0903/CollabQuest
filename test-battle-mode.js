@@ -123,6 +123,7 @@ async function testBattleMode() {
   
   // Test 6: Check Lobby Status
   console.log('\n6️⃣ Testing Lobby Status...');
+  console.log('Using roomId:', roomId);
   const lobbyRes = await makeRequest('GET', `/battle/${roomId}/lobby`);
   
   if (lobbyRes.success && lobbyRes.data.success) {
@@ -185,6 +186,7 @@ async function testBattleMode() {
   
   // Test 11: Check Final Lobby Status
   console.log('\n🔍 Testing Final Status...');
+  console.log('Using roomId:', roomId);
   await new Promise(resolve => setTimeout(resolve, 1000)); // Wait a bit
   
   const finalLobbyRes = await makeRequest('GET', `/battle/${roomId}/lobby`);

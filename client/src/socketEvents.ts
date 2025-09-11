@@ -102,6 +102,45 @@ export interface UserInfo {
   status?: 'online' | 'away' | 'busy' | 'offline';
   customMessage?: string;
   color?: string;
+  role?: 'participant' | 'moderator' | 'host';
+  permissions?: 'view-only' | 'edit-code' | 'full-access';
+}
+
+// Permission change events
+export interface PermissionChangedEvent {
+  roomId: string;
+  userId: string;
+  displayName: string;
+  oldPermissions: 'view-only' | 'edit-code' | 'full-access';
+  newPermissions: 'view-only' | 'edit-code' | 'full-access';
+  changedBy: string;
+  changedAt: string | Date;
+}
+
+export interface DefaultPermissionsChangedEvent {
+  roomId: string;
+  oldDefaultPermissions: 'view-only' | 'edit-code' | 'full-access';
+  newDefaultPermissions: 'view-only' | 'edit-code' | 'full-access';
+  changedBy: string;
+  changedAt: string | Date;
+}
+
+export interface PermissionSettingsChangedEvent {
+  roomId: string;
+  allowPermissionChanges: boolean;
+  changedBy: string;
+  changedAt: string | Date;
+}
+
+// Permission validation response
+export interface PermissionValidationEvent {
+  roomId: string;
+  userId: string;
+  action: string;
+  hasPermission: boolean;
+  userPermission: 'view-only' | 'edit-code' | 'full-access';
+  requiredPermission: 'view-only' | 'edit-code' | 'full-access';
+  message?: string;
 }
 
 // Example: Socket event name mapping (for reference)
@@ -116,4 +155,8 @@ export type SocketEventMap = {
   'problem-solved': ProblemSolvedEvent;
   'leaderboard-update': LeaderboardUpdateEvent;
   'users-in-room': UserInfo[];
+  'permission-changed': PermissionChangedEvent;
+  'default-permissions-changed': DefaultPermissionsChangedEvent;
+  'permission-settings-changed': PermissionSettingsChangedEvent;
+  'permission-validation': PermissionValidationEvent;
 }; 

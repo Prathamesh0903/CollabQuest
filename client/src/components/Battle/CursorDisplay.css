@@ -1,0 +1,205 @@
+.cursor-display-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.user-cursor {
+  position: absolute;
+  width: 2px;
+  height: 20px;
+  border-left: 2px solid;
+  pointer-events: none;
+  z-index: 15;
+  animation: cursor-blink 1s infinite;
+}
+
+.user-cursor::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  background: inherit;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.cursor-label {
+  position: absolute;
+  top: -30px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.user-cursor:hover .cursor-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cursor-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.cursor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cursor-name {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.user-selection {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 2px;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+.user-selection:hover {
+  opacity: 0.5;
+}
+
+.selection-label {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.user-selection:hover .selection-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes cursor-blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0.3;
+  }
+}
+
+/* Ensure cursors are visible over editor content */
+.monaco-editor .user-cursor {
+  z-index: 20;
+}
+
+.monaco-editor .user-selection {
+  z-index: 15;
+}
+
+/* Follow mode highlighting */
+.followed-user-cursor {
+  animation: followed-cursor-pulse 2s infinite;
+}
+
+.followed-user-selection {
+  animation: followed-selection-pulse 2s infinite;
+}
+
+.followed-label {
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.follow-indicator {
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+@keyframes followed-cursor-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes followed-selection-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cursor-label {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .cursor-avatar {
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+  }
+  
+  .cursor-name {
+    font-size: 10px;
+  }
+  
+  .selection-label {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+  
+  .follow-indicator {
+    font-size: 8px;
+    margin-left: 2px;
+  }
+}

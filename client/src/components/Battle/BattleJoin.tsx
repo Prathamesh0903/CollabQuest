@@ -29,8 +29,11 @@ const BattleJoin: React.FC = () => {
           body: JSON.stringify({ roomCode })
         });
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.error || 'Failed to join battle');
-        navigate('/battle/play', { state: { battleConfig: { roomCode }, roomId: data.roomId } });
+        if (!res.ok || !data.success) {
+          const message = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+          throw new Error(message || 'Failed to join battle');
+        }
+        navigate('/battle/lobby', { state: { roomId: data.roomId, roomCode } });
       } catch (e: any) {
         setError(e.message || 'Failed to join room');
       } finally {

@@ -42,6 +42,15 @@ const roomSchema = new mongoose.Schema({
     requireApproval: {
       type: Boolean,
       default: false
+    },
+    defaultPermissions: {
+      type: String,
+      enum: ['view-only', 'edit-code', 'full-access'],
+      default: 'edit-code'
+    },
+    allowPermissionChanges: {
+      type: Boolean,
+      default: true
     }
   },
   // Room state
@@ -82,6 +91,11 @@ const roomSchema = new mongoose.Schema({
       type: String,
       enum: ['participant', 'moderator', 'host'],
       default: 'participant'
+    },
+    permissions: {
+      type: String,
+      enum: ['view-only', 'edit-code', 'full-access'],
+      default: 'edit-code'
     },
     joinedAt: {
       type: Date,
@@ -197,7 +211,7 @@ roomSchema.virtual('duration').get(function() {
 });
 
 // Methods
-roomSchema.methods.addParticipant = function(userId, role = 'participant') {
+roomSchema.methods.addParticipant = function(userId, role = 'participant', permissions = null) {
   const existingParticipant = this.participants.find(p => 
     p.userId.toString() === userId.toString()
   );
@@ -212,9 +226,13 @@ roomSchema.methods.addParticipant = function(userId, role = 'participant') {
     throw new Error('Room has reached maximum participant limit');
   }
   
+  // Use provided permissions or default from room settings
+  const participantPermissions = permissions || this.settings.defaultPermissions;
+  
   this.participants.push({
     userId,
     role,
+    permissions: participantPermissions,
     joinedAt: new Date(),
     isActive: true,
     lastSeen: new Date()
@@ -247,6 +265,54 @@ roomSchema.methods.updateParticipantRole = function(userId, newRole) {
     participant.role = newRole;
   }
   
+  return this.save();
+};
+
+roomSchema.methods.updateParticipantPermissions = function(userId, newPermissions) {
+  const participant = this.participants.find(p => 
+    p.userId.toString() === userId.toString()
+  );
+  
+  if (participant) {
+    participant.permissions = newPermissions;
+  }
+  
+  return this.save();
+};
+
+roomSchema.methods.getParticipantPermissions = function(userId) {
+  const participant = this.participants.find(p => 
+    p.userId.toString() === userId.toString() && p.isActive
+  );
+  
+  return participant ? participant.permissions : null;
+};
+
+roomSchema.methods.hasPermission = function(userId, requiredPermission) {
+  const participant = this.participants.find(p => 
+    p.userId.toString() === userId.toString() && p.isActive
+  );
+  
+  if (!participant) return false;
+  
+  // Hosts always have full access
+  if (participant.role === 'host') return true;
+  
+  // Check permission hierarchy
+  const permissionLevels = {
+    'view-only': 1,
+    'edit-code': 2,
+    'full-access': 3
+  };
+  
+  const userLevel = permissionLevels[participant.permissions] || 0;
+  const requiredLevel = permissionLevels[requiredPermission] || 0;
+  
+  return userLevel >= requiredLevel;
+};
+
+roomSchema.methods.updateDefaultPermissions = function(newDefaultPermissions) {
+  this.settings.defaultPermissions = newDefaultPermissions;
   return this.save();
 };
 

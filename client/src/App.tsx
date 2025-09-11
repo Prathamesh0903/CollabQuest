@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import BattleLanding from './components/Battle/BattleLanding';
 import BattlePlay from './components/Battle/BattlePlay';
 import BattleJoin from './components/Battle/BattleJoin';
+import BattleLobby from './components/Battle/BattleLobby';
+import SpectatorMode from './components/Battle/SpectatorMode';
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
@@ -39,6 +41,18 @@ const AdvancedQuizWrapper: React.FC = () => {
       onClose={() => window.location.href = '/'} 
     />
   );
+};
+
+// Spectator Mode wrapper
+const SpectatorModeWrapper: React.FC = () => {
+  const location = useLocation();
+  const { roomId, roomCode } = location.state || {};
+
+  if (!roomId || !roomCode) {
+    return <Navigate to="/battle" replace />;
+  }
+
+  return <SpectatorMode roomId={roomId} roomCode={roomCode} />;
 };
 
 // Dashboard wrapper with state management
@@ -128,6 +142,8 @@ const App: React.FC = () => {
         <Route path="/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
         <Route path="/battle" element={<PrivateRoute><BattleLanding /></PrivateRoute>} />
         <Route path="/battle/play" element={<PrivateRoute><BattlePlay /></PrivateRoute>} />
+        <Route path="/battle/lobby" element={<PrivateRoute><BattleLobby /></PrivateRoute>} />
+        <Route path="/battle/spectator" element={<PrivateRoute><SpectatorModeWrapper /></PrivateRoute>} />
         <Route path="/battle/join/:roomCode" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
         <Route path="/battle/join" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
         <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />

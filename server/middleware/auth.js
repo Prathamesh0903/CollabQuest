@@ -15,27 +15,58 @@ const auth = async (req, res, next) => {
     return res.status(401).json({ error: 'Authentication failed' });
   }
 };
+// Lightweight guest support: attaches guest flag when no token but guest headers present
+const guestAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) return optionalAuth(req, res, next);
+    // Accept guest with limited privileges if x-guest: true
+    const isGuest = String(req.headers['x-guest'] || '').toLowerCase() === 'true';
+    if (isGuest) {
+      req.user = null;
+      req.guest = { name: req.headers['x-guest-name'] || 'Guest' };
+      return next();
+    }
+    return next();
+  } catch (e) {
+    req.user = null;
+    return next();
+  }
+};
 
-// Optional authentication middleware
+// Optional authentication middleware (gracefully ignores invalid/expired tokens)
 const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (token) {
-      await authenticateToken(req, res, next);
-      if (req.user) {
-        const user = await createOrUpdateUser(req.user);
-        req.user = user;
-      }
-    } else {
+    if (!token) {
       req.user = null;
-      next();
+      return next();
     }
+
+    // Verify token directly and swallow errors to allow anonymous access
+    const { admin } = require('../config/firebase');
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.user = {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        displayName: decodedToken.name || decodedToken.display_name,
+        picture: decodedToken.picture
+      };
+      const user = await createOrUpdateUser(req.user);
+      req.user = user;
+    } catch (verifyErr) {
+      console.warn('optionalAuth: ignoring invalid/expired token');
+      req.user = null;
+    }
+    return next();
   } catch (error) {
     console.error('Optional auth middleware error:', error);
     req.user = null;
-    next();
+    return next();
   }
 };
 
@@ -230,6 +261,7 @@ const socketAuth = async (socket, next) => {
 module.exports = {
   auth,
   optionalAuth,
+  guestAuth,
   requireRole,
   requireTeamMember,
   requireTeamLeader,

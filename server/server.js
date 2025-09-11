@@ -36,6 +36,9 @@ const io = new Server(server, {
   }
 });
 
+// Make io available to routes via app
+app.set('io', io);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -67,6 +70,12 @@ app.use('/api/collaborative-sessions', collaborativeSessionRoutes);
 app.use('/api/execute', codeExecutionRoutes);
 app.use('/api/execute/plugin', codeExecutionPluginRoutes);
 app.use('/api/dsa', dsaRoutes);
+
+// Test utilities (only in development)
+if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+  const testUtilsRoutes = require('./routes/test-utils');
+  app.use('/api/test', testUtilsRoutes);
+}
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -124,8 +133,12 @@ app.use('*', (req, res) => {
 // Database connection (tolerate missing DB in development)
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)
-    .then(() => {
+    .then(async () => {
       console.log('Connected to MongoDB');
+      
+      // Initialize room state manager after database connection
+      const roomStateManager = require('./utils/roomStateManager');
+      await roomStateManager.initialize();
     })
     .catch((err) => {
       console.error('MongoDB connection error:', err);
@@ -133,10 +146,18 @@ if (process.env.MONGODB_URI) {
         process.exit(1);
       } else {
         console.warn('Continuing without MongoDB in development mode. Some features may be disabled.');
+        
+        // Initialize room state manager even without database
+        const roomStateManager = require('./utils/roomStateManager');
+        roomStateManager.initialize().catch(console.error);
       }
     });
 } else {
   console.warn('MONGODB_URI not set. Running without database. Some features may be disabled.');
+  
+  // Initialize room state manager even without database
+  const roomStateManager = require('./utils/roomStateManager');
+  roomStateManager.initialize().catch(console.error);
 }
 
 const PORT = process.env.PORT || 5001;

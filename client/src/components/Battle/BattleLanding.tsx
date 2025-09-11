@@ -15,6 +15,8 @@ const BattleLanding: React.FC = () => {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [showLobby, setShowLobby] = useState(false);
+  const [lobbyData, setLobbyData] = useState<{roomId: string, roomCode: string} | null>(null);
 
   useEffect(() => {
     try {
@@ -55,6 +57,17 @@ const BattleLanding: React.FC = () => {
         </button>
       </div>
     );
+  }
+
+  if (showLobby && lobbyData) {
+    // Navigate to lobby route with state instead of rendering directly
+    navigate('/battle/lobby', { 
+      state: { 
+        roomId: lobbyData.roomId, 
+        roomCode: lobbyData.roomCode 
+      } 
+    });
+    return null; // This will be replaced by the navigation
   }
 
   return (
@@ -197,6 +210,11 @@ const BattleLanding: React.FC = () => {
       <BattleConfigModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onStartBattle={(roomId, roomCode) => {
+          setIsModalOpen(false);
+          setLobbyData({ roomId, roomCode });
+          setShowLobby(true);
+        }}
       />
 
       {isJoinOpen && (
@@ -260,7 +278,8 @@ const BattleLanding: React.FC = () => {
                       const data = await res.json();
                       if (!res.ok || !data.success) throw new Error(data.error || 'Failed to join');
                       setIsJoinOpen(false);
-                      navigate('/battle/play', { state: { battleConfig: { roomCode }, roomId: data.roomId } });
+                      setLobbyData({ roomId: data.roomId, roomCode });
+                      setShowLobby(true);
                     } catch (e: any) {
                       setJoinError(e.message || 'Failed to join room');
                     } finally {

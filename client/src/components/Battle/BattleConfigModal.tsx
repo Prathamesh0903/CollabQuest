@@ -4,6 +4,7 @@ import problems from './problems';
 import './BattleConfigModal.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../utils/api';
+import io from 'socket.io-client';
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard';
 type QuestionSelection = 'random' | 'specific';
@@ -11,6 +12,7 @@ type QuestionSelection = 'random' | 'specific';
 interface BattleConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onStartBattle?: (roomId: string, roomCode: string) => void;
 }
 
 interface Opponent {
@@ -28,9 +30,28 @@ interface BattleConfig {
   battleTime: number;
   roomCode: string;
   isHost: boolean;
+  defaultPermissions: 'view-only' | 'edit-code' | 'full-access';
+  allowPermissionChanges: boolean;
+  securityCode?: string;
+  restrictions?: {
+    allowFileAccess: boolean;
+    allowScreenShare: boolean;
+    allowDebugging: boolean;
+  };
 }
 
-const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }) => {
+interface ShareInfoResponse {
+  success: boolean;
+  roomId: string;
+  roomCode: string;
+  shareLink: string;
+  codeExpiresAt: string | null;
+  status: string;
+  participants: { active: number; ready: number };
+  battle: { durationMinutes: number | null; problemId: string | null; difficulty: string | null };
+}
+
+const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose, onStartBattle }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
@@ -39,15 +60,22 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
     questionSelection: 'random',
     battleTime: 10,
     roomCode: '',
-    isHost: true
+    isHost: true,
+    defaultPermissions: 'edit-code',
+    allowPermissionChanges: true,
+    restrictions: { allowFileAccess: true, allowScreenShare: true, allowDebugging: true }
   });
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
   const [roomId, setRoomId] = useState<string>('');
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const [shareInfo, setShareInfo] = useState<ShareInfoResponse | null>(null);
+  const [isRefreshingCode, setIsRefreshingCode] = useState(false);
+  const [isSavingDuration, setIsSavingDuration] = useState(false);
+  const socketRef = useRef<any>(null);
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   // Stop polling when modal closes
   useEffect(() => {
@@ -68,13 +96,15 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {})
+              // Avoid sending a potentially invalid token to allow optionalAuth path
             },
             body: JSON.stringify({
               difficulty: config.difficulty,
               questionSelection: config.questionSelection,
               selectedProblem: config.selectedProblem,
-              battleTime: config.battleTime
+              battleTime: config.battleTime,
+              defaultPermissions: config.defaultPermissions,
+              allowPermissionChanges: config.allowPermissionChanges
             })
           });
           const data = await res.json();
@@ -92,6 +122,73 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
     ensureRoomOnOpen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Initialize socket when roomId becomes available and step >= 2 (Share/Opponents)
+  useEffect(() => {
+    const setupSocket = async () => {
+      if (!roomId || socketRef.current) return;
+      try {
+        const token = await currentUser?.getIdToken();
+        const socket = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:5001', {
+          auth: { token: token || undefined }
+        });
+        socketRef.current = socket;
+
+        socket.emit('join-room', { roomId, mode: 'battle' });
+
+        // Reflect participants joining immediately in Step 3
+        socket.on('participant-joined', () => {
+          // Trigger an immediate refresh of opponents
+          void (async () => {
+            try {
+              const res = await fetch(`${API_BASE}/battle/${roomId}/lobby`);
+              const data = await res.json();
+              if (data?.success && Array.isArray(data.participants)) {
+                const mapped: Opponent[] = data.participants.map((p: any) => ({
+                  id: String(p.id),
+                  name: p.name,
+                  avatar: p.avatar || '👤',
+                  status: 'joined',
+                  isHost: p.role === 'host'
+                }));
+                setOpponents(mapped);
+                setCurrentStep(3);
+              }
+            } catch {}
+          })();
+        });
+
+        // When battle starts, navigate host to play window
+        socket.on('battle-started', (data: any) => {
+          if (!roomId) return;
+          navigate('/battle/play', {
+            state: {
+              roomId,
+              roomCode: config.roomCode,
+              battleConfig: {
+                difficulty: config.difficulty,
+                battleTime: config.battleTime
+              }
+            }
+          });
+        });
+
+        socket.on('error', (_err: any) => {
+          // Non-fatal for modal context
+        });
+      } catch (_) {}
+    };
+
+    setupSocket();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   const availableProblems = problems.filter(p => p.difficulty === config.difficulty);
 
@@ -152,13 +249,15 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {})
+              // Avoid sending a potentially invalid token to allow optionalAuth path
             },
             body: JSON.stringify({
               difficulty: config.difficulty,
               questionSelection: config.questionSelection,
               selectedProblem: config.selectedProblem,
-              battleTime: config.battleTime
+              battleTime: config.battleTime,
+              defaultPermissions: config.defaultPermissions,
+              allowPermissionChanges: config.allowPermissionChanges
             })
           });
           const data = await res.json();
@@ -217,9 +316,104 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
     }
   };
 
-  const getShareLink = () => config.roomCode
-    ? `${window.location.origin}/battle/join/${config.roomCode}`
-    : `${window.location.origin}/battle/join/`;
+  const getShareLink = () => {
+    if (shareInfo?.shareLink) return shareInfo.shareLink;
+    const fallback = config.roomCode
+      ? `${window.location.origin}/battle/join/${config.roomCode}`
+      : `${window.location.origin}/battle/join/`;
+    try {
+      // TEMP: log fallback link if used
+      console.log('[Battle] Using fallback share link:', fallback);
+    } catch (_) {}
+    return fallback;
+  };
+
+  // Fetch share info when entering Step 2
+  useEffect(() => {
+    const fetchShare = async () => {
+      if (currentStep !== 2 || !roomId) return;
+      try {
+        const token = await currentUser?.getIdToken();
+        const res = await fetch(`${API_BASE}/battle/${roomId}/share`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+        if (!res.ok) return;
+        const data: ShareInfoResponse = await res.json();
+        if (data.success) {
+          setShareInfo(data);
+          try {
+            // TEMP: log backend-provided share link if available
+            if (data.shareLink) {
+              console.log('[Battle] Share link from backend:', data.shareLink);
+            }
+          } catch (_) {}
+          if (data.battle?.durationMinutes) {
+            setConfig(prev => ({ ...prev, battleTime: data.battle.durationMinutes || prev.battleTime }));
+          }
+          if (data.roomCode && data.roomCode !== config.roomCode) {
+            setConfig(prev => ({ ...prev, roomCode: data.roomCode }));
+          }
+        }
+      } catch (_) {}
+    };
+    fetchShare();
+    // also poll share info lightly while on step 2
+    let interval: any;
+    if (currentStep === 2 && roomId) {
+      interval = setInterval(fetchShare, 3000);
+    }
+    return () => interval && clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, roomId]);
+
+  const handleRefreshCode = async () => {
+    if (!roomId || isRefreshingCode) return;
+    try {
+      setIsRefreshingCode(true);
+      const token = await currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/battle/${roomId}/refresh-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setConfig(prev => ({ ...prev, roomCode: data.roomCode }));
+        setShareInfo(prev => prev ? { ...prev, roomCode: data.roomCode, shareLink: data.shareLink } : prev);
+      }
+    } catch (_) {
+    } finally {
+      setIsRefreshingCode(false);
+    }
+  };
+
+  const handleSaveDuration = async (minutes: number) => {
+    if (!roomId || isSavingDuration) return;
+    try {
+      setIsSavingDuration(true);
+      const token = await currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/battle/${roomId}/settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ durationMinutes: minutes })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setConfig(prev => ({ ...prev, battleTime: minutes }));
+      }
+    } catch (_) {
+    } finally {
+      setIsSavingDuration(false);
+    }
+  };
 
   const renderStepIndicator = () => (
     <div className="step-indicator">
@@ -322,19 +516,66 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
         {/* Battle Duration */}
         <div className="config-card">
           <h4>Battle Duration</h4>
-          <div className="time-slider">
-            <input
-              type="range"
-              min="5"
-              max="30"
-              step="5"
-              value={config.battleTime}
+          <div className="problem-selector">
+            <select
+              value={String(config.battleTime)}
               onChange={(e) => updateConfig({ battleTime: Number(e.target.value) })}
-              className="time-range"
-            />
-            <div className="time-display">
-              <span className="time-value">{config.battleTime} minutes</span>
-            </div>
+              className="problem-select"
+            >
+              {[10, 20, 30].map((minutes) => (
+                <option key={minutes} value={minutes}>{minutes} minutes</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Security Controls */}
+        <div className="config-card">
+          <h4>Security & Access</h4>
+          <div className="permission-settings">
+            <label className="setting-item">
+              <span>Guest Security Code (optional)</span>
+              <input
+                type="text"
+                placeholder="e.g., 4-digit code"
+                value={config.securityCode || ''}
+                onChange={(e) => updateConfig({ securityCode: e.target.value })}
+                className="problem-select"
+              />
+            </label>
+            <label className="setting-item">
+              <input
+                type="checkbox"
+                checked={!!config.restrictions?.allowFileAccess}
+                onChange={(e) => updateConfig({ restrictions: { allowFileAccess: e.target.checked, allowScreenShare: !!config.restrictions?.allowScreenShare, allowDebugging: !!config.restrictions?.allowDebugging } })}
+              />
+              <div className="setting-content">
+                <div className="setting-title">Allow File Access</div>
+                <div className="setting-desc">Participants can open/download files when enabled</div>
+              </div>
+            </label>
+            <label className="setting-item">
+              <input
+                type="checkbox"
+                checked={!!config.restrictions?.allowScreenShare}
+                onChange={(e) => updateConfig({ restrictions: { allowFileAccess: !!config.restrictions?.allowFileAccess, allowScreenShare: e.target.checked, allowDebugging: !!config.restrictions?.allowDebugging } })}
+              />
+              <div className="setting-content">
+                <div className="setting-title">Allow Screen Share</div>
+                <div className="setting-desc">Participants can share screens if enabled</div>
+              </div>
+            </label>
+            <label className="setting-item">
+              <input
+                type="checkbox"
+                checked={!!config.restrictions?.allowDebugging}
+                onChange={(e) => updateConfig({ restrictions: { allowFileAccess: !!config.restrictions?.allowFileAccess, allowScreenShare: !!config.restrictions?.allowScreenShare, allowDebugging: e.target.checked } })}
+              />
+              <div className="setting-content">
+                <div className="setting-title">Allow Debugging</div>
+                <div className="setting-desc">Enable collaborative debugging features</div>
+              </div>
+            </label>
           </div>
         </div>
       </div>
@@ -344,15 +585,109 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
   const renderStep2 = () => (
     <div className="step-content">
       <div className="step-header">
+        <h3>🔐 Permission Settings</h3>
+        <p>Configure participant permissions and access levels</p>
+      </div>
+
+      <div className="config-grid">
+        {/* Default Permissions */}
+        <div className="config-card">
+          <h4>Default Participant Permissions</h4>
+          <div className="permission-options">
+            <label className={`option-card ${config.defaultPermissions === 'view-only' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                value="view-only"
+                checked={config.defaultPermissions === 'view-only'}
+                onChange={(e) => updateConfig({ defaultPermissions: e.target.value as 'view-only' | 'edit-code' | 'full-access' })}
+              />
+              <div className="option-content">
+                <div className="option-icon">👁️</div>
+                <div>
+                  <div className="option-title">View Only</div>
+                  <div className="option-desc">Can only view the battle, no code editing</div>
+                </div>
+              </div>
+            </label>
+            
+            <label className={`option-card ${config.defaultPermissions === 'edit-code' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                value="edit-code"
+                checked={config.defaultPermissions === 'edit-code'}
+                onChange={(e) => updateConfig({ defaultPermissions: e.target.value as 'view-only' | 'edit-code' | 'full-access' })}
+              />
+              <div className="option-content">
+                <div className="option-icon">✏️</div>
+                <div>
+                  <div className="option-title">Edit Code</div>
+                  <div className="option-desc">Can write and test code, submit solutions</div>
+                </div>
+              </div>
+            </label>
+            
+            <label className={`option-card ${config.defaultPermissions === 'full-access' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                value="full-access"
+                checked={config.defaultPermissions === 'full-access'}
+                onChange={(e) => updateConfig({ defaultPermissions: e.target.value as 'view-only' | 'edit-code' | 'full-access' })}
+              />
+              <div className="option-content">
+                <div className="option-icon">🔓</div>
+                <div>
+                  <div className="option-title">Full Access</div>
+                  <div className="option-desc">Can edit code and manage room settings</div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Permission Management */}
+        <div className="config-card">
+          <h4>Permission Management</h4>
+          <div className="permission-settings">
+            <label className="setting-item">
+              <input
+                type="checkbox"
+                checked={config.allowPermissionChanges}
+                onChange={(e) => updateConfig({ allowPermissionChanges: e.target.checked })}
+              />
+              <div className="setting-content">
+                <div className="setting-title">Allow Permission Changes</div>
+                <div className="setting-desc">Hosts can modify individual participant permissions during the battle</div>
+              </div>
+            </label>
+          </div>
+          
+          <div className="permission-info">
+            <h5>Permission Levels:</h5>
+            <ul>
+              <li><strong>View Only:</strong> Read-only access to battle content</li>
+              <li><strong>Edit Code:</strong> Can write, test, and submit code solutions</li>
+              <li><strong>Full Access:</strong> All edit-code permissions plus room management</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="step-content">
+      <div className="step-header">
         <h3>🔗 Share Battle</h3>
-        <p>Invite opponents to join your battle room</p>
+        <p>Invite opponents, share the code, and set final details</p>
       </div>
 
       <div className="share-section">
         <div className="room-info-card">
           <div className="room-header">
             <h4>Battle Room</h4>
-            <div className="room-status">Active</div>
+            <div className="room-status">
+              {shareInfo?.status || 'Active'}
+            </div>
           </div>
           
           <div className="room-details">
@@ -365,6 +700,15 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
                   onClick={() => copyToClipboard(config.roomCode, 'code')}
                 >
                   {copied === 'code' ? '✓ Copied' : '📋 Copy'}
+                </button>
+                <button 
+                  className="copy-button"
+                  style={{ marginLeft: 8 }}
+                  onClick={handleRefreshCode}
+                  disabled={isRefreshingCode}
+                  title="Generate a new room code"
+                >
+                  {isRefreshingCode ? 'Refreshing…' : '↻ Refresh'}
                 </button>
               </div>
             </div>
@@ -388,20 +732,72 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
                 </button>
               </div>
             </div>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="badge">
+                👥 Active: {shareInfo?.participants?.active ?? 1}
+              </div>
+              <div className="badge">
+                ✅ Ready: {shareInfo?.participants?.ready ?? 0}
+              </div>
+              {shareInfo?.codeExpiresAt && (
+                <div className="badge" title={new Date(shareInfo.codeExpiresAt).toLocaleString()}>
+                  ⏳ Expires soon
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="qr-section">
-          <div className="qr-placeholder">
-            <div className="qr-icon">📱</div>
-            <p>Scan to join</p>
+        <div className="room-info-card" style={{ minWidth: 260 }}>
+          <div className="room-header">
+            <h4>Finalize Settings</h4>
+          </div>
+          <div className="room-details">
+            <div style={{ marginBottom: 12 }}>
+              <label>Duration</label>
+              <div className="problem-selector">
+                <select
+                  value={String(config.battleTime)}
+                  onChange={async (e) => {
+                    const minutes = Number(e.target.value);
+                    setConfig(prev => ({ ...prev, battleTime: minutes }));
+                    await handleSaveDuration(minutes);
+                  }}
+                  className="problem-select"
+                >
+                  {[10, 20, 30].map((minutes) => (
+                    <option key={minutes} value={minutes}>{minutes} minutes</option>
+                  ))}
+                </select>
+              </div>
+              {isSavingDuration && <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Saving…</div>}
+            </div>
+
+            <div className="qr-section" onClick={() => config.roomCode && copyToClipboard(getShareLink(), 'link')} style={{ cursor: 'pointer' }}>
+              {config.roomCode ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(getShareLink())}`}
+                    alt="Battle join QR"
+                    style={{ width: 180, height: 180, borderRadius: 8 }}
+                  />
+                  <p>Tap QR to copy link</p>
+                </div>
+              ) : (
+                <div className="qr-placeholder">
+                  <div className="qr-icon">📱</div>
+                  <p>Generating link...</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 
-  const renderStep3 = () => (
+  const renderStep4 = () => (
     <div className="step-content">
       <div className="step-header">
         <h3>👥 Opponents</h3>
@@ -497,6 +893,7 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
+          {currentStep === 4 && renderStep4()}
         </div>
 
         <div className="modal-footer">
@@ -518,7 +915,27 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
             ) : (
               <button 
                 className={`btn btn-primary ${isLoading ? 'loading' : ''}`}
-                onClick={handleStartBattle}
+                onClick={() => {
+                  // Emit start-battle over socket so everyone in room moves to play
+                  if (socketRef.current && roomId) {
+                    const durationSeconds = Math.max(60, (config.battleTime || 10) * 60);
+                    socketRef.current.emit('start-battle', { roomId, duration: durationSeconds, securityCode: config.securityCode, restrictions: config.restrictions });
+                    // Host will also navigate on battle-started; as a fallback, navigate after short delay
+                    setTimeout(() => {
+                      navigate('/battle/play', {
+                        state: {
+                          roomId,
+                          roomCode: config.roomCode,
+                          battleConfig: { difficulty: config.difficulty, battleTime: config.battleTime }
+                        }
+                      });
+                    }, 300);
+                  } else if (onStartBattle && roomId) {
+                    onStartBattle(roomId, config.roomCode);
+                  } else {
+                    handleStartBattle();
+                  }
+                }}
                 disabled={isLoading || (config.questionSelection === 'specific' && !config.selectedProblem)}
               >
                 {isLoading ? 'Starting Battle...' : 'Start Battle'}
@@ -532,3 +949,4 @@ const BattleConfigModal: React.FC<BattleConfigModalProps> = ({ isOpen, onClose }
 };
 
 export default BattleConfigModal;
+ 

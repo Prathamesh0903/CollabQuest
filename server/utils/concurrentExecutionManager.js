@@ -220,6 +220,23 @@ class ConcurrentExecutionManager {
         executionTime: executionResult.executionTime,
         timestamp: new Date()
       });
+
+      // Also emit diagnostics payload for collaborative highlighting if available
+      try {
+        const diagnostics = error?.details?.diagnostics || this.parseDiagnosticsFromError(error?.message || '');
+        if (Array.isArray(diagnostics) && diagnostics.length > 0) {
+          io.in(`room:${roomId}`).emit('diagnostics-update', {
+            roomId,
+            fromUserId: userId,
+            displayName,
+            language,
+            diagnostics,
+            timestamp: new Date()
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
     } finally {
       // Remove from active executions
       this.activeExecutions.get(roomId).delete(id);
@@ -227,6 +244,49 @@ class ConcurrentExecutionManager {
       // Process next queued execution
       await this.processQueue(roomId);
     }
+  }
+
+  /**
+   * Parse simple diagnostics from common compiler/runtime error messages
+   * Returns array of Monaco-like markers
+   */
+  parseDiagnosticsFromError(errorMessage) {
+    if (!errorMessage || typeof errorMessage !== 'string') return [];
+    const diagnostics = [];
+    const firstLine = errorMessage.split('\n')[0];
+
+    // Generic pattern: :line:column
+    const m = errorMessage.match(/:(\d+):(\d+)/);
+    if (m) {
+      const line = parseInt(m[1], 10) || 1;
+      const col = parseInt(m[2], 10) || 1;
+      diagnostics.push({
+        message: firstLine.slice(0, 400),
+        severity: 8, // monaco.MarkerSeverity.Error
+        startLineNumber: line,
+        startColumn: col,
+        endLineNumber: line,
+        endColumn: col + 1
+      });
+      return diagnostics;
+    }
+
+    // Node stack style: at <anonymous>:12:5
+    const n = errorMessage.match(/anonymous\>?:?(\d+):(\d+)/);
+    if (n) {
+      const line = parseInt(n[1], 10) || 1;
+      const col = parseInt(n[2], 10) || 1;
+      diagnostics.push({
+        message: firstLine.slice(0, 400),
+        severity: 8,
+        startLineNumber: line,
+        startColumn: col,
+        endLineNumber: line,
+        endColumn: col + 1
+      });
+    }
+
+    return diagnostics;
   }
 
   /**

@@ -8,6 +8,9 @@ const CodePersistenceManager = require('./codePersistence');
 // const { handleInteractiveTerminal } = require('./interactiveTerminal');
 // const { handleEnhancedInteractiveTerminal } = require('./enhancedTerminal');
 const concurrentExecutionManager = require('./concurrentExecutionManager');
+const debugManager = require('./debugManager');
+const roomStateManager = require('./roomStateManager');
+const persistentStateManager = roomStateManager.persistentStateManager;
 
 // Store active connections
 const activeConnections = new Map();
@@ -23,6 +26,12 @@ const userCursors = new Map();
 
 // Store user selections for collaborative editing
 const userSelections = new Map();
+
+// Store follow relationships for battle mode
+const followRelationships = new Map(); // followerId -> { followingId, roomId, mode }
+
+// Store viewport states for following
+const viewportStates = new Map(); // userId -> { scrollTop, scrollLeft, visibleRange }
 
 // Enhanced collaborator tracking with detailed status
 const collaboratorStatus = new Map(); // userId -> { sessionId, status, lastActivity, isTyping, isEditing }
@@ -71,7 +80,7 @@ const handleSocketConnection = (socket, io) => {
   // Handle room joining
   socket.on('join-room', async (data) => {
     try {
-      const { roomId } = data;
+      const { roomId, mode = 'collaborative', role = 'participant' } = data;
       
       if (!socket.user) {
         socket.emit('error', { message: 'Authentication required' });
@@ -84,28 +93,60 @@ const handleSocketConnection = (socket, io) => {
         return;
       }
 
-      // Add user to room participants
-      await room.addParticipant(socket.user._id);
+      // Validate role
+      if (!['participant', 'spectator'].includes(role)) {
+        socket.emit('error', { message: 'Invalid role. Must be participant or spectator' });
+        return;
+      }
+
+      // Add user to room participants with specified role
+      await room.addParticipant(socket.user._id, { role });
       
-      // Join socket to room
+      // Update room state manager
+      try {
+        await roomStateManager.joinRoomByCode(room.roomCode, socket.user._id, { role });
+      } catch (stateError) {
+        console.warn('⚠️ Failed to update room state manager:', stateError.message);
+      }
+      
+      // Join socket to room based on mode and role
       socket.join(`room:${roomId}`);
+      if (mode === 'battle') {
+        socket.join(`battle:${roomId}`);
+        if (role === 'spectator') {
+          socket.join(`spectator:${roomId}`);
+        }
+      }
       
       // Notify other participants
       socket.to(`room:${roomId}`).emit('user-joined-room', {
         userId: socket.user._id,
         displayName: socket.user.displayName,
         avatar: socket.user.avatar,
+        role: role,
         joinedAt: new Date()
+      });
+
+      // Also emit participant-joined for battle rooms
+      socket.to(`room:${roomId}`).emit('participant-joined', {
+        userId: socket.user._id,
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        role: role,
+        joinedAt: new Date(),
+        roomId: roomId
       });
 
       // Send room info to user
       socket.emit('room-joined', {
         roomId,
         participants: room.participants.filter(p => p.isActive),
-        currentActivity: room.currentActivity
+        currentActivity: room.currentActivity,
+        role: role,
+        isSpectator: role === 'spectator'
       });
 
-      console.log(`User ${socket.user.displayName} joined room ${room.name}`);
+      console.log(`User ${socket.user.displayName} joined room ${room.name} as ${role}`);
     } catch (error) {
       console.error('Error joining room:', error);
       socket.emit('error', { message: 'Failed to join room' });
@@ -135,6 +176,14 @@ const handleSocketConnection = (socket, io) => {
         userId: socket.user._id,
         displayName: socket.user.displayName,
         leftAt: new Date()
+      });
+
+      // Also emit participant-left for battle rooms
+      socket.to(`room:${roomId}`).emit('participant-left', {
+        userId: socket.user._id,
+        displayName: socket.user.displayName,
+        leftAt: new Date(),
+        roomId: roomId
       });
 
       console.log(`User ${socket.user.displayName} left room ${room?.name || roomId}`);
@@ -1051,6 +1100,232 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
+  // Handle cursor position for battle mode
+  socket.on('cursor-position', (data) => {
+    try {
+      const { position, roomId, mode, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store cursor position
+      userCursors.set(userId, {
+        position,
+        roomId,
+        mode,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast cursor position to other users in the room
+      const roomKey = mode === 'battle' ? `battle:${roomId}` : `room:${roomId}`;
+      socket.to(roomKey).emit('cursor-position', {
+        position,
+        userId,
+        color: userCursors.get(userId).color,
+        displayName: userCursors.get(userId).displayName,
+        avatar: userCursors.get(userId).avatar,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error handling cursor position:', error);
+    }
+  });
+
+  // Handle user selection for battle mode
+  socket.on('user-selection', (data) => {
+    try {
+      const { selection, roomId, mode, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store selection
+      userSelections.set(userId, {
+        selection,
+        roomId,
+        mode,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast selection to other users in the room
+      const roomKey = mode === 'battle' ? `battle:${roomId}` : `room:${roomId}`;
+      socket.to(roomKey).emit('user-selection', {
+        selection,
+        userId,
+        color: userSelections.get(userId).color,
+        displayName: userSelections.get(userId).displayName,
+        avatar: userSelections.get(userId).avatar,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error handling user selection:', error);
+    }
+  });
+
+  // Handle battle code changes (diff-like events) and broadcast to participants
+  socket.on('battle-code-change', (data) => {
+    try {
+      const { roomId, range, text, version } = data || {};
+      if (!roomId) return;
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const roomKey = `battle:${roomId}`;
+      const payload = {
+        userId: socket.user._id?.toString?.() || 'anonymous',
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar || '👤',
+        range,
+        text,
+        version: typeof version === 'number' ? version : undefined,
+        timestamp: new Date()
+      };
+      socket.to(roomKey).emit('battle-code-change', payload);
+    } catch (error) {
+      console.error('Error handling battle-code-change:', error);
+      socket.emit('error', { message: 'Failed to handle battle code change' });
+    }
+  });
+
+  // Handle start following a user
+  socket.on('start-following', (data) => {
+    try {
+      const { followingUserId, roomId, mode = 'battle' } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const followerId = socket.user._id.toString();
+      
+      // Store follow relationship
+      followRelationships.set(followerId, {
+        followingId: followingUserId,
+        roomId,
+        mode,
+        startedAt: new Date()
+      });
+
+      // Notify the followed user
+      const roomKey = mode === 'battle' ? `battle:${roomId}` : `room:${roomId}`;
+      socket.to(roomKey).emit('user-following', {
+        followerId,
+        followingId: followingUserId,
+        followerName: socket.user.displayName || socket.user.email || 'Anonymous',
+        followerAvatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Send confirmation to follower
+      socket.emit('follow-started', {
+        followingId: followingUserId,
+        followingName: 'User', // Will be updated when we get user info
+        timestamp: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} started following user ${followingUserId} in ${mode} room ${roomId}`);
+    } catch (error) {
+      console.error('Error handling start following:', error);
+    }
+  });
+
+  // Handle stop following a user
+  socket.on('stop-following', (data) => {
+    try {
+      const { roomId, mode = 'battle' } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const followerId = socket.user._id.toString();
+      const followData = followRelationships.get(followerId);
+      
+      if (followData) {
+        const { followingId } = followData;
+        
+        // Remove follow relationship
+        followRelationships.delete(followerId);
+        
+        // Notify the followed user
+        const roomKey = mode === 'battle' ? `battle:${roomId}` : `room:${roomId}`;
+        socket.to(roomKey).emit('user-unfollowed', {
+          followerId,
+          followingId,
+          followerName: socket.user.displayName || socket.user.email || 'Anonymous',
+          timestamp: new Date()
+        });
+
+        // Send confirmation to follower
+        socket.emit('follow-stopped', {
+          followingId,
+          timestamp: new Date()
+        });
+
+        console.log(`User ${socket.user.displayName} stopped following user ${followingId} in ${mode} room ${roomId}`);
+      }
+    } catch (error) {
+      console.error('Error handling stop following:', error);
+    }
+  });
+
+  // Handle viewport synchronization
+  socket.on('viewport-sync', (data) => {
+    try {
+      const { viewport, roomId, mode = 'battle' } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store viewport state
+      viewportStates.set(userId, {
+        ...viewport,
+        timestamp: new Date()
+      });
+
+      // Find all followers of this user
+      const followers = Array.from(followRelationships.entries())
+        .filter(([, followData]) => followData.followingId === userId && followData.roomId === roomId)
+        .map(([followerId]) => followerId);
+
+      // Send viewport update to followers
+      if (followers.length > 0) {
+        const roomKey = mode === 'battle' ? `battle:${roomId}` : `room:${roomId}`;
+        followers.forEach(followerId => {
+          socket.to(roomKey).emit('viewport-update', {
+            userId,
+            viewport,
+            timestamp: new Date()
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error handling viewport sync:', error);
+    }
+  });
+
   // Create new file in collaborative session
   socket.on('session-file-create', async (data) => {
     try {
@@ -1933,7 +2208,7 @@ const handleSocketConnection = (socket, io) => {
     if (!roomId) return;
     if (battleStates[roomId] && battleStates[roomId].state === 'active') return; // already running
     battleStates[roomId] = { state: 'active', remaining: duration };
-    io.in(`room:${roomId}`).emit('start-battle', { roomId, duration });
+    io.in(`room:${roomId}`).emit('battle-started', { roomId, duration });
     // Start timer
     if (battleTimers[roomId]) clearInterval(battleTimers[roomId]);
     battleTimers[roomId] = setInterval(() => {
@@ -1945,7 +2220,7 @@ const handleSocketConnection = (socket, io) => {
         delete battleTimers[roomId];
         battleStates[roomId].state = 'ended';
         // TODO: Calculate result (stubbed as draw)
-        io.in(`room:${roomId}`).emit('end-battle', { roomId, result: 'draw' });
+        io.in(`room:${roomId}`).emit('battle-ended', { roomId, result: 'draw' });
       }
     }, 1000);
   });
@@ -1957,7 +2232,91 @@ const handleSocketConnection = (socket, io) => {
     if (battleTimers[roomId]) clearInterval(battleTimers[roomId]);
     delete battleTimers[roomId];
     battleStates[roomId] = { state: 'ended', remaining: 0 };
-    io.in(`room:${roomId}`).emit('end-battle', { roomId, result });
+    io.in(`room:${roomId}`).emit('battle-ended', { roomId, result });
+  });
+
+  // ================= Screen Sharing (WebRTC signaling relay) =================
+  // Track active screen sharers per room
+  const roomScreenSharers = new Map(); // roomId -> Set<userId>
+
+  // Helper to broadcast current sharers in a room
+  const broadcastSharers = (roomId) => {
+    const sharers = Array.from(roomScreenSharers.get(roomId) || []);
+    io.in(`room:${roomId}`).emit('screenshare-sharers', { roomId, sharers });
+  };
+
+  // Announce start of screen sharing
+  socket.on('screenshare-start', (data) => {
+    const { roomId } = data || {};
+    if (!roomId || !socket.user) return;
+    if (!roomScreenSharers.has(roomId)) roomScreenSharers.set(roomId, new Set());
+    roomScreenSharers.get(roomId).add(socket.user.id);
+    io.in(`room:${roomId}`).emit('screenshare-started', {
+      roomId,
+      userId: socket.user.id,
+      displayName: socket.user.displayName,
+      avatar: socket.user.avatar
+    });
+    broadcastSharers(roomId);
+  });
+
+  // Announce stop of screen sharing
+  socket.on('screenshare-stop', (data) => {
+    const { roomId } = data || {};
+    if (!roomId || !socket.user) return;
+    const set = roomScreenSharers.get(roomId);
+    if (set) {
+      set.delete(socket.user.id);
+      if (set.size === 0) roomScreenSharers.delete(roomId);
+    }
+    io.in(`room:${roomId}`).emit('screenshare-stopped', {
+      roomId,
+      userId: socket.user.id
+    });
+    broadcastSharers(roomId);
+  });
+
+  // Relay SDP offer from sharer to all other participants (or a specific target)
+  socket.on('screenshare-offer', (data) => {
+    const { roomId, targetUserId, sdp } = data || {};
+    if (!roomId || !sdp || !socket.user) return;
+    if (targetUserId) {
+      // Send to specific target
+      io.to(targetUserId).emit('screenshare-offer', {
+        roomId,
+        fromUserId: socket.user.id,
+        sdp
+      });
+    } else {
+      // Broadcast to room excluding sender
+      socket.to(`room:${roomId}`).emit('screenshare-offer', {
+        roomId,
+        fromUserId: socket.user.id,
+        sdp
+      });
+    }
+  });
+
+  // Relay SDP answer from viewer back to sharer
+  socket.on('screenshare-answer', (data) => {
+    const { roomId, targetUserId, sdp } = data || {};
+    if (!roomId || !targetUserId || !sdp || !socket.user) return;
+    io.to(targetUserId).emit('screenshare-answer', {
+      roomId,
+      fromUserId: socket.user.id,
+      sdp
+    });
+  });
+
+  // Relay ICE candidates between peers
+  socket.on('screenshare-ice-candidate', (data) => {
+    const { roomId, targetUserId, candidate } = data || {};
+    if (!roomId || !targetUserId || !candidate || !socket.user) return;
+    io.to(targetUserId).emit('screenshare-ice-candidate', {
+      roomId,
+      fromUserId: socket.user.id,
+      candidate
+    });
   });
 
   // Get current battle state (for late joiners)
@@ -1966,6 +2325,885 @@ const handleSocketConnection = (socket, io) => {
     if (!roomId) return;
     const state = battleStates[roomId] || { state: 'waiting', remaining: 0 };
     socket.emit('battle-state', { roomId, ...state });
+  });
+
+  // Handle battle ready status
+  socket.on('battle-ready', async (data) => {
+    try {
+      const { roomId, ready } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      if (!roomId) {
+        socket.emit('error', { message: 'Room ID is required' });
+        return;
+      }
+
+      // Update battle state with ready status
+      if (!battleStates[roomId]) {
+        battleStates[roomId] = { state: 'waiting', remaining: 0, ready: {} };
+      }
+      
+      battleStates[roomId].ready = battleStates[roomId].ready || {};
+      battleStates[roomId].ready[socket.user._id.toString()] = ready;
+
+      // Broadcast ready status to all participants
+      socket.to(`room:${roomId}`).emit('participant-ready', {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        ready: ready,
+        timestamp: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} ready status: ${ready} in battle ${roomId}`);
+    } catch (error) {
+      console.error('Error handling battle ready:', error);
+      socket.emit('error', { message: 'Failed to update ready status' });
+    }
+  });
+
+  // Handle battle submission
+  socket.on('battle-submission', async (data) => {
+    try {
+      const { roomId, score, passed, total } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      if (!roomId) {
+        socket.emit('error', { message: 'Room ID is required' });
+        return;
+      }
+
+      // Broadcast submission to all participants
+      socket.to(`room:${roomId}`).emit('participant-update', {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        score: score,
+        passed: passed,
+        total: total,
+        timestamp: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} submitted solution in battle ${roomId}: ${passed}/${total} tests passed`);
+    } catch (error) {
+      console.error('Error handling battle submission:', error);
+      socket.emit('error', { message: 'Failed to broadcast submission' });
+    }
+  });
+
+  // Handle code change activity
+  socket.on('code-change-activity', async (data) => {
+    try {
+      const { roomId, changeType, linesChanged } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      if (!roomId) {
+        socket.emit('error', { message: 'Room ID is required' });
+        return;
+      }
+
+      // Broadcast code change activity to all participants
+      socket.to(`room:${roomId}`).emit('participant-activity', {
+        userId: socket.user._id.toString(),
+        displayName: socket.user.displayName,
+        avatar: socket.user.avatar,
+        activity: 'code-change',
+        timestamp: new Date(),
+        details: {
+          action: changeType || 'modified code',
+          description: `Made significant code changes (${linesChanged || 'unknown'} lines)`,
+          linesChanged: linesChanged
+        }
+      });
+
+      console.log(`User ${socket.user.displayName} made code changes in battle ${roomId}`);
+    } catch (error) {
+      console.error('Error handling code change activity:', error);
+      socket.emit('error', { message: 'Failed to broadcast code change activity' });
+    }
+  });
+
+  // Handle permission change requests
+  socket.on('change-permission', async (data) => {
+    try {
+      const { roomId, targetUserId, newPermissions } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      if (!roomId || !targetUserId || !newPermissions) {
+        socket.emit('error', { message: 'Missing required parameters' });
+        return;
+      }
+
+      // Import Room model
+      const Room = require('../models/Room');
+      
+      // Check if user is host and has permission to change permissions
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const userParticipant = room.participants.find(p => 
+        p.userId.toString() === socket.user._id.toString() && p.isActive
+      );
+
+      if (!userParticipant || userParticipant.role !== 'host') {
+        socket.emit('error', { message: 'Only hosts can change permissions' });
+        return;
+      }
+
+      // Check if permission changes are allowed
+      if (!room.settings.allowPermissionChanges) {
+        socket.emit('error', { message: 'Permission changes are disabled for this room' });
+        return;
+      }
+
+      // Find target participant
+      const targetParticipant = room.participants.find(p => 
+        p.userId.toString() === targetUserId && p.isActive
+      );
+
+      if (!targetParticipant) {
+        socket.emit('error', { message: 'Target participant not found' });
+        return;
+      }
+
+      // Don't allow changing host permissions
+      if (targetParticipant.role === 'host') {
+        socket.emit('error', { message: 'Cannot change host permissions' });
+        return;
+      }
+
+      const oldPermissions = targetParticipant.permissions;
+      
+      // Update permissions
+      await room.updateParticipantPermissions(targetUserId, newPermissions);
+
+      // Broadcast permission change to all room participants
+      io.in(`room:${roomId}`).emit('permission-changed', {
+        roomId,
+        userId: targetUserId,
+        displayName: targetParticipant.userId.displayName || 'Unknown',
+        oldPermissions,
+        newPermissions,
+        changedBy: socket.user._id.toString(),
+        changedAt: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} changed permissions for user ${targetUserId} in room ${roomId}: ${oldPermissions} -> ${newPermissions}`);
+    } catch (error) {
+      console.error('Error handling permission change:', error);
+      socket.emit('error', { message: 'Failed to change permissions' });
+    }
+  });
+
+  // Handle default permission change requests
+  socket.on('change-default-permissions', async (data) => {
+    try {
+      const { roomId, newDefaultPermissions } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      if (!roomId || !newDefaultPermissions) {
+        socket.emit('error', { message: 'Missing required parameters' });
+        return;
+      }
+
+      // Import Room model
+      const Room = require('../models/Room');
+      
+      // Check if user is host
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const userParticipant = room.participants.find(p => 
+        p.userId.toString() === socket.user._id.toString() && p.isActive
+      );
+
+      if (!userParticipant || userParticipant.role !== 'host') {
+        socket.emit('error', { message: 'Only hosts can change default permissions' });
+        return;
+      }
+
+      const oldDefaultPermissions = room.settings.defaultPermissions;
+      
+      // Update default permissions
+      await room.updateDefaultPermissions(newDefaultPermissions);
+
+      // Broadcast default permission change to all room participants
+      io.in(`room:${roomId}`).emit('default-permissions-changed', {
+        roomId,
+        oldDefaultPermissions,
+        newDefaultPermissions,
+        changedBy: socket.user._id.toString(),
+        changedAt: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} changed default permissions for room ${roomId}: ${oldDefaultPermissions} -> ${newDefaultPermissions}`);
+    } catch (error) {
+      console.error('Error handling default permission change:', error);
+      socket.emit('error', { message: 'Failed to change default permissions' });
+    }
+  });
+
+  // Handle permission settings change requests
+  socket.on('change-permission-settings', async (data) => {
+    try {
+      const { roomId, allowPermissionChanges } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      if (!roomId || typeof allowPermissionChanges !== 'boolean') {
+        socket.emit('error', { message: 'Missing required parameters' });
+        return;
+      }
+
+      // Import Room model
+      const Room = require('../models/Room');
+      
+      // Check if user is host
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const userParticipant = room.participants.find(p => 
+        p.userId.toString() === socket.user._id.toString() && p.isActive
+      );
+
+      if (!userParticipant || userParticipant.role !== 'host') {
+        socket.emit('error', { message: 'Only hosts can change permission settings' });
+        return;
+      }
+
+      // Update permission settings
+      room.settings.allowPermissionChanges = allowPermissionChanges;
+      await room.save();
+
+      // Broadcast permission settings change to all room participants
+      io.in(`room:${roomId}`).emit('permission-settings-changed', {
+        roomId,
+        allowPermissionChanges,
+        changedBy: socket.user._id.toString(),
+        changedAt: new Date()
+      });
+
+      console.log(`User ${socket.user.displayName} changed permission settings for room ${roomId}: allowPermissionChanges = ${allowPermissionChanges}`);
+    } catch (error) {
+      console.error('Error handling permission settings change:', error);
+      socket.emit('error', { message: 'Failed to change permission settings' });
+    }
+  });
+
+  // --- Presence enhancements: typing, idle, connection quality ---
+  // User typing indicator
+  socket.on('user-typing', (data = {}) => {
+    try {
+      const { roomId, isTyping = true } = data;
+      if (!roomId || !socket.user) return;
+      socket.to(`room:${roomId}`).emit('user-typing', {
+        roomId,
+        userId: socket.user._id?.toString?.() || 'anonymous',
+        displayName: socket.user.displayName || 'Anonymous',
+        isTyping: Boolean(isTyping),
+        timestamp: new Date()
+      });
+    } catch (e) {
+      // noop
+    }
+  });
+
+  // User idle status
+  socket.on('user-idle', (data = {}) => {
+    try {
+      const { roomId, isIdle = false } = data;
+      if (!roomId || !socket.user) return;
+      socket.to(`room:${roomId}`).emit('user-idle', {
+        roomId,
+        userId: socket.user._id?.toString?.() || 'anonymous',
+        displayName: socket.user.displayName || 'Anonymous',
+        isIdle: Boolean(isIdle),
+        timestamp: new Date()
+      });
+    } catch (e) {
+      // noop
+    }
+  });
+
+  // Connection quality reporting (client computed RTT)
+  socket.on('connection-quality', (data = {}) => {
+    try {
+      const { roomId, rtt = null, quality = 'good' } = data;
+      if (!roomId || !socket.user) return;
+      socket.to(`room:${roomId}`).emit('connection-quality', {
+        roomId,
+        userId: socket.user._id?.toString?.() || 'anonymous',
+        displayName: socket.user.displayName || 'Anonymous',
+        rtt,
+        quality,
+        timestamp: new Date()
+      });
+    } catch (e) {
+      // noop
+    }
+  });
+
+  // Handle ping measurement requests
+  socket.on('ping-measure', (data = {}) => {
+    try {
+      const { ts, roomId } = data;
+      if (!ts || !socket.user) return;
+      
+      // Send pong back to the client
+      socket.emit(`pong:${ts}`, {
+        timestamp: new Date(),
+        serverTime: Date.now()
+      });
+    } catch (e) {
+      // noop
+    }
+  });
+
+  // ===== SPECTATOR MODE EVENTS =====
+
+  // Handle spectator requesting code sync from a specific participant
+  socket.on('request-code-sync', async (data) => {
+    try {
+      const { roomId, targetUserId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Verify the requesting user is a spectator
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const requesterParticipant = room.participants.find(p => 
+        p.userId.toString() === socket.user._id.toString()
+      );
+
+      if (!requesterParticipant || requesterParticipant.role !== 'spectator') {
+        socket.emit('error', { message: 'Only spectators can request code sync' });
+        return;
+      }
+
+      // Get room state and send code to spectator
+      const state = await roomStateManager.getRoomState(roomId);
+      if (state && state.code) {
+        socket.emit('code-sync-response', {
+          roomId,
+          targetUserId,
+          code: state.code,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      console.error('Error handling code sync request:', error);
+      socket.emit('error', { message: 'Failed to sync code' });
+    }
+  });
+
+  // Handle spectator requesting all participant data
+  socket.on('request-spectator-data', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Verify the requesting user is a spectator
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const requesterParticipant = room.participants.find(p => 
+        p.userId.toString() === socket.user._id.toString()
+      );
+
+      if (!requesterParticipant || requesterParticipant.role !== 'spectator') {
+        socket.emit('error', { message: 'Only spectators can request spectator data' });
+        return;
+      }
+
+      // Get comprehensive spectator data
+      const state = await roomStateManager.getRoomState(roomId);
+      if (!state) {
+        socket.emit('error', { message: 'Room state not found' });
+        return;
+      }
+
+      // Collect all participant cursors
+      const allCursors = {};
+      userCursors.forEach((cursor, userId) => {
+        if (cursor.roomId === roomId) {
+          allCursors[userId] = {
+            userId,
+            displayName: cursor.displayName,
+            avatar: cursor.avatar,
+            position: cursor.position,
+            color: cursor.color,
+            timestamp: cursor.timestamp
+          };
+        }
+      });
+
+      // Collect all participant selections
+      const allSelections = {};
+      userSelections.forEach((selection, userId) => {
+        if (selection.roomId === roomId) {
+          allSelections[userId] = {
+            userId,
+            displayName: selection.displayName,
+            avatar: selection.avatar,
+            selection: selection.selection,
+            color: selection.color,
+            timestamp: selection.timestamp
+          };
+        }
+      });
+
+      // Send comprehensive spectator data
+      socket.emit('spectator-data-response', {
+        roomId,
+        participants: room.participants.filter(p => p.isActive).map(p => ({
+          id: p.userId.toString(),
+          name: p.userId.displayName || p.userId.email || 'Anonymous',
+          avatar: p.userId.avatar || '👤',
+          role: p.role,
+          isActive: p.isActive,
+          ready: p.ready || false,
+          joinedAt: p.joinedAt,
+          lastSeen: p.lastSeen
+        })),
+        battleInfo: state.battle ? {
+          started: state.battle.started,
+          ended: state.battle.ended,
+          durationMinutes: state.battle.durationMinutes,
+          problemId: state.battle.problemId,
+          difficulty: state.battle.difficulty,
+          host: state.battle.host,
+          startedAt: state.battle.startedAt,
+          endedAt: state.battle.endedAt
+        } : null,
+        participantCode: state.code ? { [roomId]: state.code } : {},
+        participantCursors: allCursors,
+        participantSelections: allSelections,
+        testResults: state.battle?.submissions || {},
+        timestamp: new Date()
+      });
+
+    } catch (error) {
+      console.error('Error handling spectator data request:', error);
+      socket.emit('error', { message: 'Failed to get spectator data' });
+    }
+  });
+
+  // Handle spectator requesting to follow a specific participant
+  socket.on('spectator-follow-participant', async (data) => {
+    try {
+      const { roomId, targetUserId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      // Verify the requesting user is a spectator
+      const room = await Room.findById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const requesterParticipant = room.participants.find(p => 
+        p.userId.toString() === socket.user._id.toString()
+      );
+
+      if (!requesterParticipant || requesterParticipant.role !== 'spectator') {
+        socket.emit('error', { message: 'Only spectators can follow participants' });
+        return;
+      }
+
+      // Verify target user exists and is a participant
+      const targetParticipant = room.participants.find(p => 
+        p.userId.toString() === targetUserId && p.role === 'participant'
+      );
+
+      if (!targetParticipant) {
+        socket.emit('error', { message: 'Target participant not found' });
+        return;
+      }
+
+      // Store follow relationship
+      const followerId = socket.user._id.toString();
+      followRelationships.set(followerId, {
+        followingId: targetUserId,
+        roomId,
+        mode: 'battle',
+        startedAt: new Date()
+      });
+
+      // Notify the spectator about successful follow
+      socket.emit('spectator-follow-started', {
+        roomId,
+        targetUserId,
+        targetDisplayName: targetParticipant.userId.displayName || targetParticipant.userId.email || 'Anonymous',
+        startedAt: new Date()
+      });
+
+      // Notify the followed participant (optional)
+      socket.to(`user:${targetUserId}`).emit('user-being-followed', {
+        followerId,
+        followerDisplayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        roomId
+      });
+
+      console.log(`Spectator ${socket.user.displayName} started following participant ${targetUserId} in room ${roomId}`);
+
+    } catch (error) {
+      console.error('Error handling spectator follow request:', error);
+      socket.emit('error', { message: 'Failed to follow participant' });
+    }
+  });
+
+  // Handle spectator stopping follow
+  socket.on('spectator-stop-follow', async (data) => {
+    try {
+      const { roomId } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const followerId = socket.user._id.toString();
+      const followRelationship = followRelationships.get(followerId);
+
+      if (followRelationship && followRelationship.roomId === roomId) {
+        const { followingId } = followRelationship;
+        
+        // Remove follow relationship
+        followRelationships.delete(followerId);
+
+        // Notify the spectator
+        socket.emit('spectator-follow-stopped', {
+          roomId,
+          followingId,
+          stoppedAt: new Date()
+        });
+
+        // Notify the previously followed participant
+        socket.to(`user:${followingId}`).emit('user-unfollowed', {
+          followerId,
+          followerDisplayName: socket.user.displayName || socket.user.email || 'Anonymous',
+          roomId
+        });
+
+        console.log(`Spectator ${socket.user.displayName} stopped following in room ${roomId}`);
+      }
+
+    } catch (error) {
+      console.error('Error handling spectator stop follow:', error);
+      socket.emit('error', { message: 'Failed to stop following' });
+    }
+  });
+
+  // Enhanced cursor movement that broadcasts to spectators
+  socket.on('cursor-move', (data) => {
+    try {
+      const { position, roomId, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store cursor position
+      userCursors.set(userId, {
+        position,
+        roomId,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast to all room participants (including spectators)
+      socket.to(`room:${roomId}`).emit('cursor-moved', {
+        userId,
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        position,
+        color: color || generateUserColor(userId),
+        timestamp: new Date()
+      });
+
+    } catch (error) {
+      console.error('Error handling cursor move:', error);
+    }
+  });
+
+  // Enhanced selection change that broadcasts to spectators
+  socket.on('selection-change', (data) => {
+    try {
+      const { selection, roomId, color, displayName } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+      
+      // Store selection
+      userSelections.set(userId, {
+        selection,
+        roomId,
+        color: color || generateUserColor(userId),
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        timestamp: new Date()
+      });
+
+      // Broadcast to all room participants (including spectators)
+      socket.to(`room:${roomId}`).emit('selection-changed', {
+        userId,
+        displayName: displayName || socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        selection,
+        color: color || generateUserColor(userId),
+        timestamp: new Date()
+      });
+
+      // Persist selection and last position in room state for recovery
+      try {
+        const state = roomStates.get(roomId) || {};
+        if (!state.viewports) state.viewports = new Map();
+        if (!state.lastPositions) state.lastPositions = new Map();
+        state.lastPositions.set(userId, { lineNumber: selection.endLineNumber, column: selection.endColumn });
+      } catch (_) {}
+
+    } catch (error) {
+      console.error('Error handling selection change:', error);
+    }
+  });
+
+  // Enhanced code change that broadcasts to spectators
+  socket.on('code-change', (data) => {
+    try {
+      const { roomId, code, version, range, text } = data;
+      
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id.toString();
+
+      // Broadcast to all room participants (including spectators)
+      socket.to(`room:${roomId}`).emit('code-changed', {
+        userId,
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        avatar: socket.user.avatar,
+        code,
+        version,
+        range,
+        text,
+        timestamp: new Date()
+      });
+
+      // Append to collabHistory for recovery
+      try {
+        const state = roomStates.get(roomId);
+        if (state) {
+          state.collabHistory = state.collabHistory || [];
+          state.collabHistory.push({
+            type: 'code-change',
+            userId,
+            version,
+            text,
+            range,
+            at: Date.now()
+          });
+          if (state.collabHistory.length > 500) {
+            state.collabHistory = state.collabHistory.slice(-500);
+          }
+        }
+      } catch (_) {}
+
+    } catch (error) {
+      console.error('Error handling code change:', error);
+    }
+  });
+
+  // ================= Collaborative Debugging =================
+  // Breakpoint add/remove
+  socket.on('debug-set-breakpoint', (data) => {
+    try {
+      const { roomId, lineNumber } = data || {};
+      if (!roomId || !lineNumber) return;
+      if (!socket.user) return;
+      const userId = socket.user._id?.toString?.() || socket.user.id;
+      const bps = debugManager.setBreakpoint(roomId, userId, lineNumber);
+      io.in(`room:${roomId}`).emit('debug-breakpoints', { roomId, breakpoints: bps });
+    } catch (e) {
+      console.error('debug-set-breakpoint error', e);
+    }
+  });
+
+  socket.on('debug-remove-breakpoint', (data) => {
+    try {
+      const { roomId, lineNumber } = data || {};
+      if (!roomId || !lineNumber) return;
+      if (!socket.user) return;
+      const userId = socket.user._id?.toString?.() || socket.user.id;
+      const bps = debugManager.removeBreakpoint(roomId, userId, lineNumber);
+      io.in(`room:${roomId}`).emit('debug-breakpoints', { roomId, breakpoints: bps });
+    } catch (e) {
+      console.error('debug-remove-breakpoint error', e);
+    }
+  });
+
+  // Start/stop/step/continue debugging
+  socket.on('debug-start', (data) => {
+    try {
+      const { roomId } = data || {};
+      if (!roomId) return;
+      const state = debugManager.startDebug(roomId);
+      io.in(`room:${roomId}`).emit('debug-state', { roomId, state });
+    } catch (e) {
+      console.error('debug-start error', e);
+    }
+  });
+
+  socket.on('debug-stop', (data) => {
+    try {
+      const { roomId } = data || {};
+      if (!roomId) return;
+      const state = debugManager.stopDebug(roomId);
+      io.in(`room:${roomId}`).emit('debug-state', { roomId, state });
+    } catch (e) {
+      console.error('debug-stop error', e);
+    }
+  });
+
+  socket.on('debug-step', (data) => {
+    try {
+      const { roomId } = data || {};
+      if (!roomId) return;
+      const state = debugManager.step(roomId);
+      io.in(`room:${roomId}`).emit('debug-state', { roomId, state });
+    } catch (e) {
+      console.error('debug-step error', e);
+    }
+  });
+
+  socket.on('debug-continue', (data) => {
+    try {
+      const { roomId } = data || {};
+      if (!roomId) return;
+      const state = debugManager.continue(roomId);
+      io.in(`room:${roomId}`).emit('debug-state', { roomId, state });
+    } catch (e) {
+      console.error('debug-continue error', e);
+    }
+  });
+
+  socket.on('debug-update-variables', (data) => {
+    try {
+      const { roomId, variables } = data || {};
+      if (!roomId) return;
+      const state = debugManager.updateVariables(roomId, variables || {});
+      io.in(`room:${roomId}`).emit('debug-state', { roomId, state });
+    } catch (e) {
+      console.error('debug-update-variables error', e);
+    }
+  });
+
+  // ================= Collaborative Diagnostics =================
+  // Relay diagnostics updates from any participant to the whole room
+  socket.on('diagnostics-update', (data) => {
+    try {
+      const { roomId, diagnostics, language } = data || {};
+      if (!roomId || !Array.isArray(diagnostics)) return;
+      if (!socket.user) {
+        socket.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
+      const userId = socket.user._id?.toString?.() || socket.user.id;
+      io.in(`room:${roomId}`).emit('diagnostics-update', {
+        roomId,
+        fromUserId: userId,
+        displayName: socket.user.displayName || socket.user.email || 'Anonymous',
+        language,
+        diagnostics,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error relaying diagnostics:', error);
+    }
+  });
+
+  // ================= Host Force-Follow Mode =================
+  const forceFollowRooms = new Map(); // roomId -> hostUserId or null
+
+  socket.on('force-follow-start', (data) => {
+    try {
+      const { roomId } = data || {};
+      if (!roomId || !socket.user) return;
+      // Only allow if sender is host is enforced at REST level; here we broadcast
+      const hostUserId = socket.user._id?.toString?.() || socket.user.id;
+      forceFollowRooms.set(roomId, hostUserId);
+      io.in(`room:${roomId}`).emit('force-follow', { roomId, enabled: true, hostUserId });
+    } catch (e) { console.error('force-follow-start error', e); }
+  });
+
+  socket.on('force-follow-stop', (data) => {
+    try {
+      const { roomId } = data || {};
+      if (!roomId) return;
+      forceFollowRooms.delete(roomId);
+      io.in(`room:${roomId}`).emit('force-follow', { roomId, enabled: false });
+    } catch (e) { console.error('force-follow-stop error', e); }
   });
 };
 
