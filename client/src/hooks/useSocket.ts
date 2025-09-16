@@ -154,6 +154,17 @@ export const useSocket = (options: UseSocketOptions = {}) => {
         // Join room
         socketConnection.emit('join-room', { roomId, mode });
 
+        // Presence/init events
+        socketConnection.on('room-joined', (data: any) => {
+          console.log('Room joined:', data);
+          onParticipantUpdate?.({ participants: data.participants });
+        });
+
+        socketConnection.on('users-in-room', (users: any[]) => {
+          console.log('Users in room:', users);
+          onParticipantUpdate?.({ participants: users });
+        });
+
         // Battle events
         socketConnection.on('battle-started', (data: any) => {
           console.log('Battle started:', data);
@@ -299,6 +310,27 @@ export const useSocket = (options: UseSocketOptions = {}) => {
         socketConnection.on('error', (error: any) => {
           console.error('Socket error:', error);
           onError?.(error);
+        });
+
+        // Refresh token on user token changes and update handshake auth
+        const unsubscribeToken = currentUser.onIdTokenChanged?.(async (user) => {
+          try {
+            const newToken = await user?.getIdToken();
+            if (socketRef.current && newToken) {
+              socketRef.current.auth = { token: newToken };
+              socketRef.current.disconnect();
+              socketRef.current.connect();
+            }
+          } catch (e) {
+            // ignore
+          }
+        });
+
+        // Clean up token subscription when unmounting or deps change
+        socketConnection.on('disconnect', () => {
+          if (typeof unsubscribeToken === 'function') {
+            try { unsubscribeToken(); } catch {}
+          }
         });
 
       } catch (err) {

@@ -11,10 +11,8 @@ import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
 import QuizPage from './components/QuizPage';
 
-import ResultScreen from './components/ResultScreen';
 import DemoInstructions from './components/DemoInstructions';
 import DSASheet from './components/DSASheet/DSASheet';
-import DSAProblemPage from './components/DSASheet/DSAProblemPage';
 import LeetCodeProblemPage from './components/DSASheet/LeetCodeProblemPage';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
@@ -126,15 +124,42 @@ const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =
   return currentUser ? <Navigate to="/" replace /> : children;
 };
 
+// Onboarding guard: fetches minimal user and redirects if onboarding incomplete
+const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  const [checking, setChecking] = React.useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = async () => {
+      if (loading) return;
+      if (!currentUser) { setNeedsOnboarding(false); setChecking(false); return; }
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) throw new Error('failed');
+        const data = await res.json();
+        setNeedsOnboarding(!data?.user?.onboardingCompleted);
+      } catch {
+        setNeedsOnboarding(false);
+      } finally {
+        setChecking(false);
+      }
+    };
+    check();
+  }, [currentUser, loading]);
+
+  if (loading || checking) return null;
+  if (currentUser && needsOnboarding) return <Navigate to="/onboarding" replace />;
+  return children;
+};
+
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>
-      
-      } />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
-        <Route path="/" element={<PrivateRoute><DashboardWrapper /></PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute><OnboardingRoute><DashboardWrapper /></OnboardingRoute></PrivateRoute>} />
         <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
         <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditor /></PrivateRoute>} />
 
@@ -148,6 +173,8 @@ const App: React.FC = () => {
         <Route path="/battle/join" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
         <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />
         <Route path="/dsa-sheet/problem/:id" element={<PrivateRoute><LeetCodeProblemPage /></PrivateRoute>} />
+        {/* Placeholder onboarding route (UI to be implemented next) */}
+        <Route path="/onboarding" element={<PrivateRoute><div className="app">Onboarding placeholder</div></PrivateRoute>} />
       </Routes>
     </Router>
   );

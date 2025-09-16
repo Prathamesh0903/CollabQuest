@@ -85,6 +85,11 @@ const userSchema = new mongoose.Schema({
       default: 'auto'
     }
   },
+  // Onboarding state
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
   // Account status
   isActive: {
     type: Boolean,

@@ -302,6 +302,80 @@ router.get('/profile', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/auth/me
+// @desc    Return normalized user for onboarding gating
+// @access  Private
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-__v');
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        firebaseUid: user.firebaseUid,
+        email: user.email,
+        displayName: user.displayName,
+        avatar: user.avatar,
+        role: user.role,
+        onboardingCompleted: !!user.onboardingCompleted,
+        preferences: user.preferences
+      }
+    });
+  } catch (error) {
+    console.error('Auth me error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch user' });
+  }
+});
+
+// @route   POST /api/auth/onboarding
+// @desc    Persist onboarding data and mark completion
+// @access  Private
+router.post('/onboarding', [
+  auth,
+  body('displayName').optional().isLength({ min: 2, max: 50 }).withMessage('Display name must be between 2 and 50 characters'),
+  body('role').optional().isIn(['student', 'teacher', 'admin']).withMessage('Invalid role'),
+  body('preferences').optional().isObject().withMessage('Preferences must be an object')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { displayName, role, preferences } = req.body;
+
+    const update = { onboardingCompleted: true };
+    if (displayName) update.displayName = displayName;
+    if (role) update.role = role;
+    if (preferences) update.preferences = { ...(req.user.preferences || {}), ...preferences };
+
+    const user = await User.findByIdAndUpdate(req.user._id, update, { new: true }).select('-__v');
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        firebaseUid: user.firebaseUid,
+        email: user.email,
+        displayName: user.displayName,
+        avatar: user.avatar,
+        role: user.role,
+        onboardingCompleted: !!user.onboardingCompleted,
+        preferences: user.preferences
+      }
+    });
+  } catch (error) {
+    console.error('Onboarding save error:', error);
+    res.status(500).json({ success: false, error: 'Failed to save onboarding' });
+  }
+});
+
 // @route   PUT /api/auth/profile
 // @desc    Update user profile
 // @access  Private
