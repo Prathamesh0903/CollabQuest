@@ -135,7 +135,7 @@ const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children 
       if (loading) return;
       if (!currentUser) { setNeedsOnboarding(false); setChecking(false); return; }
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/auth/me`);
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
         setNeedsOnboarding(!data?.user?.onboardingCompleted);

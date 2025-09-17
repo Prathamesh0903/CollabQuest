@@ -14,6 +14,7 @@ const inferDevBase = (): string => {
   return '/api';
 };
 
-export const API_BASE: string = (process.env.REACT_APP_API_BASE as string) || inferDevBase();
+export const API_BASE: string = (process.env.REACT_APP_API_BASE as string) || 
+  (process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api` : inferDevBase());
 
 

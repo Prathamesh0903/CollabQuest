@@ -52,7 +52,7 @@ const SpectatorMode: React.FC<SpectatorModeProps> = ({
       setError(null);
 
       const token = await currentUser?.getIdToken();
-      const response = await fetch(`/api/battle/${roomId}/spectator`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/battle/${roomId}/spectator`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
