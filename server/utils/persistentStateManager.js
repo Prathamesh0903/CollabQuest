@@ -358,11 +358,13 @@ class PersistentStateManager {
       for (const roomState of expiredRooms) {
         const roomId = roomState.roomId.toString();
         
-        // Remove from memory
-        roomStateManager.roomStates.delete(roomId);
+        // Remove from memory (check if roomStateManager exists)
+        if (roomStateManager && roomStateManager.roomStates) {
+          roomStateManager.roomStates.delete(roomId);
+        }
         
         // Remove from Redis
-        if (roomStateManager.redisClient) {
+        if (roomStateManager && roomStateManager.redisClient) {
           try {
             await roomStateManager.redisClient.del(`room:${roomId}`);
           } catch (redisError) {

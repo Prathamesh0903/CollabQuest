@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../firebase';
 import io from 'socket.io-client';
 
 interface CursorPosition {
@@ -313,7 +314,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
         });
 
         // Refresh token on user token changes and update handshake auth
-        const unsubscribeToken = currentUser.onIdTokenChanged?.(async (user) => {
+        const unsubscribeToken = auth.onIdTokenChanged(async (user) => {
           try {
             const newToken = await user?.getIdToken();
             if (socketRef.current && newToken) {

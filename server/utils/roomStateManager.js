@@ -670,7 +670,8 @@ const initialize = async () => {
   console.log('✅ Room state manager initialized');
 };
 
-module.exports = {
+// Export everything to avoid circular dependency issues
+const roomStateManager = {
   initialize,
   createRoom,
   joinRoomByCode,
@@ -692,4 +693,6 @@ module.exports = {
   pendingJoinRequests,
   // Expose persistent state manager
   persistentStateManager
-}; 
+};
+
+module.exports = roomStateManager; 
