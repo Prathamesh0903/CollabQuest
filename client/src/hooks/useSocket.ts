@@ -133,7 +133,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       
       try {
         const token = await currentUser.getIdToken();
-        const socketConnection = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:5001', {
+        const socketConnection = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
           auth: {
             token: token || undefined
           }

@@ -197,7 +197,7 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({
       setConnectionStatus('connecting');
 
       // Connect to Socket.IO server
-      const socket = io('http://localhost:5001', {
+      const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
         auth: {
           token: await currentUser.getIdToken()
         },

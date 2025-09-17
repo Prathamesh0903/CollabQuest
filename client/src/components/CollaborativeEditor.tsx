@@ -171,7 +171,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const loadFiles = async () => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
         }
@@ -217,7 +217,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const createDefaultFile = async () => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -284,7 +284,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -379,7 +379,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/folder`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/folder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -412,7 +412,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/file/${file.path}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
         }
@@ -469,7 +469,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${currentFile}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/file/${currentFile}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -531,7 +531,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         socketRef.current.disconnect();
       }
 
-      socketRef.current = io('http://localhost:5001', {
+      socketRef.current = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
         query: { sessionId: currentSessionId },
         auth: { token: token || '' },
         reconnection: true,
@@ -1141,7 +1141,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       }
 
       // Also execute locally for immediate feedback
-      const response = await fetch(`http://localhost:5001/api/execute`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1202,7 +1202,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       let errorMessage = (error as Error).message;
       
       if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Cannot connect to server. Please ensure the server is running on http://localhost:5001';
+        errorMessage = `Cannot connect to server. Please ensure the server is running on ${process.env.REACT_APP_API_URL || 'http://localhost:5001'}`;
       } else if (errorMessage.includes('Unexpected token')) {
         errorMessage = 'Server returned invalid response. This usually means the server is not running or there\'s a configuration issue.';
       }
@@ -1337,7 +1337,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         formData.append('files', file, file.webkitRelativePath || file.name);
       }
       
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/import-files`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/import-files`, {
         method: 'POST',
         headers: {
           // 'Authorization': `Bearer ${token}`
@@ -1412,7 +1412,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const handleDeleteFile = async (file: FileItem) => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/file/${file.path}`, {
         method: 'DELETE',
         headers: {
           // 'Authorization': `Bearer ${token}`
@@ -1460,7 +1460,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const handleRenameFile = async (file: FileItem, newName: string) => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}/rename`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/file/${file.path}/rename`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1520,7 +1520,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const handleDuplicateFile = async (file: FileItem) => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}/duplicate`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/file/${file.path}/duplicate`, {
         method: 'POST',
         headers: {
           // 'Authorization': `Bearer ${token}`
@@ -1545,7 +1545,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   const handleDownloadFile = async (file: FileItem) => {
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/file/${file.path}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/file/${file.path}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
         }
@@ -1594,7 +1594,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     
     try {
       // const token = await currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:5001/api/files/session/${currentSessionId}/import-local`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/files/session/${currentSessionId}/import-local`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

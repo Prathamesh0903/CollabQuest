@@ -92,7 +92,7 @@ console.log("Code execution successful! 🎉");`);
 
       console.log('Sending code execution request:', requestBody);
 
-      const response = await fetch('http://localhost:5001/api/execute', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ console.log("Code execution successful! 🎉");`);
 
       console.log('Sending authenticated code execution request:', requestBody);
 
-      const response = await fetch('http://localhost:5001/api/execute/secure', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/secure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,7 +256,7 @@ console.log("Code execution successful! 🎉");`);
 
       console.log('Sending code execution request with limits:', requestBody);
 
-      const response = await fetch('http://localhost:5001/api/execute', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

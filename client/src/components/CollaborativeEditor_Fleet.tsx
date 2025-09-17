@@ -125,7 +125,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         socketRef.current.disconnect();
       }
 
-      socketRef.current = io('http://localhost:5001', {
+      socketRef.current = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
         query: { roomId },
         auth: { token },
         transports: ['websocket', 'polling'],
@@ -366,7 +366,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     } else {
       // Fallback for offline execution
       try {
-        const response = await fetch('http://localhost:5001/api/execute', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

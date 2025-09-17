@@ -317,8 +317,8 @@ vercel
 3. Go to Settings → Environment Variables
 4. Add:
    ```
-   REACT_APP_API_URL=https://your-backend.onrender.com
-   REACT_APP_SOCKET_URL=https://your-backend.onrender.com
+   REACT_APP_API_URL=https://collabquest.onrender.com
+   REACT_APP_SOCKET_URL=https://collabquest.onrender.com
    ```
 
 ## Step 3: Deploy Backend to Vercel (Serverless)

@@ -63,7 +63,7 @@ async function executeCodeBasic(language, code, input = '') {
     console.log('Sending code execution request:', requestBody);
 
     // Send request to API
-    const response = await fetch('http://localhost:5001/api/execute', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ async function executeCodeAuthenticated(language, code, input = '', token) {
     console.log('Sending authenticated code execution request:', requestBody);
 
     // Send request to authenticated endpoint
-    const response = await fetch('http://localhost:5001/api/execute/secure', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/secure`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ async function executeCodeWithLimits(language, code, input = '', timeout = 5000,
     console.log('Sending code execution request with limits:', requestBody);
 
     // Send request to API
-    const response = await fetch('http://localhost:5001/api/execute', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

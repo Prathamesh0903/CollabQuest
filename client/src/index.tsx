@@ -28,7 +28,7 @@ reportWebVitals();
   const originalFetch = window.fetch.bind(window);
 
   const apiOrigins = [
-    process.env.REACT_APP_SERVER_URL || 'http://localhost:5001',
+    process.env.REACT_APP_API_URL || 'http://localhost:5001',
     process.env.REACT_APP_API_BASE || ''
   ].filter(Boolean);
 

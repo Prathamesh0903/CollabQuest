@@ -69,7 +69,7 @@ const BattleLobby: React.FC<BattleLobbyProps> = ({ onStartBattle }) => {
     const initializeSocket = async () => {
       try {
         const token = await currentUser?.getIdToken();
-        const socket = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:5001', {
+        const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
           auth: {
             token: token || undefined
           }

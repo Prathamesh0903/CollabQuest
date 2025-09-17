@@ -130,7 +130,7 @@ print("Code execution completed! 🎉")`);
 
       console.log('Sending basic code execution request:', requestBody);
 
-      const response = await fetch('http://localhost:5001/api/execute', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ print("Code execution completed! 🎉")`);
         sessionId
       });
 
-      const response = await fetch('http://localhost:5001/api/execute/with-files', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/with-files`, {
         method: 'POST',
         body: formData
       });
@@ -267,7 +267,7 @@ print("Code execution completed! 🎉")`);
   // Load session files
   const loadSessionFiles = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/execute/files/${sessionId}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/files/${sessionId}`);
       const result = await response.json();
       
       if (result.success) {
@@ -281,7 +281,7 @@ print("Code execution completed! 🎉")`);
   // Download file
   const downloadFile = useCallback(async (filename: string) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/execute/files/${sessionId}/${filename}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/files/${sessionId}/${filename}`);
       
       if (response.ok) {
         const blob = await response.blob();
@@ -327,7 +327,7 @@ print("Code execution completed! 🎉")`);
         sessionId
       };
 
-      const response = await fetch('http://localhost:5001/api/execute/interactive', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/interactive`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +362,7 @@ print("Code execution completed! 🎉")`);
     setInteractiveSession(prev => prev ? { ...prev, status: 'running' } : null);
 
     try {
-      const response = await fetch(`http://localhost:5001/api/execute/interactive/${interactiveSession.sessionId}/input`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/interactive/${interactiveSession.sessionId}/input`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -392,7 +392,7 @@ print("Code execution completed! 🎉")`);
     if (!interactiveSession) return;
 
     try {
-      await fetch(`http://localhost:5001/api/execute/interactive/${interactiveSession.sessionId}`, {
+      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute/interactive/${interactiveSession.sessionId}`, {
         method: 'DELETE'
       });
 
