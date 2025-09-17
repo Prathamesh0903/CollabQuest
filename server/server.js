@@ -36,7 +36,9 @@ const allowedOrigins = (process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',
 if (allowedOrigins.length === 0) {
   allowedOrigins.push(
     "http://localhost:3000",
-    "https://collab-quest-lmws4f0eh-prathamesh-pawars-projects-de2689ea.vercel.app"
+    "https://collab-quest-lmws4f0eh-prathamesh-pawars-projects-de2689ea.vercel.app",
+    "https://collab-quest-g2a9ekboj-prathamesh-pawars-projects-de2689ea.vercel.app",
+    "https://collab-quest.vercel.app"
   );
 }
 
