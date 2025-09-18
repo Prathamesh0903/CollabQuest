@@ -5,7 +5,7 @@
   "main": "docker-code-executor.js",
   "scripts": {
     "start": "node docker-code-executor.js",
-    "test": "node test-executor.js",
+    "test": "node tests/manual/test-executor.js",
     "example": "node docker-code-executor.js"
   },
   "keywords": [
