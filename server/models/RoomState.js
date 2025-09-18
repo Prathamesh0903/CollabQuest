@@ -5,8 +5,7 @@ const roomStateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   
   // Core room state
