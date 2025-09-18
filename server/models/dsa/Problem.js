@@ -9,11 +9,11 @@ const testCaseSchema = new mongoose.Schema({
 
 const dsaProblemSchema = new mongoose.Schema({
   problemNumber: { type: Number, required: true, unique: true, index: true },
-  title: { type: String, required: true, trim: true, index: true },
+  title: { type: String, required: true, trim: true },
   description: { type: String, required: true },
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], required: true, index: true },
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'DSACategory', required: true, index: true },
-  tags: [{ type: String, trim: true, index: true }],
+  tags: [{ type: String, trim: true }],
   acceptanceRate: { type: Number, default: 0, min: 0, max: 100 },
   testCases: { type: [testCaseSchema], default: [] },
   starterCode: {
