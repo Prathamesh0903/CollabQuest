@@ -3,7 +3,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Initialize Firebase Admin SDK
-const serviceAccount = require('../firbase-adminsdk.json');
+const serviceAccount = require('../firebase-adminsdk.json');
 
 // Initialize Firebase Admin
 let firebaseApp;

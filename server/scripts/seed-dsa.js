@@ -8,7 +8,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 
 const DSACategory = require('../models/dsa/Category');
-const DSAProblem = require('../models/dsa/Problem');
+const DSAProblem = require('../models/dsa/DSAProblem');
 const DSAUser = require('../models/dsa/DSAUser');
 
 const toSlug = (str) => String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

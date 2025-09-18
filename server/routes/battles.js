@@ -1,7 +1,7 @@
 const express = require('express');
 const { auth } = require('../middleware/auth');
 const Room = require('../models/Room');
-const DSAProblem = require('../models/dsa/Problem');
+const DSAProblem = require('../models/dsa/DSAProblem');
 const roomStateManager = require('../utils/roomStateManager');
 const { executeCode } = require('../utils/codeExecutor');
 

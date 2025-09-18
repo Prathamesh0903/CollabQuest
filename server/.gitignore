@@ -1,0 +1,4 @@
+uploads/**
+!uploads/README.md
+temp/**
+!temp/README.md

@@ -17,8 +17,8 @@ const leaderboardRoutes = require('./routes/leaderboards');
 const messageRoutes = require('./routes/messages');
 const fileRoutes = require('./routes/files');
 const collaborativeSessionRoutes = require('./routes/collaborativeSessions');
-const codeExecutionRoutes = require('./routes/codeExecution');
-const codeExecutionPluginRoutes = require('./routes/codeExecutionPlugin');
+const codeExecutionRoutes = require('./routes/execute');
+const codeExecutionPluginRoutes = require('./routes/execute-plugins');
 const dsaRoutes = require('./routes/dsa');
 const battleRoutes = require('./routes/battles');
 
@@ -102,7 +102,7 @@ app.use('/api/battle', battleRoutes);
 
 // Test utilities (only in development)
 if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-  const testUtilsRoutes = require('./routes/test-utils');
+  const testUtilsRoutes = require('./routes/_test-utils');
   app.use('/api/test', testUtilsRoutes);
 }
 

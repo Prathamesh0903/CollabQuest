@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 
 const DSAUser = require('../models/dsa/DSAUser');
 const DSACategory = require('../models/dsa/Category');
-const DSAProblem = require('../models/dsa/Problem');
-const DSASubmission = require('../models/dsa/Submission');
+const DSAProblem = require('../models/dsa/DSAProblem');
+const DSASubmission = require('../models/dsa/DSASubmission');
 
 const router = express.Router();
 
