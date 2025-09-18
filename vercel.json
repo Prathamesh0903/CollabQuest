@@ -16,7 +16,7 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "@react_app_api_url",
-    "REACT_APP_SOCKET_URL": "@react_app_socket_url"
+    "REACT_APP_API_URL": "https://collabquest.onrender.com",
+    "REACT_APP_SOCKET_URL": "https://collabquest.onrender.com"
   }
 }
