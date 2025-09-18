@@ -75,7 +75,7 @@ const createRoomState = (roomId, language = 'javascript', mode = 'collaborative'
   chatMessages: [],
   isActive: true,
   createdAt: new Date(),
-  battle: undefined
+  // battle removed
 });
 
 // Get default code for language
@@ -415,44 +415,7 @@ const updateRoomState = async (roomId, updates) => {
   return state;
 };
 
-// Schedule battle end for a room after a duration (in ms). Sets state.battle.ended.
-const scheduleBattleEnd = (roomId, durationMs) => {
-  if (battleEndTimers.has(roomId)) {
-    clearTimeout(battleEndTimers.get(roomId));
-    battleEndTimers.delete(roomId);
-  }
-  const timer = setTimeout(async () => {
-    try {
-      const state = roomStates.get(roomId);
-      if (state && state.battle && !state.battle.ended) {
-        console.log(`Battle ${roomId} ended by timer after ${durationMs}ms`);
-        state.battle.ended = true;
-        state.battle.endedAt = new Date();
-        await updateRoomState(roomId, { battle: state.battle });
-        
-        // Log comprehensive state after timer-based battle end
-        const { logRoomState, logSubmissionState, validateBattleResultData } = require('./battleLogger');
-        await logRoomState(roomId, 'BATTLE_TIMER_ENDED');
-        await logSubmissionState(roomId, 'BATTLE_TIMER_ENDED');
-        await validateBattleResultData(roomId);
-      }
-    } catch (e) {
-      console.error('Error ending battle by timer:', e);
-    } finally {
-      battleEndTimers.delete(roomId);
-    }
-  }, Math.max(0, durationMs | 0));
-  battleEndTimers.set(roomId, timer);
-};
-
-// Clear battle timer for a room (used to prevent double-ending)
-const clearBattleTimer = (roomId) => {
-  if (battleEndTimers.has(roomId)) {
-    clearTimeout(battleEndTimers.get(roomId));
-    battleEndTimers.delete(roomId);
-    console.log(`Cleared battle timer for room ${roomId}`);
-  }
-};
+// Removed battle scheduling utilities
 
 // Prune inactive participants based on lastSeen in Room doc; marks participant inactive in DB and removes from state.users
 const pruneInactiveParticipants = async (roomId, maxIdleMs = 5 * 60 * 1000) => {
@@ -683,8 +646,6 @@ const roomStateManager = {
   getRoomStats,
   createRoomState,
   getDefaultCode,
-  scheduleBattleEnd,
-  clearBattleTimer,
   pruneInactiveParticipants,
   // Expose internal state for testing
   roomStates,

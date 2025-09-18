@@ -14,13 +14,13 @@ const teamRoutes = require('./routes/teams');
 const roomRoutes = require('./routes/rooms');
 const quizRoutes = require('./routes/quizzes');
 const leaderboardRoutes = require('./routes/leaderboards');
-const battleRoutes = require('./routes/battle');
 const messageRoutes = require('./routes/messages');
 const fileRoutes = require('./routes/files');
 const collaborativeSessionRoutes = require('./routes/collaborativeSessions');
 const codeExecutionRoutes = require('./routes/codeExecution');
 const codeExecutionPluginRoutes = require('./routes/codeExecutionPlugin');
 const dsaRoutes = require('./routes/dsa');
+const battleRoutes = require('./routes/battles');
 
 const { socketAuth } = require('./middleware/auth');
 const { handleSocketConnection } = require('./utils/socketHandler');
@@ -92,13 +92,13 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
-app.use('/api/battle', battleRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/collaborative-sessions', collaborativeSessionRoutes);
 app.use('/api/execute', codeExecutionRoutes);
 app.use('/api/execute/plugin', codeExecutionPluginRoutes);
 app.use('/api/dsa', dsaRoutes);
+app.use('/api/battle', battleRoutes);
 
 // Test utilities (only in development)
 if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {

@@ -167,6 +167,15 @@ export const useSocket = (options: UseSocketOptions = {}) => {
         });
 
         // Battle events
+        socketConnection.on('battle:countdown', (data: any) => {
+          // map countdown into tick with remaining seconds if desired by caller
+          onBattleTick?.({ remaining: data?.seconds ?? 0, phase: 'countdown' });
+        });
+
+        socketConnection.on('battle:start', (data: any) => {
+          onBattleStarted?.(data);
+        });
+
         socketConnection.on('battle-started', (data: any) => {
           console.log('Battle started:', data);
           onBattleStarted?.(data);

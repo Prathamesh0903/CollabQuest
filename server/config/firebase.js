@@ -31,6 +31,7 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
+      console.warn('[Auth] No Authorization bearer token on HTTP request');
       return res.status(401).json({ error: 'Access token required' });
     }
 
@@ -43,7 +44,7 @@ const authenticateToken = async (req, res, next) => {
     };
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('[Auth] HTTP token verification error:', error && error.message ? error.message : error);
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
 };
@@ -56,7 +57,7 @@ const authenticateSocket = async (socket, next) => {
     // In development mode, allow connections without token for testing
     if (!token) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: Allowing unauthenticated socket connection');
+        console.log('[Auth] Development mode: Allowing unauthenticated socket connection');
         socket.user = {
           uid: 'dev-user-' + Math.random().toString(36).substr(2, 9),
           email: 'dev@example.com',
@@ -65,6 +66,7 @@ const authenticateSocket = async (socket, next) => {
         };
         return next();
       }
+      console.warn('[Auth] No token provided in socket handshake');
       return next(new Error('Authentication token required'));
     }
 
@@ -77,9 +79,9 @@ const authenticateSocket = async (socket, next) => {
     };
     next();
   } catch (error) {
-    console.error('Socket authentication error:', error);
+    console.error('[Auth] Socket token verification error:', error && error.message ? error.message : error);
     if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Allowing connection despite auth error');
+      console.log('[Auth] Development mode: Allowing connection despite auth error');
       socket.user = {
         uid: 'dev-user-' + Math.random().toString(36).substr(2, 9),
         email: 'dev@example.com',

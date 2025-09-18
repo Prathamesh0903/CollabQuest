@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
-import BattleLanding from './components/Battle/BattleLanding';
-import BattlePlay from './components/Battle/BattlePlay';
-import BattleJoin from './components/Battle/BattleJoin';
-import BattleLobby from './components/Battle/BattleLobby';
-import SpectatorMode from './components/Battle/SpectatorMode';
+// Removed Battle components; Battle Play now uses DSAProblemPage
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
 import Quiz from './components/Quiz';
@@ -14,6 +10,8 @@ import QuizPage from './components/QuizPage';
 import DemoInstructions from './components/DemoInstructions';
 import DSASheet from './components/DSASheet/DSASheet';
 import LeetCodeProblemPage from './components/DSASheet/LeetCodeProblemPage';
+import DSAProblemPage from './components/DSASheet/DSAProblemPage';
+import Battle from './components/Battle';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import './App.css';
@@ -41,17 +39,7 @@ const AdvancedQuizWrapper: React.FC = () => {
   );
 };
 
-// Spectator Mode wrapper
-const SpectatorModeWrapper: React.FC = () => {
-  const location = useLocation();
-  const { roomId, roomCode } = location.state || {};
-
-  if (!roomId || !roomCode) {
-    return <Navigate to="/battle" replace />;
-  }
-
-  return <SpectatorMode roomId={roomId} roomCode={roomCode} />;
-};
+// Spectator Mode was removed with Battle feature
 
 // Dashboard wrapper with state management
 const DashboardWrapper: React.FC = () => {
@@ -162,15 +150,12 @@ const App: React.FC = () => {
         <Route path="/" element={<PrivateRoute><OnboardingRoute><DashboardWrapper /></OnboardingRoute></PrivateRoute>} />
         <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
         <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditor /></PrivateRoute>} />
+        <Route path="/battle" element={<PrivateRoute><Battle /></PrivateRoute>} />
 
         <Route path="/advanced-quiz" element={<PrivateRoute><AdvancedQuizWrapper /></PrivateRoute>} />
         <Route path="/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
-        <Route path="/battle" element={<PrivateRoute><BattleLanding /></PrivateRoute>} />
-        <Route path="/battle/play" element={<PrivateRoute><BattlePlay /></PrivateRoute>} />
-        <Route path="/battle/lobby" element={<PrivateRoute><BattleLobby /></PrivateRoute>} />
-        <Route path="/battle/spectator" element={<PrivateRoute><SpectatorModeWrapper /></PrivateRoute>} />
-        <Route path="/battle/join/:roomCode" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
-        <Route path="/battle/join" element={<PrivateRoute><BattleJoin /></PrivateRoute>} />
+        {/* Route Battle Play to DSA editor with host-chosen problem id */}
+        <Route path="/battle/play/:id" element={<PrivateRoute><DSAProblemPage /></PrivateRoute>} />
         <Route path="/dsa-sheet" element={<PrivateRoute><DSASheet /></PrivateRoute>} />
         <Route path="/dsa-sheet/problem/:id" element={<PrivateRoute><LeetCodeProblemPage /></PrivateRoute>} />
         {/* Placeholder onboarding route (UI to be implemented next) */}

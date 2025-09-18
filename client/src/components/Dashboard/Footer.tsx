@@ -44,7 +44,7 @@ const Footer: React.FC = () => {
           <h4>Platform</h4>
           <ul className="footer-links">
             <li><a href="/collab">Collaborative Editor</a></li>
-            <li><a href="/battle">Battle Mode</a></li>
+            <li><a href="/dsa-sheet">DSA Sheet</a></li>
             <li><a href="/quiz">Coding Quizzes</a></li>
             <li><a href="#">DSA Practice</a></li>
             <li><a href="#">Hackathons</a></li>

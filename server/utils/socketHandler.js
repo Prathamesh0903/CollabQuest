@@ -43,6 +43,9 @@ const executionResults = new Map();
 const battleTimers = {};
 const battleStates = {};
 
+// Battle state helpers
+// Removed battle state machine usage
+
 // Handle socket connection
 const handleSocketConnection = (socket, io) => {
   console.log(`User connected: ${socket.user?.displayName || 'Unknown'}`);
@@ -150,6 +153,36 @@ const handleSocketConnection = (socket, io) => {
     } catch (error) {
       console.error('Error joining room:', error);
       socket.emit('error', { message: 'Failed to join room' });
+    }
+  });
+
+  // Lobby: user toggles ready status
+  socket.on('lobby:ready', async (data) => {
+    try {
+      const { roomId, ready } = data || {};
+      if (!socket.user) return;
+      await setUserReady(roomId, socket.user._id.toString(), Boolean(ready));
+      socket.to(`room:${roomId}`).emit('lobby:ready:update', { userId: socket.user._id.toString(), ready: Boolean(ready) });
+      socket.emit('lobby:ready:ack', { success: true, ready: Boolean(ready) });
+    } catch (error) {
+      socket.emit('lobby:ready:error', { message: 'Failed to update ready', details: error.message });
+    }
+  });
+
+  // Host initiates countdown then starts battle
+  socket.on('battle:begin', async (data) => {
+    try {
+      const { roomId, seconds = 5 } = data || {};
+      if (!socket.user) return;
+      const ok = await isHost(roomId, socket.user._id.toString());
+      if (!ok) {
+        socket.emit('battle:error', { message: 'Only host can start battle' });
+        return;
+      }
+      await beginCountdown(socket.server, roomId, Math.max(3, Math.min(Number(seconds) || 5, 15)));
+      await startBattle(socket.server, roomId);
+    } catch (error) {
+      socket.emit('battle:error', { message: 'Failed to start battle', details: error.message });
     }
   });
 
@@ -2202,38 +2235,7 @@ const handleSocketConnection = (socket, io) => {
     console.error('Socket error:', error);
   });
 
-  // Start a coding battle
-  socket.on('start-battle', (data) => {
-    const { roomId, duration = 300 } = data; // duration in seconds
-    if (!roomId) return;
-    if (battleStates[roomId] && battleStates[roomId].state === 'active') return; // already running
-    battleStates[roomId] = { state: 'active', remaining: duration };
-    io.in(`room:${roomId}`).emit('battle-started', { roomId, duration });
-    // Start timer
-    if (battleTimers[roomId]) clearInterval(battleTimers[roomId]);
-    battleTimers[roomId] = setInterval(() => {
-      if (!battleStates[roomId]) return;
-      battleStates[roomId].remaining -= 1;
-      io.in(`room:${roomId}`).emit('battle-tick', { roomId, remaining: battleStates[roomId].remaining });
-      if (battleStates[roomId].remaining <= 0) {
-        clearInterval(battleTimers[roomId]);
-        delete battleTimers[roomId];
-        battleStates[roomId].state = 'ended';
-        // TODO: Calculate result (stubbed as draw)
-        io.in(`room:${roomId}`).emit('battle-ended', { roomId, result: 'draw' });
-      }
-    }, 1000);
-  });
-
-  // End battle manually
-  socket.on('end-battle', (data) => {
-    const { roomId, result = 'draw' } = data;
-    if (!roomId) return;
-    if (battleTimers[roomId]) clearInterval(battleTimers[roomId]);
-    delete battleTimers[roomId];
-    battleStates[roomId] = { state: 'ended', remaining: 0 };
-    io.in(`room:${roomId}`).emit('battle-ended', { roomId, result });
-  });
+  // Removed battle start/end socket events
 
   // ================= Screen Sharing (WebRTC signaling relay) =================
   // Track active screen sharers per room
@@ -2435,192 +2437,11 @@ const handleSocketConnection = (socket, io) => {
     }
   });
 
-  // Handle permission change requests
-  socket.on('change-permission', async (data) => {
-    try {
-      const { roomId, targetUserId, newPermissions } = data;
-      
-      if (!socket.user) {
-        socket.emit('error', { message: 'Authentication required' });
-        return;
-      }
+  // Removed permission change socket handlers
 
-      if (!roomId || !targetUserId || !newPermissions) {
-        socket.emit('error', { message: 'Missing required parameters' });
-        return;
-      }
+  // Removed default permission change socket handlers
 
-      // Import Room model
-      const Room = require('../models/Room');
-      
-      // Check if user is host and has permission to change permissions
-      const room = await Room.findById(roomId);
-      if (!room) {
-        socket.emit('error', { message: 'Room not found' });
-        return;
-      }
-
-      const userParticipant = room.participants.find(p => 
-        p.userId.toString() === socket.user._id.toString() && p.isActive
-      );
-
-      if (!userParticipant || userParticipant.role !== 'host') {
-        socket.emit('error', { message: 'Only hosts can change permissions' });
-        return;
-      }
-
-      // Check if permission changes are allowed
-      if (!room.settings.allowPermissionChanges) {
-        socket.emit('error', { message: 'Permission changes are disabled for this room' });
-        return;
-      }
-
-      // Find target participant
-      const targetParticipant = room.participants.find(p => 
-        p.userId.toString() === targetUserId && p.isActive
-      );
-
-      if (!targetParticipant) {
-        socket.emit('error', { message: 'Target participant not found' });
-        return;
-      }
-
-      // Don't allow changing host permissions
-      if (targetParticipant.role === 'host') {
-        socket.emit('error', { message: 'Cannot change host permissions' });
-        return;
-      }
-
-      const oldPermissions = targetParticipant.permissions;
-      
-      // Update permissions
-      await room.updateParticipantPermissions(targetUserId, newPermissions);
-
-      // Broadcast permission change to all room participants
-      io.in(`room:${roomId}`).emit('permission-changed', {
-        roomId,
-        userId: targetUserId,
-        displayName: targetParticipant.userId.displayName || 'Unknown',
-        oldPermissions,
-        newPermissions,
-        changedBy: socket.user._id.toString(),
-        changedAt: new Date()
-      });
-
-      console.log(`User ${socket.user.displayName} changed permissions for user ${targetUserId} in room ${roomId}: ${oldPermissions} -> ${newPermissions}`);
-    } catch (error) {
-      console.error('Error handling permission change:', error);
-      socket.emit('error', { message: 'Failed to change permissions' });
-    }
-  });
-
-  // Handle default permission change requests
-  socket.on('change-default-permissions', async (data) => {
-    try {
-      const { roomId, newDefaultPermissions } = data;
-      
-      if (!socket.user) {
-        socket.emit('error', { message: 'Authentication required' });
-        return;
-      }
-
-      if (!roomId || !newDefaultPermissions) {
-        socket.emit('error', { message: 'Missing required parameters' });
-        return;
-      }
-
-      // Import Room model
-      const Room = require('../models/Room');
-      
-      // Check if user is host
-      const room = await Room.findById(roomId);
-      if (!room) {
-        socket.emit('error', { message: 'Room not found' });
-        return;
-      }
-
-      const userParticipant = room.participants.find(p => 
-        p.userId.toString() === socket.user._id.toString() && p.isActive
-      );
-
-      if (!userParticipant || userParticipant.role !== 'host') {
-        socket.emit('error', { message: 'Only hosts can change default permissions' });
-        return;
-      }
-
-      const oldDefaultPermissions = room.settings.defaultPermissions;
-      
-      // Update default permissions
-      await room.updateDefaultPermissions(newDefaultPermissions);
-
-      // Broadcast default permission change to all room participants
-      io.in(`room:${roomId}`).emit('default-permissions-changed', {
-        roomId,
-        oldDefaultPermissions,
-        newDefaultPermissions,
-        changedBy: socket.user._id.toString(),
-        changedAt: new Date()
-      });
-
-      console.log(`User ${socket.user.displayName} changed default permissions for room ${roomId}: ${oldDefaultPermissions} -> ${newDefaultPermissions}`);
-    } catch (error) {
-      console.error('Error handling default permission change:', error);
-      socket.emit('error', { message: 'Failed to change default permissions' });
-    }
-  });
-
-  // Handle permission settings change requests
-  socket.on('change-permission-settings', async (data) => {
-    try {
-      const { roomId, allowPermissionChanges } = data;
-      
-      if (!socket.user) {
-        socket.emit('error', { message: 'Authentication required' });
-        return;
-      }
-
-      if (!roomId || typeof allowPermissionChanges !== 'boolean') {
-        socket.emit('error', { message: 'Missing required parameters' });
-        return;
-      }
-
-      // Import Room model
-      const Room = require('../models/Room');
-      
-      // Check if user is host
-      const room = await Room.findById(roomId);
-      if (!room) {
-        socket.emit('error', { message: 'Room not found' });
-        return;
-      }
-
-      const userParticipant = room.participants.find(p => 
-        p.userId.toString() === socket.user._id.toString() && p.isActive
-      );
-
-      if (!userParticipant || userParticipant.role !== 'host') {
-        socket.emit('error', { message: 'Only hosts can change permission settings' });
-        return;
-      }
-
-      // Update permission settings
-      room.settings.allowPermissionChanges = allowPermissionChanges;
-      await room.save();
-
-      // Broadcast permission settings change to all room participants
-      io.in(`room:${roomId}`).emit('permission-settings-changed', {
-        roomId,
-        allowPermissionChanges,
-        changedBy: socket.user._id.toString(),
-        changedAt: new Date()
-      });
-
-      console.log(`User ${socket.user.displayName} changed permission settings for room ${roomId}: allowPermissionChanges = ${allowPermissionChanges}`);
-    } catch (error) {
-      console.error('Error handling permission settings change:', error);
-      socket.emit('error', { message: 'Failed to change permission settings' });
-    }
-  });
+  // Removed permission settings socket handlers
 
   // --- Presence enhancements: typing, idle, connection quality ---
   // User typing indicator
