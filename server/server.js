@@ -36,14 +36,20 @@ const allowedOrigins = (process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',
 if (allowedOrigins.length === 0) {
   allowedOrigins.push(
     "http://localhost:3000",
-    "https://collab-quest-lmws4f0eh-prathamesh-pawars-projects-de2689ea.vercel.app",
-    "https://collab-quest-g2a9ekboj-prathamesh-pawars-projects-de2689ea.vercel.app",
-    "https://collab-quest.vercel.app"
+    "https://collab-quest.vercel.app",
+    // Add your current frontend URL here
+   // Replace with actual URL
   );
 }
 
 const corsOptions = {
   origin: function(origin, callback) {
+    // For development - allow all origins (remove in production)
+    if (process.env.NODE_ENV === 'development') {
+      callback(null, true);
+      return;
+    }
+    
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
