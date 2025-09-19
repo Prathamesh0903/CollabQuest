@@ -1,4 +1,4 @@
-const { authenticateToken, authenticateSocket, createOrUpdateUser, getUserByFirebaseUid } = require('../config/firebase');
+const { authenticateToken, authenticateSocket, createOrUpdateUser } = require('../config/supabaseAuth');
 
 // Express authentication middleware
 const auth = async (req, res, next) => {
@@ -47,22 +47,16 @@ const optionalAuth = async (req, res, next) => {
     }
 
     // Verify token directly and swallow errors to allow anonymous access
-    const { admin } = require('../config/firebase');
+    const { verifySupabaseToken } = require('../config/supabaseAuth');
     try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      const firebaseUser = {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        displayName: decodedToken.name || decodedToken.display_name,
-        picture: decodedToken.picture
-      };
-      const dbUser = await createOrUpdateUser(firebaseUser);
-      
-      // Keep both Firebase info and database user info
+      const normalizedUser = await verifySupabaseToken(token);
+      const dbUser = await createOrUpdateUser(normalizedUser);
+
+      // Keep both normalized info and database user info
       req.user = {
-        ...firebaseUser,  // Keep uid, email, etc.
-        ...dbUser.toObject ? dbUser.toObject() : dbUser,  // Add database fields
-        uid: firebaseUser.uid  // Ensure uid is preserved
+        ...normalizedUser,
+        ...(dbUser.toObject ? dbUser.toObject() : dbUser),
+        uid: normalizedUser.uid
       };
     } catch (verifyErr) {
       console.warn('optionalAuth: ignoring invalid/expired token');

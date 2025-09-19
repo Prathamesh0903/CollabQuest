@@ -1,16 +1,16 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { createOrUpdateUser, getUserByFirebaseUid } = require('../config/firebase');
+const { createOrUpdateUser, getUserByFirebaseUid } = require('../config/supabaseAuth');
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 
 const router = express.Router();
 
 // @route   POST /api/auth/login
-// @desc    Login user with Firebase token
+// @desc    Login user with Supabase token
 // @access  Public
 router.post('/login', [
-  body('token').notEmpty().withMessage('Firebase token is required')
+  body('token').notEmpty().withMessage('Supabase token is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -19,20 +19,9 @@ router.post('/login', [
     }
 
     const { token } = req.body;
-
-    // Verify Firebase token
-    const { admin } = require('../config/firebase');
-    const decodedToken = await admin.auth().verifyIdToken(token);
-
-    // Create or update user in database
-    const userData = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      displayName: decodedToken.name || decodedToken.display_name,
-      picture: decodedToken.picture
-    };
-
-    const user = await createOrUpdateUser(userData);
+    const { verifySupabaseToken } = require('../config/supabaseAuth');
+    const normalized = await verifySupabaseToken(token);
+    const user = await createOrUpdateUser(normalized);
 
     // Generate JWT token (optional, since we're using Firebase)
     const jwt = require('jsonwebtoken');
@@ -71,10 +60,10 @@ router.post('/login', [
 });
 
 // @route   POST /api/auth/register
-// @desc    Register new user
+// @desc    Register new user (token from Supabase)
 // @access  Public (admin required for teacher/admin)
 router.post('/register', [
-  body('token').notEmpty().withMessage('Firebase token is required'),
+  body('token').notEmpty().withMessage('Supabase token is required'),
   body('displayName').optional().isLength({ min: 2, max: 50 }).withMessage('Display name must be between 2 and 50 characters'),
   body('preferences').optional().isObject().withMessage('Preferences must be an object'),
   body('role').optional().isIn(['student', 'teacher', 'admin']).withMessage('Invalid role')
@@ -86,13 +75,9 @@ router.post('/register', [
     }
 
     const { token, displayName, preferences, role } = req.body;
-
-    // Verify Firebase token
-    const { admin } = require('../config/firebase');
-    const decodedToken = await admin.auth().verifyIdToken(token);
-
-    // Check if user already exists
-    const existingUser = await getUserByFirebaseUid(decodedToken.uid);
+    const { verifySupabaseToken } = require('../config/supabaseAuth');
+    const normalized = await verifySupabaseToken(token);
+    const existingUser = await getUserByFirebaseUid(normalized.uid);
     if (existingUser) {
       return res.status(400).json({ 
         success: false, 
@@ -112,10 +97,10 @@ router.post('/register', [
 
     // Create new user
     const userData = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      displayName: displayName || decodedToken.name || decodedToken.display_name || 'Anonymous User',
-      picture: decodedToken.picture,
+      uid: normalized.uid,
+      email: normalized.email,
+      displayName: displayName || normalized.displayName || 'Anonymous User',
+      picture: normalized.picture,
       role: assignedRole
     };
 
