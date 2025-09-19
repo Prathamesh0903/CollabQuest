@@ -30,14 +30,16 @@ const DSASheet: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Load real problems from API and group by category
+  // Load problems with user progress from API and group by category
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API_BASE}/dsa/problems?limit=500`);
+        // Load problems with user progress
+        const res = await fetch(`${API_BASE}/dsa/progress?limit=500`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        const items = Array.isArray(json.items) ? json.items : [];
+        const items = Array.isArray(json.problems) ? json.problems : [];
+        
         const byCategory: Record<string, Topic> = {};
         for (const p of items) {
           const catName = p?.category?.name || 'Misc';
@@ -55,19 +57,56 @@ const DSASheet: React.FC = () => {
             title: p.title,
             difficulty: p.difficulty,
             tags: p.tags || [],
-            isCompleted: false,
+            isCompleted: p.isCompleted || false,
             url: `/dsa-sheet/problem/${p._id}`
           } as Problem);
         }
         setTopics(Object.values(byCategory));
       } catch (e) {
-        console.error('Error loading DSA problems:', e);
+        console.error('Error loading DSA problems with progress:', e);
+        // Fallback to loading problems without progress
+        try {
+          const res = await fetch(`${API_BASE}/dsa/problems?limit=500`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          const items = Array.isArray(json.items) ? json.items : [];
+          const byCategory: Record<string, Topic> = {};
+          for (const p of items) {
+            const catName = p?.category?.name || 'Misc';
+            const topicId = (p?.category?._id as string) || catName.toLowerCase().replace(/\s+/g, '-');
+            if (!byCategory[topicId]) {
+              byCategory[topicId] = {
+                id: topicId,
+                name: catName,
+                isExpanded: true,
+                problems: []
+              } as Topic;
+            }
+            byCategory[topicId].problems.push({
+              id: p._id,
+              title: p.title,
+              difficulty: p.difficulty,
+              tags: p.tags || [],
+              isCompleted: false,
+              url: `/dsa-sheet/problem/${p._id}`
+            } as Problem);
+          }
+          setTopics(Object.values(byCategory));
+        } catch (fallbackError) {
+          console.error('Error loading DSA problems (fallback):', fallbackError);
+        }
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, []);
+    
+    // Only load if user is authenticated
+    if (currentUser) {
+      load();
+    } else {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
   const toggleTopic = (topicId: string) => {
     setTopics(topics.map(topic => 
@@ -77,7 +116,23 @@ const DSASheet: React.FC = () => {
     ));
   };
 
-  const toggleProblemStatus = (topicId: string, problemId: string) => {
+  const toggleProblemStatus = async (topicId: string, problemId: string) => {
+    // Check if user is authenticated
+    if (!currentUser) {
+      alert('Please log in to track your progress');
+      return;
+    }
+
+    // Find the current problem to get its current status
+    const currentProblem = topics
+      .find(topic => topic.id === topicId)
+      ?.problems.find(problem => problem.id === problemId);
+    
+    if (!currentProblem) return;
+
+    const newCompletionStatus = !currentProblem.isCompleted;
+
+    // Optimistically update UI
     setTopics(topics.map(topic => {
       if (topic.id !== topicId) return topic;
       
@@ -85,13 +140,55 @@ const DSASheet: React.FC = () => {
         ...topic,
         problems: topic.problems.map(problem => 
           problem.id === problemId 
-            ? { ...problem, isCompleted: !problem.isCompleted } 
+            ? { ...problem, isCompleted: newCompletionStatus } 
             : problem
         )
       };
     }));
-    
-    // TODO: Call API to update problem status
+
+    // Save to backend
+    try {
+      const token = await currentUser.getIdToken();
+      
+      const response = await fetch(`${API_BASE}/dsa/progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          problemId,
+          isCompleted: newCompletionStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Progress save error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Progress saved successfully');
+    } catch (error) {
+      console.error('Error saving progress:', error);
+      
+      // Revert UI changes on error
+      setTopics(topics.map(topic => {
+        if (topic.id !== topicId) return topic;
+        
+        return {
+          ...topic,
+          problems: topic.problems.map(problem => 
+            problem.id === problemId 
+              ? { ...problem, isCompleted: currentProblem.isCompleted } 
+              : problem
+          )
+        };
+      }));
+      
+      alert('Failed to save progress. Please try again.');
+    }
   };
 
   const filteredTopics = topics.map(topic => ({
@@ -114,6 +211,46 @@ const DSASheet: React.FC = () => {
 
   if (loading) {
     return <div className="loading">Loading DSA Practice Sheet...</div>;
+  }
+
+  // Show login prompt for unauthenticated users
+  if (!currentUser) {
+    return (
+      <div className="dsa-sheet">
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '4rem 2rem',
+          background: '#212121',
+          borderRadius: '10px',
+          margin: '2rem auto',
+          maxWidth: '600px'
+        }}>
+          <h2 style={{ color: '#ececec', marginBottom: '1rem' }}>
+            🔐 Login Required
+          </h2>
+          <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '2rem', fontSize: '1.1rem' }}>
+            Please log in to track your DSA practice progress and save your completion status.
+          </p>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{
+              background: '#007acc',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '6px',
+              fontSize: '1rem',
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#005a9e'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#007acc'}
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

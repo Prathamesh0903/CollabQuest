@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../utils/api';
 import './DSASheet.css';
 import Editor from '@monaco-editor/react';
@@ -27,19 +28,25 @@ type Submission = {
 
 const DSAProblemPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [dsaUserId, setDsaUserId] = useState<string>('');
   const [language, setLanguage] = useState<string>('python');
   const [code, setCode] = useState<string>('');
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubs, setLoadingSubs] = useState<boolean>(false);
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const pollRef = useRef<number | null>(null);
 
-  const canSubmit = useMemo(() => Boolean(id && dsaUserId && code.trim().length >= 3), [id, dsaUserId, code]);
+  const canSubmit = useMemo(() => {
+    const result = Boolean(id && currentUser && code.trim().length >= 3);
+    console.log('DSAProblemPage canSubmit check:', { id, currentUser: !!currentUser, codeLength: code.trim().length, result });
+    return result;
+  }, [id, currentUser, code]);
 
   useEffect(() => {
     let mounted = true;
@@ -60,42 +67,81 @@ const DSAProblemPage: React.FC = () => {
     return () => { mounted = false; };
   }, [id]);
 
-  const refreshSubmissions = async (uid: string) => {
-    if (!uid || !id) return;
+  // Load progress and submissions when user is available
+  useEffect(() => {
+    if (currentUser && id) {
+      loadProgress();
+      refreshSubmissions();
+    }
+  }, [currentUser, id]);
+
+  const refreshSubmissions = async () => {
+    if (!currentUser || !id) return;
     try {
       setLoadingSubs(true);
-      const res = await fetch(`${API_BASE}/dsa/users/${uid}/submissions?problem_id=${id}`);
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${API_BASE}/dsa/submissions?problem_id=${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setSubmissions(Array.isArray(json.items) ? json.items : []);
     } catch (e) {
-      // swallow for now
+      console.error('Error loading submissions:', e);
     } finally {
       setLoadingSubs(false);
+    }
+  };
+
+  const loadProgress = async () => {
+    if (!currentUser || !id) return;
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${API_BASE}/dsa/progress/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIsCompleted(json.progress?.isCompleted || false);
+      }
+    } catch (e) {
+      console.error('Error loading progress:', e);
     }
   };
 
   const handleSubmit = async () => {
     setSubmitMsg(null);
     if (!canSubmit) {
-      setSubmitMsg('Select user, enter code (≥3 chars)');
+      setSubmitMsg('Please log in and enter code (≥3 chars)');
       return;
     }
     try {
+      const token = await currentUser?.getIdToken();
       const res = await fetch(`${API_BASE}/dsa/submissions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: dsaUserId, problem_id: id, code, language })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          problem_id: id, 
+          code, 
+          language 
+        })
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({} as any));
         throw new Error(j.message || `HTTP ${res.status}`);
       }
       setSubmitMsg('Submitted successfully');
-      refreshSubmissions(dsaUserId);
+      refreshSubmissions();
       // Start a lightweight poll to update status if it changes server-side
       if (pollRef.current) window.clearInterval(pollRef.current);
-      pollRef.current = window.setInterval(() => refreshSubmissions(dsaUserId), 2000);
+      pollRef.current = window.setInterval(() => refreshSubmissions(), 2000);
       window.setTimeout(() => { if (pollRef.current) window.clearInterval(pollRef.current); }, 15000);
     } catch (e: any) {
       setSubmitMsg(e.message);
@@ -144,8 +190,41 @@ const DSAProblemPage: React.FC = () => {
 
               <div style={{ display: 'grid', gap: '12px' }}>
                 <div className="problem-card" style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input className="difficulty-filter" value={dsaUserId} onChange={(e) => setDsaUserId(e.target.value)} placeholder="Paste a DSA user _id" />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ececec' }}>
+                        <input
+                          type="checkbox"
+                          checked={isCompleted}
+                          onChange={async (e) => {
+                            if (!currentUser) {
+                              alert('Please log in to track progress');
+                              return;
+                            }
+                            setIsCompleted(e.target.checked);
+                            try {
+                              const token = await currentUser.getIdToken();
+                              await fetch(`${API_BASE}/dsa/progress`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                  problemId: id,
+                                  isCompleted: e.target.checked
+                                })
+                              });
+                            } catch (error) {
+                              console.error('Error updating progress:', error);
+                              setIsCompleted(!e.target.checked); // Revert on error
+                            }
+                          }}
+                          style={{ marginRight: '4px' }}
+                        />
+                        Mark as completed
+                      </label>
+                    </div>
                     <select className="difficulty-filter" value={language} onChange={(e) => setLanguage(e.target.value)}>
                       <option value="python">Python</option>
                       <option value="javascript">JavaScript</option>
@@ -174,10 +253,10 @@ const DSAProblemPage: React.FC = () => {
 
                 <div className="problem-card">
                   <div className="topic-header"><h3>Your Submissions</h3></div>
-                  {!dsaUserId && <div className="loading">Enter your DSA user id to see history</div>}
-                  {dsaUserId && (
+                  {!currentUser && <div className="loading">Please log in to see your submission history</div>}
+                  {currentUser && (
                     <>
-                      <button className="action-button" onClick={() => refreshSubmissions(dsaUserId)} disabled={loadingSubs}>
+                      <button className="action-button" onClick={() => refreshSubmissions()} disabled={loadingSubs}>
                         {loadingSubs ? 'Loading…' : 'Refresh'}
                       </button>
                       {submissions.length === 0 && !loadingSubs && <div className="loading">No submissions yet.</div>}

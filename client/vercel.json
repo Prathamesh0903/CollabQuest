@@ -10,6 +10,13 @@
   ],
   "env": {
     "REACT_APP_API_URL": "https://collabquest.onrender.com",
-    "REACT_APP_SOCKET_URL": "https://collabquest.onrender.com"
+    "REACT_APP_SOCKET_URL": "https://collabquest.onrender.com",
+    "REACT_APP_FIREBASE_API_KEY": "AIzaSyAvmlhgXfzsvGepjAnTg1IrOXbm6p7VDeE",
+    "REACT_APP_FIREBASE_AUTH_DOMAIN": "signpdf-f4ff2.firebaseapp.com",
+    "REACT_APP_FIREBASE_PROJECT_ID": "signpdf-f4ff2",
+    "REACT_APP_FIREBASE_STORAGE_BUCKET": "signpdf-f4ff2.firebasestorage.app",
+    "REACT_APP_FIREBASE_MESSAGING_SENDER_ID": "154704879141",
+    "REACT_APP_FIREBASE_APP_ID": "1:154704879141:web:92c36ec6063ca77c17a9cc",
+    "REACT_APP_FIREBASE_MEASUREMENT_ID": "G-ZJK2193BG5"
   }
 }
