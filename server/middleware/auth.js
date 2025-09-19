@@ -50,14 +50,20 @@ const optionalAuth = async (req, res, next) => {
     const { admin } = require('../config/firebase');
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
-      req.user = {
+      const firebaseUser = {
         uid: decodedToken.uid,
         email: decodedToken.email,
         displayName: decodedToken.name || decodedToken.display_name,
         picture: decodedToken.picture
       };
-      const user = await createOrUpdateUser(req.user);
-      req.user = user;
+      const dbUser = await createOrUpdateUser(firebaseUser);
+      
+      // Keep both Firebase info and database user info
+      req.user = {
+        ...firebaseUser,  // Keep uid, email, etc.
+        ...dbUser.toObject ? dbUser.toObject() : dbUser,  // Add database fields
+        uid: firebaseUser.uid  // Ensure uid is preserved
+      };
     } catch (verifyErr) {
       console.warn('optionalAuth: ignoring invalid/expired token');
       req.user = null;
