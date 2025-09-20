@@ -22,12 +22,12 @@ const featureCards = [
     animationClass: 'card-animate-collab',
   },
   {
-    key: 'battle-mode',
-    icon: '⚔️',
-    title: 'Battle Mode',
-    desc: 'Compete in timed coding battles. Climb the leaderboard!',
-    button: 'Start Battle',
-    animationClass: 'card-animate-battle',
+    key: 'quizzes',
+    icon: '🚀',
+    title: 'Advanced Quizzes',
+    desc: 'Challenge yourself with advanced questions, power-ups, and real-time feedback.',
+    button: 'Take a Quiz',
+    animationClass: 'card-animate-advanced-quiz',
   },
   {
     key: 'results',
@@ -47,21 +47,21 @@ const featureCards = [
     isUpcoming: true,
   },
   {
+    key: 'battle-mode',
+    icon: '⚔️',
+    title: 'Battle Mode',
+    desc: 'Compete in timed coding battles. Climb the leaderboard!',
+    button: 'Start Battle',
+    animationClass: 'card-animate-battle',
+    isUpcoming: true,
+  },
+  {
     key: 'Weekly Contest',
     icon: '🚀',
     title: 'Weekly Contest',
     desc: 'Try the interactive demo and get started in minutes.',
     button: 'Start Demo',
     animationClass: 'card-animate-demo',
-    isUpcoming: true,
-  },
-  {
-    key: 'quizzes',
-    icon: '🚀',
-    title: 'Advanced Quizzes',
-    desc: 'Challenge yourself with advanced questions, power-ups, and real-time feedback.',
-    button: 'Take a Quiz',
-    animationClass: 'card-animate-advanced-quiz',
   }
  
 ];

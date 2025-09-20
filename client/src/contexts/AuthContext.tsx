@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 interface AuthUser {
-  uid: string;
+  id: string;
   email: string | null;
   displayName: string | null;
   avatarUrl: string | null;
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(session?.access_token || null);
       if (authUser) {
         setCurrentUser({
-          uid: authUser.id,
+          id: authUser.id,
           email: authUser.email || null,
           displayName: authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
           avatarUrl: authUser.user_metadata?.avatar_url || null,

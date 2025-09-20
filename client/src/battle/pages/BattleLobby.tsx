@@ -32,7 +32,7 @@ export const BattleLobby: React.FC = () => {
     return (
       state.participants.length >= 2 &&
       state.participants.every(p => p.isReady) &&
-      state.currentBattle?.host === currentUser?.uid
+      state.currentBattle?.host === currentUser?.id
     );
   };
 
@@ -100,12 +100,12 @@ export const BattleLobby: React.FC = () => {
       <div className="lobby-actions">
         <button 
           onClick={handleToggleReady}
-          className={`ready-btn ${state.participants.find(p => p.userId === currentUser?.uid)?.isReady ? 'ready' : 'not-ready'}`}
+          className={`ready-btn ${state.participants.find(p => p.userId === currentUser?.id)?.isReady ? 'ready' : 'not-ready'}`}
         >
-          {state.participants.find(p => p.userId === currentUser?.uid)?.isReady ? 'Ready!' : 'Not Ready'}
+          {state.participants.find(p => p.userId === currentUser?.id)?.isReady ? 'Ready!' : 'Not Ready'}
         </button>
 
-        {state.currentBattle?.host === currentUser?.uid && (
+        {state.currentBattle?.host === currentUser?.id && (
           <button 
             onClick={handleStartBattle}
             disabled={!canStartBattle()}

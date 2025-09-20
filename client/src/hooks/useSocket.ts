@@ -345,9 +345,9 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     if (!socket || !currentUser || !roomId) return;
     
     const cursorData: UserCursor = {
-      userId: currentUser.uid,
+      userId: currentUser.id,
       position,
-      color: generateUserColor(currentUser.uid),
+      color: generateUserColor(currentUser.id),
       displayName: currentUser.displayName || currentUser.email || 'Anonymous',
       avatar: currentUser.avatarUrl || undefined,
       timestamp: new Date()
@@ -365,9 +365,9 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     if (!socket || !currentUser || !roomId) return;
     
     const selectionData: UserSelection = {
-      userId: currentUser.uid,
+      userId: currentUser.id,
       selection,
-      color: generateUserColor(currentUser.uid),
+      color: generateUserColor(currentUser.id),
       displayName: currentUser.displayName || currentUser.email || 'Anonymous',
       avatar: currentUser.avatarUrl || undefined,
       timestamp: new Date()
@@ -449,9 +449,9 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     if (!socket || !currentUser || !roomId) return;
     
     socket.emit('selection-highlight', {
-      userId: currentUser.uid,
+      userId: currentUser.id,
       selection,
-      color: generateUserColor(currentUser.uid),
+      color: generateUserColor(currentUser.id),
       displayName: currentUser.displayName || currentUser.email || 'Anonymous',
       roomId,
       mode

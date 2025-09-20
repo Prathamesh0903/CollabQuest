@@ -347,7 +347,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                 content: defaultCode,
                 version: 0
               },
-              userId: currentUser?.uid
+              userId: currentUser?.id
             });
           }
         }
@@ -494,7 +494,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
               content: f.content,
               version: f.version
             },
-                userId: currentUser?.uid
+                userId: currentUser?.id
           });
         }
       }
@@ -554,7 +554,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           roomId: currentSessionId,
           language,
           userInfo: {
-            userId: currentUser?.uid,
+            userId: currentUser?.id,
             displayName: currentUser?.displayName || currentUser?.email || 'Anonymous',
             avatar: currentUser?.avatarUrl || undefined
           }
@@ -658,7 +658,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           roomVersionRef.current = change.version;
         }
         
-        if (editorRef.current && change.userId !== currentUser?.uid) {
+        if (editorRef.current && change.userId !== currentUser?.id) {
           const model = editorRef.current.getModel();
           if (model) {
             const range = new (window as any).monaco.Range(
@@ -686,7 +686,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           roomVersionRef.current = syncData.version;
         }
         
-        if (editorRef.current && syncData.userId !== currentUser?.uid) {
+        if (editorRef.current && syncData.userId !== currentUser?.id) {
           const model = editorRef.current.getModel();
           if (model) {
             model.setValue(syncData.code);
@@ -736,7 +736,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socket.on('language-change', (data: { language: 'javascript' | 'python'; code: string; userId: string; displayName: string }) => {
         console.log('Received language change:', data);
         
-        if (data.userId !== currentUser?.uid) {
+        if (data.userId !== currentUser?.id) {
           setLanguage(data.language);
           
           if (editorRef.current) {
@@ -764,7 +764,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         console.log('Received cursors sync:', cursors);
         const cursorsMap: { [userId: string]: CursorInfo } = {};
         cursors.forEach(cursor => {
-          if (cursor.userId && cursor.userId !== currentUser?.uid) {
+          if (cursor.userId && cursor.userId !== currentUser?.id) {
             cursorsMap[cursor.userId] = {
               position: cursor.position,
               color: cursor.color,
@@ -780,7 +780,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socket.on('cursor-change', (change: any) => {
         console.log('Received cursor change:', change);
         
-        if (change.userId && change.userId !== currentUser?.uid) {
+        if (change.userId && change.userId !== currentUser?.id) {
           setRemoteCursors(prev => ({
             ...prev,
             [change.userId]: {
@@ -798,7 +798,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         console.log('Received selections sync:', selections);
         const selectionsMap: { [userId: string]: SelectionInfo } = {};
         selections.forEach(selection => {
-          if (selection.userId && selection.userId !== currentUser?.uid) {
+          if (selection.userId && selection.userId !== currentUser?.id) {
             selectionsMap[selection.userId] = {
               range: selection.range,
               color: selection.color,
@@ -814,7 +814,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socket.on('selection-change', (change: any) => {
         console.log('Received selection change:', change);
         
-        if (change.userId && change.userId !== currentUser?.uid) {
+        if (change.userId && change.userId !== currentUser?.id) {
           setRemoteSelections(prev => ({
             ...prev,
             [change.userId]: {
@@ -829,13 +829,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       // Concurrent execution events (handled by ConcurrentExecutionHandler)
       socket.on('execution-queued', (data: { userId: string; displayName: string; avatar?: string; executionId: string; position: number; timestamp: Date }) => {
-        if (data.userId !== currentUser?.uid) {
+        if (data.userId !== currentUser?.id) {
           showInfo('Code Execution', `${data.displayName} queued code execution (position ${data.position})`);
         }
       });
 
       socket.on('execution-started', (data: { executionId: string; userId: string; displayName: string; avatar?: string; language: string; timestamp: Date }) => {
-        if (data.userId !== currentUser?.uid) {
+        if (data.userId !== currentUser?.id) {
           setIsExecuting(true);
           showInfo('Code Execution', `${data.displayName} started executing ${data.language} code`);
         }
@@ -843,7 +843,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       socket.on('execution-completed', (data: { executionId: string; userId: string; displayName: string; avatar?: string; result: any; executionTime: number; timestamp: Date }) => {
         setIsExecuting(false);
-        if (data.userId !== currentUser?.uid) {
+        if (data.userId !== currentUser?.id) {
           setTerminalOutput({
             stdout: data.result.stdout || '',
             stderr: data.result.stderr || '',
@@ -866,7 +866,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       socket.on('execution-failed', (data: { executionId: string; userId: string; displayName: string; avatar?: string; error: string; executionTime: number; timestamp: Date }) => {
         setIsExecuting(false);
-        if (data.userId !== currentUser?.uid) {
+        if (data.userId !== currentUser?.id) {
           setTerminalOutput({
             error: data.error
           });
@@ -885,7 +885,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       // Legacy code execution events (for backward compatibility)
       socket.on('code-execution-started', (data: { userId: string; displayName: string; avatar?: string; timestamp: Date }) => {
-        if (data.userId !== currentUser?.uid) {
+        if (data.userId !== currentUser?.id) {
           setIsExecuting(true);
           showInfo('Code Execution', `${data.displayName} is running code...`);
         }
@@ -893,7 +893,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       socket.on('code-execution-completed', (data: { success: boolean; result: any; executedBy: string; displayName: string; avatar?: string; timestamp: Date }) => {
         setIsExecuting(false);
-        if (data.executedBy !== currentUser?.uid) {
+        if (data.executedBy !== currentUser?.id) {
           setTerminalOutput({
             stdout: data.result.stdout || '',
             stderr: data.result.stderr || '',
@@ -909,7 +909,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       socket.on('code-execution-error', (data: { error: string; executedBy: string; displayName: string; avatar?: string; timestamp: Date }) => {
         setIsExecuting(false);
-        if (data.executedBy !== currentUser?.uid) {
+        if (data.executedBy !== currentUser?.id) {
           setTerminalOutput({
             error: data.error
           });
@@ -1090,7 +1090,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           socketRef.current.emit('cursor-move', {
             position,
             roomId: currentSessionId,
-            color: generateUserColor(currentUser?.uid || ''),
+            color: generateUserColor(currentUser?.id || ''),
             displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
           });
         }
@@ -1104,7 +1104,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         socketRef.current.emit('selection-change', {
           selection,
           roomId: currentSessionId,
-          color: generateUserColor(currentUser?.uid || ''),
+          color: generateUserColor(currentUser?.id || ''),
           displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
         });
       }
@@ -1435,7 +1435,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
               socketRef.current.emit('session:file-delete', {
                 roomId: currentSessionId,
                 file: { id: entry.id, name: entry.name, path: entry.path, language: entry.language, content: entry.content, version: entry.version },
-                userId: currentUser?.uid
+                userId: currentUser?.id
               });
             }
             delete (next as any)[entry.id];
@@ -1499,7 +1499,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                   content: f.content,
                   version: f.version
                 },
-                userId: currentUser?.uid
+                userId: currentUser?.id
               });
             }
           }
@@ -1633,7 +1633,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                   socketRef.current.emit('session:file-create', {
                     roomId: currentSessionId,
                     file: next[id],
-                    userId: currentUser?.uid
+                    userId: currentUser?.id
                   });
                 }
                 if (!firstNewId) firstNewId = id;
@@ -1722,7 +1722,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socketRef.current.emit('cursor-change', {
         position,
         roomId: currentSessionId,
-        color: generateUserColor(currentUser?.uid || ''),
+        color: generateUserColor(currentUser?.id || ''),
         displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
       });
     }
@@ -1735,7 +1735,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socketRef.current.emit('selection-change', {
         selection,
         roomId: currentSessionId,
-        color: generateUserColor(currentUser?.uid || ''),
+        color: generateUserColor(currentUser?.id || ''),
         displayName: currentUser?.displayName || currentUser?.email || 'Anonymous'
       });
     }
@@ -1847,7 +1847,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
                             onFollow={() => handleFollowUser(user.userId, user.displayName)}
                             onUnfollow={() => handleUnfollowUser(user.userId, user.displayName)}
                             isFollowing={followingUser === user.userId}
-                            canFollow={user.userId !== currentUser?.uid}
+                            canFollow={user.userId !== currentUser?.id}
                           />
                           <span className="tooltip-username">{user.displayName}</span>
                           {user.isTyping && <span className="typing-indicator">✏️</span>}
@@ -2157,7 +2157,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       <ConcurrentExecutionHandler
         socket={socketRef.current}
         roomId={currentSessionId}
-        currentUserId={currentUser?.uid || ''}
+        currentUserId={currentUser?.id || ''}
         onExecutionStatusChange={(status) => {
           console.log('Execution status changed:', status);
         }}

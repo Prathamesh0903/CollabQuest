@@ -147,7 +147,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         socketRef.current.emit('join-collab-room', {
           roomId,
           userInfo: {
-            userId: currentUser.uid,
+            userId: currentUser.id,
             displayName: currentUser.displayName || 'Anonymous',
             avatar: currentUser.avatarUrl
           }
@@ -213,7 +213,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       // Code collaboration handlers
       socketRef.current.on('code-change', (data: { code: string, change: EditorChange, userId: string }) => {
-        if (data.userId !== currentUser.uid && editorRef.current) {
+        if (data.userId !== currentUser.id && editorRef.current) {
           setCode(data.code);
           // Apply the change to the editor
           const model = editorRef.current.getModel();
@@ -224,7 +224,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       });
 
       socketRef.current.on('cursor-position', (data: CursorInfo) => {
-        if (data.userId !== currentUser.uid) {
+        if (data.userId !== currentUser.id) {
           setRemoteCursors(prev => ({
             ...prev,
             [data.userId]: data
@@ -235,7 +235,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Chat handlers
       socketRef.current.on('chat-message', (message: ChatMessage) => {
         setChatMessages(prev => [...prev, message]);
-        if (message.userId !== currentUser.uid) {
+        if (message.userId !== currentUser.id) {
           showInfo('Chat', `${message.displayName}: ${message.message}`, 3000);
         }
       });
@@ -298,7 +298,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           roomId,
           code: newCode,
           changes,
-          userId: currentUser?.uid
+          userId: currentUser?.id
         });
       }
     });
@@ -308,8 +308,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       if (socketRef.current && connectionStatus === 'connected') {
         const cursorInfo: CursorInfo = {
           position: e.position,
-          userId: currentUser?.uid || '',
-          color: generateUserColor(currentUser?.uid || ''),
+          userId: currentUser?.id || '',
+          color: generateUserColor(currentUser?.id || ''),
           displayName: currentUser?.displayName || 'Anonymous',
           timestamp: new Date()
         };
@@ -361,7 +361,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         code,
         language,
         input: customInput,
-        userId: currentUser?.uid
+        userId: currentUser?.id
       });
     } else {
       // Fallback for offline execution
@@ -416,7 +416,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       socketRef.current.emit('language-change', {
         roomId,
         language: newLanguage,
-        userId: currentUser?.uid
+        userId: currentUser?.id
       });
     }
     
@@ -550,7 +550,7 @@ print(greet("Developer"))`
             <div className="fleet-sidebar-content">
               <UserSidebar
                 users={sidebarUsers}
-                currentUserId={currentUser?.uid || ''}
+                currentUserId={currentUser?.id || ''}
                 roomId={roomId}
                 isVisible={showSidebar}
                 onToggle={() => setShowSidebar(!showSidebar)}

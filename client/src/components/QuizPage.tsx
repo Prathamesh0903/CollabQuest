@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, Clock, Target, CheckCircle, XCircle, 
-  BookOpen, Timer, ArrowRight, Home
+  BookOpen, Timer, ArrowRight, Home, Brain, Zap,
+  Award, TrendingUp, Star, Eye, EyeOff, HelpCircle
 } from 'lucide-react';
 import './QuizPage.css';
 
@@ -22,6 +23,8 @@ interface QuizConfig {
   timeLimit: number;
   questionCount: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
+  enableHints?: boolean;
+  showExplanations?: boolean;
 }
 
 interface Question {
@@ -35,6 +38,7 @@ interface Question {
   timeLimit: number;
   difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
+  hint?: string;
 }
 
 interface UserAnswer {
@@ -45,7 +49,7 @@ interface UserAnswer {
   points: number;
 }
 
-// Sample questions for demonstration
+// Enhanced sample questions with hints
 const sampleQuestions: Question[] = [
   {
     id: 'q1',
@@ -54,6 +58,7 @@ const sampleQuestions: Question[] = [
     options: ['O(1)', 'O(log n)', 'O(n)', 'O(n²)'],
     correctAnswer: 1,
     explanation: 'Binary search has a time complexity of O(log n) as it divides the search space in half with each iteration.',
+    hint: 'Think about how binary search works - it eliminates half of the remaining elements in each step.',
     points: 10,
     timeLimit: 30,
     difficulty: 'medium',
@@ -66,6 +71,7 @@ const sampleQuestions: Question[] = [
     options: ['Queue', 'Stack', 'Tree', 'Graph'],
     correctAnswer: 1,
     explanation: 'A Stack uses the LIFO principle where the last element added is the first one to be removed.',
+    hint: 'Think of a stack of plates - you can only add or remove from the top.',
     points: 10,
     timeLimit: 30,
     difficulty: 'easy',
@@ -78,6 +84,7 @@ const sampleQuestions: Question[] = [
     options: ['True', 'False'],
     correctAnswer: false,
     explanation: 'A binary tree can have at most two children per node. If it can have more than two children, it\'s called a general tree.',
+    hint: 'The word "binary" gives us a clue about the number of children allowed.',
     points: 10,
     timeLimit: 30,
     difficulty: 'easy',
@@ -90,6 +97,7 @@ const sampleQuestions: Question[] = [
     options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
     correctAnswer: 2,
     explanation: 'Merge sort requires O(n) additional space to store the merged arrays during the sorting process.',
+    hint: 'Merge sort creates temporary arrays to store the merged results.',
     points: 10,
     timeLimit: 30,
     difficulty: 'medium',
@@ -102,6 +110,7 @@ const sampleQuestions: Question[] = [
     options: ['Tail recursion', 'Memoization', 'Dynamic programming', 'Greedy'],
     correctAnswer: 0,
     explanation: 'Tail recursion optimization converts recursive calls to iterative loops to improve space efficiency.',
+    hint: 'This optimization is specifically about the last operation in a recursive function.',
     points: 10,
     timeLimit: 30,
     difficulty: 'hard',
@@ -120,6 +129,11 @@ const QuizPage: React.FC = () => {
   const [isQuizComplete, setIsQuizComplete] = useState(false);
   const [score, setScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -135,6 +149,7 @@ const QuizPage: React.FC = () => {
 
     setTimeLeft(quizConfig.timeLimit * 60);
     setTotalQuestions(quizConfig.questionCount);
+    setQuestionStartTime(Date.now());
     
     // Start timer
     timerRef.current = setInterval(() => {
@@ -153,6 +168,12 @@ const QuizPage: React.FC = () => {
       }
     };
   }, [quizConfig, category, navigate]);
+
+  useEffect(() => {
+    setQuestionStartTime(Date.now());
+    setShowHint(false);
+    setSelectedAnswer(null);
+  }, [currentQuestion]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -176,20 +197,32 @@ const QuizPage: React.FC = () => {
   const handleNextQuestion = () => {
     if (selectedAnswer === null) return;
 
-    const currentQ = sampleQuestions[currentQuestion];
+    const currentQ = sampleQuestions[currentQuestion % sampleQuestions.length];
     const isCorrect = selectedAnswer === currentQ.correctAnswer;
     const points = isCorrect ? currentQ.points : 0;
+    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
 
     const userAnswer: UserAnswer = {
       questionId: currentQ.id,
       answer: selectedAnswer,
-      timeSpent: (quizConfig.timeLimit * 60) - timeLeft,
+      timeSpent,
       isCorrect,
       points
     };
 
     setUserAnswers(prev => [...prev, userAnswer]);
     setScore(prev => prev + points);
+
+    // Update streak
+    if (isCorrect) {
+      setStreak(prev => {
+        const newStreak = prev + 1;
+        setMaxStreak(prevMax => Math.max(prevMax, newStreak));
+        return newStreak;
+      });
+    } else {
+      setStreak(0);
+    }
 
     setShowExplanation(true);
     
@@ -202,7 +235,7 @@ const QuizPage: React.FC = () => {
       } else {
         handleQuizComplete();
       }
-    }, 2000);
+    }, 3000);
   };
 
   const handleQuizComplete = () => {
@@ -216,87 +249,142 @@ const QuizPage: React.FC = () => {
     navigate('/');
   };
 
+  const handleShowHint = () => {
+    if (!showHint && quizConfig.enableHints) {
+      setShowHint(true);
+      setHintsUsed(prev => prev + 1);
+    }
+  };
+
+  const handleSkipQuestion = () => {
+    if (currentQuestion + 1 < Math.min(quizConfig.questionCount, sampleQuestions.length)) {
+      setCurrentQuestion(prev => prev + 1);
+      setStreak(0);
+    } else {
+      handleQuizComplete();
+    }
+  };
+
   if (!quizConfig || !category) {
     return null;
   }
 
   if (isQuizComplete) {
+    const accuracy = Math.round((userAnswers.filter(a => a.isCorrect).length / userAnswers.length) * 100);
+    const totalPossibleScore = totalQuestions * 10;
+    const scorePercentage = Math.round((score / totalPossibleScore) * 100);
+    
     return (
-      <div className="quiz-page">
-        <div className="quiz-navbar">
-          <div className="navbar-content">
-            <button className="nav-button" onClick={handleGoHome}>
-              <Home className="w-4 h-4" />
-              Home
-            </button>
-            <div className="quiz-title">Quiz Complete</div>
+      <div className="quiz-complete-page">
+        <div className="completion-background">
+          <div className="floating-elements">
+            {[...Array(20)].map((_, i) => (
+              <div key={i} className={`floating-element floating-element-${i % 4}`} />
+            ))}
           </div>
         </div>
         
-        <div className="quiz-content">
-          <motion.div 
-            className="completion-card"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="completion-header">
-              <CheckCircle className="w-16 h-16 text-green-500" />
-              <h2>Quiz Completed!</h2>
+        <div className="completion-container">
+          <div className="completion-header">
+            <div className="completion-icon">
+              <Award className="w-8 h-8" />
             </div>
-            
-            <div className="completion-stats">
-              <div className="stat-item">
-                <span className="stat-label">Score</span>
-                <span className="stat-value">{score}/{totalQuestions * 10}</span>
+            <h1 className="completion-title">Quiz Complete!</h1>
+            <p className="completion-subtitle">Great job completing the {category.title} quiz</p>
+          </div>
+
+          <div className="stats-grid">
+            <div className="stat-card primary">
+              <div className="stat-icon">
+                <Target className="w-5 h-5" />
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Accuracy</span>
-                <span className="stat-value">{Math.round((score / (totalQuestions * 10)) * 100)}%</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Questions</span>
-                <span className="stat-value">{totalQuestions}</span>
-              </div>
+              <div className="stat-value">{score}/{totalPossibleScore}</div>
+              <div className="stat-label">Final Score</div>
             </div>
-            
-            <button className="home-button" onClick={handleGoHome}>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{accuracy}%</div>
+              <div className="stat-label">Accuracy</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{maxStreak}</div>
+              <div className="stat-label">Best Streak</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{hintsUsed}</div>
+              <div className="stat-label">Hints Used</div>
+            </div>
+          </div>
+
+          <div className="completion-actions">
+            <button 
+              className="home-btn"
+              onClick={handleGoHome}
+            >
               <Home className="w-4 h-4" />
               Back to Dashboard
             </button>
-          </motion.div>
+          </div>
         </div>
       </div>
     );
   }
 
   const currentQ = sampleQuestions[currentQuestion % sampleQuestions.length];
+  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
 
   return (
     <div className="quiz-page">
-      {/* Small Height Navbar */}
-      <div className="quiz-navbar">
-        <div className="navbar-content">
-          <button className="nav-button" onClick={() => navigate('/advanced-quiz')}>
+      {/* Header Section */}
+      <div className="quiz-header">
+        <div className="header-left">
+          <button className="back-btn" onClick={() => navigate('/advanced-quiz')}>
             <ChevronLeft className="w-4 h-4" />
             Back
           </button>
-          
-          <div className="quiz-info">
-            <div className="quiz-title">{category.title}</div>
-            <div className="quiz-progress">
-              Question {currentQuestion + 1} of {totalQuestions}
+        </div>
+
+        <div className="header-center">
+          <div className="quiz-title">{category.title}</div>
+          <div className="quiz-progress">
+            <div className="progress-bar">
+              <div 
+                className="progress-fill"
+                style={{ width: `${progress}%` }}
+              />
             </div>
+            <span className="progress-text">{currentQuestion + 1} / {totalQuestions}</span>
           </div>
-          
-          <div className="quiz-meta">
-            <div className="timer">
+        </div>
+
+        <div className="header-right">
+          <div className="quiz-stats">
+            <div className="stat-item">
               <Clock className="w-4 h-4" />
               <span>{formatTime(timeLeft)}</span>
             </div>
+            <div className="stat-item">
+              <Zap className="w-4 h-4" />
+              <span>{streak}</span>
+            </div>
             <div 
               className="difficulty-badge"
-              style={{ backgroundColor: getDifficultyColor(quizConfig.difficulty) }}
+              style={{ 
+                backgroundColor: quizConfig.difficulty === 'Easy' ? '#059669' : 
+                                quizConfig.difficulty === 'Medium' ? '#d97706' : '#dc2626',
+                color: '#ffffff'
+              }}
             >
               {quizConfig.difficulty}
             </div>
@@ -304,79 +392,99 @@ const QuizPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quiz Content - No Scrolling */}
-      <div className="quiz-content">
-        <motion.div 
-          className="question-card"
-          key={currentQuestion}
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -50, opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+      {/* Main Quiz Content */}
+      <div className="quiz-main">
+        <div className="question-container">
+          {/* Question Header */}
           <div className="question-header">
-            <div className="question-number">Question {currentQuestion + 1}</div>
-            <div className="question-type">{currentQ.type.replace('-', ' ').toUpperCase()}</div>
+            <div className="question-meta">
+              <span className="question-number">Question {currentQuestion + 1}</span>
+              <span className="question-type">{currentQ.type.replace('-', ' ').toUpperCase()}</span>
+            </div>
+            <div className="question-points">{currentQ.points} pts</div>
           </div>
-          
+
+          {/* Question Text */}
           <div className="question-text">
             {currentQ.question}
           </div>
-          
-          <div className="answer-options">
+
+          {/* Answer Options */}
+          <div className="answer-grid">
             {currentQ.options?.map((option, index) => (
-              <motion.button
+              <button
                 key={index}
-                className={`answer-option ${selectedAnswer === index ? 'selected' : ''} ${
+                className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
                   showExplanation ? 
                     (index === currentQ.correctAnswer ? 'correct' : 
                      selectedAnswer === index ? 'incorrect' : '') : ''
                 }`}
                 onClick={() => !showExplanation && handleAnswerSelect(index)}
                 disabled={showExplanation}
-                whileHover={{ scale: showExplanation ? 1 : 1.02 }}
-                whileTap={{ scale: showExplanation ? 1 : 0.98 }}
               >
-                <div className="option-content">
-                  <span className="option-letter">{String.fromCharCode(65 + index)}</span>
-                  <span className="option-text">{option}</span>
+                <div className="answer-content">
+                  <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
+                  <div className="answer-text">{option}</div>
                 </div>
                 {showExplanation && index === currentQ.correctAnswer && (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <CheckCircle className="w-6 h-6 answer-icon correct" />
                 )}
                 {showExplanation && selectedAnswer === index && index !== currentQ.correctAnswer && (
-                  <XCircle className="w-5 h-5 text-red-500" />
+                  <XCircle className="w-6 h-6 answer-icon incorrect" />
                 )}
-              </motion.button>
+              </button>
             ))}
           </div>
-          
-          {showExplanation && (
-            <motion.div 
-              className="explanation"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="explanation-text">
-                {currentQ.explanation}
+
+          {/* Hint Section */}
+          {quizConfig.enableHints && currentQ.hint && showHint && (
+            <div className="hint-section">
+              <div className="hint-content">
+                <Brain className="w-5 h-5" />
+                <span>{currentQ.hint}</span>
               </div>
-            </motion.div>
+            </div>
           )}
-          
-          {selectedAnswer !== null && !showExplanation && (
-            <motion.button
-              className="next-button"
-              onClick={handleNextQuestion}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <span>Next Question</span>
-              <ArrowRight className="w-4 h-4" />
-            </motion.button>
+
+          {/* Explanation */}
+          {showExplanation && currentQ.explanation && (
+            <div className="explanation-section">
+              <div className="explanation-header">
+                <Eye className="w-5 h-5" />
+                <span>Explanation</span>
+              </div>
+              <div className="explanation-text">{currentQ.explanation}</div>
+            </div>
           )}
-        </motion.div>
+
+          {/* Action Buttons */}
+          <div className="action-buttons">
+            {!showExplanation && (
+              <>
+                {quizConfig.enableHints && currentQ.hint && !showHint && (
+                  <button className="hint-btn" onClick={handleShowHint}>
+                    <HelpCircle className="w-4 h-4" />
+                    Show Hint
+                  </button>
+                )}
+                
+                <button className="skip-btn" onClick={handleSkipQuestion}>
+                  Skip Question
+                </button>
+              </>
+            )}
+
+            {selectedAnswer !== null && !showExplanation && (
+              <button
+                className="next-btn"
+                onClick={handleNextQuestion}
+              >
+                <span>Next Question</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
