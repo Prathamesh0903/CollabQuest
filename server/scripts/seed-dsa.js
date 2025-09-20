@@ -41,6 +41,10 @@ You can return the answer in any order.`,
       { input: '[0,1,2,3,4]\n4', expectedOutput: '[0,4]', description: 'Hidden test case 2.', isHidden: true },
     ],
     starterCode: {
+      python: `class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        # Your code here
+        pass`,
       javascript: `/**
  * @param {number[]} nums
  * @param {number} target
@@ -71,6 +75,7 @@ public:
 };`
     },
     functionName: {
+      python: 'twoSum',
       javascript: 'twoSum',
       java: 'twoSum',
       cpp: 'twoSum'
@@ -92,6 +97,10 @@ An Anagram is a word or phrase formed by rearranging the letters of a different 
       { input: '"listen"\n"silent"', expectedOutput: 'true', description: 'Both strings are anagrams of each other.' },
     ],
     starterCode: {
+      python: `class Solution:
+    def isAnagram(self, s: str, t: str) -> bool:
+        # Your code here
+        pass`,
       javascript: `/**
  * @param {string} s
  * @param {string} t
@@ -122,6 +131,7 @@ public:
 };`
     },
     functionName: {
+      python: 'isAnagram',
       javascript: 'isAnagram',
       java: 'isAnagram',
       cpp: 'isAnagram'
@@ -146,6 +156,10 @@ A subarray is a contiguous non-empty sequence of elements within an array.`,
       { input: '[-5,-4,-3,-2,-1]', expectedOutput: '-1', description: 'All negative elements.', isHidden: true },
     ],
     starterCode: {
+      python: `class Solution:
+    def maxSubArray(self, nums: List[int]) -> int:
+        # Your code here
+        pass`,
       javascript: `/**
  * @param {number[]} nums
  * @return {number}
@@ -173,6 +187,7 @@ public:
 };`
     },
     functionName: {
+      python: 'maxSubArray',
       javascript: 'maxSubArray',
       java: 'maxSubArray',
       cpp: 'maxSubArray'
@@ -196,6 +211,10 @@ Return the maximum profit you can achieve from this transaction. If you cannot a
       { input: '[1,2,3,4,5]', expectedOutput: '4', description: 'Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.' },
     ],
     starterCode: {
+      python: `class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        # Your code here
+        pass`,
       javascript: `/**
  * @param {number[]} prices
  * @return {number}
@@ -223,6 +242,7 @@ public:
 };`
     },
     functionName: {
+      python: 'maxProfit',
       javascript: 'maxProfit',
       java: 'maxProfit',
       cpp: 'maxProfit'
@@ -242,6 +262,10 @@ public:
       { input: '[1,1,1,3,3,4,3,2,4,2]', expectedOutput: 'true', description: 'Multiple duplicates exist.' },
     ],
     starterCode: {
+      python: `class Solution:
+    def containsDuplicate(self, nums: List[int]) -> bool:
+        # Your code here
+        pass`,
       javascript: `/**
  * @param {number[]} nums
  * @return {boolean}
@@ -271,6 +295,7 @@ public:
 };`
     },
     functionName: {
+      python: 'containsDuplicate',
       javascript: 'containsDuplicate',
       java: 'containsDuplicate',
       cpp: 'containsDuplicate'

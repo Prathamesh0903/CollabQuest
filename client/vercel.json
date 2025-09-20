@@ -11,12 +11,7 @@
   "env": {
     "REACT_APP_API_URL": "https://collabquest.onrender.com",
     "REACT_APP_SOCKET_URL": "https://collabquest.onrender.com",
-    "REACT_APP_FIREBASE_API_KEY": "AIzaSyDMYurzWn_CqYMXWC5oD3wl7aNjmiXLxlI",
-    "REACT_APP_FIREBASE_AUTH_DOMAIN": "collabquest-41cc8.firebaseapp.com",
-    "REACT_APP_FIREBASE_PROJECT_ID": "collabquest-41cc8",
-    "REACT_APP_FIREBASE_STORAGE_BUCKET": "collabquest-41cc8.firebasestorage.app",
-    "REACT_APP_FIREBASE_MESSAGING_SENDER_ID": "955338862707",
-    "REACT_APP_FIREBASE_APP_ID": "1:955338862707:web:2a78749ed206f7872d7a06",
-    "REACT_APP_FIREBASE_MEASUREMENT_ID": "G-3Q92L3PSLT"
+    "REACT_APP_SUPABASE_URL": "https://qrxjhmpudchgisaxfdtn.supabase.co",
+    "REACT_APP_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyeGpobXB1ZGNoZ2lzYXhmZHRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTEyNzYsImV4cCI6MjA3Mzg2NzI3Nn0.R_BE6DCzm31yNIDDQinuwea5Wx_BCBmsLInNb_OVPWM"
   }
 }

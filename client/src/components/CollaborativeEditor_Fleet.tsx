@@ -149,7 +149,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           userInfo: {
             userId: currentUser.uid,
             displayName: currentUser.displayName || 'Anonymous',
-            avatar: currentUser.photoURL
+            avatar: currentUser.avatarUrl
           }
         });
       });

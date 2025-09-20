@@ -24,6 +24,9 @@ const battleRoutes = require('./routes/battles');
 
 const { socketAuth } = require('./middleware/auth');
 const { handleSocketConnection } = require('./utils/socketHandler');
+const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
+const { performanceMiddleware, healthCheck } = require('./middleware/performance');
+const { databaseOptimizer } = require('./utils/databaseOptimization');
 
 const app = express();
 const server = createServer(app);
@@ -82,6 +85,7 @@ app.use(helmet());
 app.use(cors(corsOptions));
 app.use(limiter);
 app.use(morgan('combined'));
+app.use(performanceMiddleware); // Add performance monitoring
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -106,36 +110,8 @@ if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
   app.use('/api/test', testUtilsRoutes);
 }
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  const { checkExecutorHealth } = require('./utils/codeExecutor');
-  
-  try {
-    const executorHealth = await checkExecutorHealth();
-    
-    res.json({ 
-      status: 'OK', 
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      services: {
-        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        executor: executorHealth.local ? 'healthy' : 'unhealthy',
-        executorDetails: executorHealth
-      }
-    });
-  } catch (error) {
-    res.json({ 
-      status: 'OK', 
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      services: {
-        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        executor: 'error',
-        executorDetails: { error: error.message }
-      }
-    });
-  }
-});
+// Enhanced health check endpoint
+app.get('/api/health', asyncHandler(healthCheck));
 
 // Socket.io middleware
 io.use(socketAuth);
@@ -145,25 +121,18 @@ io.on('connection', (socket) => {
   handleSocketConnection(socket, io);
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+// Enhanced error handling middleware
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Database connection (tolerate missing DB in development)
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
       console.log('Connected to MongoDB');
+      
+      // Create database indexes for optimization
+      await databaseOptimizer.createIndexes();
       
       // Initialize room state manager after database connection
       const roomStateManager = require('./utils/roomStateManager');

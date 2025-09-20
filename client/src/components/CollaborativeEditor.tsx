@@ -494,7 +494,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
               content: f.content,
               version: f.version
             },
-            userId: currentUser?.uid
+                userId: currentUser?.uid
           });
         }
       }
@@ -523,7 +523,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     if (!currentUser) return;
 
     try {
-      // Get Firebase token for authentication
+      // Get Supabase token for authentication
       const token = currentUser ? await currentUser.getIdToken() : null;
       
       // Disconnect existing socket if any
@@ -556,7 +556,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           userInfo: {
             userId: currentUser?.uid,
             displayName: currentUser?.displayName || currentUser?.email || 'Anonymous',
-            avatar: currentUser?.photoURL || undefined
+            avatar: currentUser?.avatarUrl || undefined
           }
         });
       });

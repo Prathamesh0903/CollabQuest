@@ -103,7 +103,7 @@ const DashboardWrapper: React.FC = () => {
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
   if (loading) return null;
-  return currentUser ? children : <Navigate to="/login" replace />;
+  return currentUser ? children : <Navigate to="/auth" replace />;
 };
 
 const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -145,9 +145,13 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-
+        {/* Original homepage - protected route */}
         <Route path="/" element={<PrivateRoute><OnboardingRoute><DashboardWrapper /></OnboardingRoute></PrivateRoute>} />
+        
+        {/* Auth routes - public routes */}
+        <Route path="/auth" element={<PublicRoute><Login /></PublicRoute>} />
+
+        {/* Protected app routes */}
         <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
         <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditor /></PrivateRoute>} />
         <Route path="/battle" element={<PrivateRoute><Battle /></PrivateRoute>} />

@@ -4,8 +4,7 @@ const roomStateSchema = new mongoose.Schema({
   roomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',
-    required: true,
-    unique: true
+    required: true
   },
   
   // Core room state
@@ -152,7 +151,7 @@ const roomStateSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-roomStateSchema.index({ roomId: 1 });
+roomStateSchema.index({ roomId: 1 }, { unique: true });
 roomStateSchema.index({ 'battle.host': 1 });
 roomStateSchema.index({ 'battle.started': 1, 'battle.ended': 1 });
 roomStateSchema.index({ 'metadata.lastSaved': 1 });

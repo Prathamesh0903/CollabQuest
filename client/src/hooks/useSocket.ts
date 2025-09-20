@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { auth } from '../firebase';
 import io from 'socket.io-client';
 
 interface CursorPosition {
@@ -75,7 +74,7 @@ interface UseSocketOptions {
 }
 
 export const useSocket = (options: UseSocketOptions = {}) => {
-  const { currentUser } = useAuth();
+  const { currentUser, token } = useAuth();
   const [socket, setSocket] = useState<any | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [userCursors, setUserCursors] = useState<Map<string, UserCursor>>(new Map());
@@ -132,7 +131,6 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       if (!roomId || !currentUser) return;
       
       try {
-        const token = await currentUser.getIdToken();
         const socketConnection = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
           auth: {
             token: token || undefined
@@ -322,26 +320,8 @@ export const useSocket = (options: UseSocketOptions = {}) => {
           onError?.(error);
         });
 
-        // Refresh token on user token changes and update handshake auth
-        const unsubscribeToken = auth.onIdTokenChanged(async (user) => {
-          try {
-            const newToken = await user?.getIdToken();
-            if (socketRef.current && newToken) {
-              socketRef.current.auth = { token: newToken };
-              socketRef.current.disconnect();
-              socketRef.current.connect();
-            }
-          } catch (e) {
-            // ignore
-          }
-        });
-
-        // Clean up token subscription when unmounting or deps change
-        socketConnection.on('disconnect', () => {
-          if (typeof unsubscribeToken === 'function') {
-            try { unsubscribeToken(); } catch {}
-          }
-        });
+        // If token changes, reconnect with new token
+        // Note: rely on hook deps to recreate connection when token changes
 
       } catch (err) {
         console.error('Socket initialization error:', err);
@@ -358,7 +338,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
         setIsConnected(false);
       }
     };
-  }, [roomId, currentUser, mode]);
+  }, [roomId, currentUser, token, mode]);
 
   // Emit cursor position
   const emitCursorPosition = (position: CursorPosition) => {
@@ -369,7 +349,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       position,
       color: generateUserColor(currentUser.uid),
       displayName: currentUser.displayName || currentUser.email || 'Anonymous',
-      avatar: currentUser.photoURL || undefined,
+      avatar: currentUser.avatarUrl || undefined,
       timestamp: new Date()
     };
 
@@ -389,7 +369,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       selection,
       color: generateUserColor(currentUser.uid),
       displayName: currentUser.displayName || currentUser.email || 'Anonymous',
-      avatar: currentUser.photoURL || undefined,
+      avatar: currentUser.avatarUrl || undefined,
       timestamp: new Date()
     };
 

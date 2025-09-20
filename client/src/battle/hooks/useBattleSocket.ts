@@ -1,10 +1,10 @@
 import { useEffect, useCallback, useRef } from 'react';
 import io from 'socket.io-client';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { useBattleContext } from '../context/BattleProvider';
 
 export const useBattleSocket = () => {
-  const { user, token, refreshToken } = useAuth();
+  const { currentUser, token } = useAuth();
   const { dispatch } = useBattleContext();
   
   const socket = useRef<any | null>(null);
@@ -67,7 +67,7 @@ export const useBattleSocket = () => {
       const msg = String(err?.message || err || 'connect_error');
       dispatch({ type: 'SET_ERROR', payload: msg });
       if (msg.toLowerCase().includes('auth')) {
-        try { await refreshToken(); } catch {}
+        // Token refresh handled automatically by Supabase
       }
     });
 
@@ -100,13 +100,13 @@ export const useBattleSocket = () => {
   }, []);
 
   useEffect(() => {
-    if (user && token) {
+    if (currentUser && token) {
       connect();
     }
     return () => {
       disconnect();
     };
-  }, [user, token, connect, disconnect]);
+  }, [currentUser, token, connect, disconnect]);
 
   return {
     joinLobby,

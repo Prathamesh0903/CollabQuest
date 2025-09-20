@@ -60,7 +60,7 @@ const About: React.FC = () => {
     { name: 'Node.js', category: 'Backend' },
     { name: 'Socket.io', category: 'Real-time' },
     { name: 'MongoDB', category: 'Database' },
-    { name: 'Firebase', category: 'Authentication' },
+    { name: 'Supabase', category: 'Authentication' },
     { name: 'TypeScript', category: 'Language' }
   ];
 

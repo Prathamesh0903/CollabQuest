@@ -40,6 +40,11 @@ const DSASheet: React.FC = () => {
         const json = await res.json();
         const items = Array.isArray(json.problems) ? json.problems : [];
         
+        // Log if we're in fallback mode (no user progress)
+        if (json.message && json.message.includes('after login')) {
+          console.log('Loading problems without user progress (fallback mode)');
+        }
+        
         const byCategory: Record<string, Topic> = {};
         for (const p of items) {
           const catName = p?.category?.name || 'Misc';

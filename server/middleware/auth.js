@@ -41,7 +41,10 @@ const optionalAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
+    console.log(`[Auth] ${req.method} ${req.path} - Auth header: ${authHeader ? 'present' : 'missing'}`);
+
     if (!token) {
+      console.log(`[Auth] ${req.method} ${req.path} - No token, proceeding as anonymous`);
       req.user = null;
       return next();
     }
@@ -49,8 +52,12 @@ const optionalAuth = async (req, res, next) => {
     // Verify token directly and swallow errors to allow anonymous access
     const { verifySupabaseToken } = require('../config/supabaseAuth');
     try {
+      console.log(`[Auth] ${req.method} ${req.path} - Verifying token...`);
       const normalizedUser = await verifySupabaseToken(token);
+      console.log(`[Auth] ${req.method} ${req.path} - Token valid, UID: ${normalizedUser.uid}`);
+      
       const dbUser = await createOrUpdateUser(normalizedUser);
+      console.log(`[Auth] ${req.method} ${req.path} - User created/updated in DB: ${dbUser._id}`);
 
       // Keep both normalized info and database user info
       req.user = {
@@ -58,13 +65,14 @@ const optionalAuth = async (req, res, next) => {
         ...(dbUser.toObject ? dbUser.toObject() : dbUser),
         uid: normalizedUser.uid
       };
+      console.log(`[Auth] ${req.method} ${req.path} - Authentication successful`);
     } catch (verifyErr) {
-      console.warn('optionalAuth: ignoring invalid/expired token');
+      console.warn(`[Auth] ${req.method} ${req.path} - Token verification failed:`, verifyErr.message);
       req.user = null;
     }
     return next();
   } catch (error) {
-    console.error('Optional auth middleware error:', error);
+    console.error(`[Auth] ${req.method} ${req.path} - Optional auth middleware error:`, error);
     req.user = null;
     return next();
   }

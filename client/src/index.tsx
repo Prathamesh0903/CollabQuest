@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import reportWebVitals from './reportWebVitals';
-import { auth } from './firebase';
+import { supabase } from './supabaseClient';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -22,7 +22,7 @@ root.render(
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
 
-// Global fetch wrapper to attach Firebase ID token to API requests
+// Global fetch wrapper to attach Supabase JWT token to API requests
 // Minimal and non-invasive: adds Authorization header for /api and configured API origins
 (function installAuthenticatedFetchWrapper() {
   const originalFetch = window.fetch.bind(window);
@@ -49,9 +49,9 @@ reportWebVitals();
 
     if (shouldAttachAuth(urlString)) {
       try {
-        const token = await auth.currentUser?.getIdToken();
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          headers.set('Authorization', `Bearer ${session.access_token}`);
         }
       } catch (e) {
         // Silently ignore token fetch errors; proceed unauthenticated

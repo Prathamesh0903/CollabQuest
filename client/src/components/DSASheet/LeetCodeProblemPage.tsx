@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../utils/api';
 import Editor from '@monaco-editor/react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
@@ -22,14 +23,16 @@ type Problem = {
   tags?: string[];
   testCases?: TestCase[];
   starterCode?: {
-    javascript: string;
-    java: string;
-    cpp: string;
+    python?: string;
+    javascript?: string;
+    java?: string;
+    cpp?: string;
   };
   functionName?: {
-    javascript: string;
-    java: string;
-    cpp: string;
+    python?: string;
+    javascript?: string;
+    java?: string;
+    cpp?: string;
   };
 };
 
@@ -54,13 +57,14 @@ type TestResult = {
 const LeetCodeProblemPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Editor and submission state
   const [dsaUserId, setDsaUserId] = useState<string>('');
-  const [language, setLanguage] = useState<string>('javascript');
+  const [language, setLanguage] = useState<string>('python');
   const [code, setCode] = useState<string>('');
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -122,11 +126,16 @@ const LeetCodeProblemPage: React.FC = () => {
     return () => { mounted = false; };
   }, [id]);
 
-  const refreshSubmissions = async (uid: string) => {
-    if (!uid || !id) return;
+  const refreshSubmissions = async () => {
+    if (!currentUser || !id) return;
     try {
       setLoadingSubs(true);
-      const res = await fetch(`${API_BASE}/dsa/users/${uid}/submissions?problem_id=${id}`);
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${API_BASE}/dsa/submissions?problem_id=${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setSubmissions(Array.isArray(json.items) ? json.items : []);
@@ -137,10 +146,15 @@ const LeetCodeProblemPage: React.FC = () => {
     }
   };
 
-  const checkIfSolved = async (uid: string) => {
-    if (!uid || !id) return;
+  const checkIfSolved = async () => {
+    if (!currentUser || !id) return;
     try {
-      const res = await fetch(`${API_BASE}/dsa/users/${uid}/submissions?problem_id=${id}`);
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${API_BASE}/dsa/submissions?problem_id=${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const hasAcceptedSubmission = json.items?.some((sub: Submission) => sub.status === 'ACCEPTED');
@@ -167,7 +181,61 @@ const LeetCodeProblemPage: React.FC = () => {
           let testCode = '';
           let expectedOutput = testCase.expectedOutput;
           
-          if (language === 'javascript') {
+          if (language === 'python') {
+            // For Python, wrap the user code and call the function
+            const inputLines = testCase.input.split('\n');
+            const nums = inputLines[0];
+            const functionName = problem.functionName?.python || 'twoSum';
+            
+            // Handle different parameter counts based on function name
+            if (functionName === 'maxSubArray') {
+              testCode = `${code}
+
+# Test execution
+solution = Solution()
+nums = ${nums}
+result = solution.${functionName}(nums)
+print(result)`;
+            } else if (functionName === 'isAnagram') {
+              const s = inputLines[0];
+              const t = inputLines[1];
+              testCode = `${code}
+
+# Test execution
+solution = Solution()
+s = ${s}
+t = ${t}
+result = solution.${functionName}(s, t)
+print(result)`;
+            } else if (functionName === 'maxProfit') {
+              testCode = `${code}
+
+# Test execution
+solution = Solution()
+prices = ${nums}
+result = solution.${functionName}(prices)
+print(result)`;
+            } else if (functionName === 'containsDuplicate') {
+              testCode = `${code}
+
+# Test execution
+solution = Solution()
+nums = ${nums}
+result = solution.${functionName}(nums)
+print(result)`;
+            } else {
+              // Default for twoSum
+              const target = inputLines[1];
+              testCode = `${code}
+
+# Test execution
+solution = Solution()
+nums = ${nums}
+target = ${target}
+result = solution.${functionName}(nums, target)
+print(result)`;
+            }
+          } else if (language === 'javascript') {
             // For JavaScript, wrap the user code and call the function
             const inputLines = testCase.input.split('\n');
             const nums = inputLines[0];
@@ -433,26 +501,41 @@ int main() {
       setSubmitMsg('Enter code (≥3 chars)');
       return;
     }
+    
+    // Check if user is authenticated
+    if (!currentUser) {
+      setSubmitMsg('Please log in to submit code');
+      return;
+    }
+    
     try {
-      // Use demo user ID for anonymous submissions
-      const demoUserId = '68b9b6507ebf2bdb220894bb'; // From seeded demo user
+      // Get authentication token
+      const token = await currentUser.getIdToken();
+      
       const res = await fetch(`${API_BASE}/dsa/submissions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: demoUserId, problem_id: id, code, language })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ problem_id: id, code, language })
       });
+      
       if (!res.ok) {
         const j = await res.json().catch(() => ({} as any));
         throw new Error(j.message || `HTTP ${res.status}`);
       }
+      
       setSubmitMsg('Submitted successfully');
-      refreshSubmissions(demoUserId);
+      
+      // Refresh submissions for current user
+      refreshSubmissions();
       // Start polling for status updates
       if (pollRef.current) window.clearInterval(pollRef.current);
       pollRef.current = window.setInterval(() => {
-        refreshSubmissions(demoUserId);
+        refreshSubmissions();
         // Check if any submission is accepted to mark as solved
-        checkIfSolved(demoUserId);
+        checkIfSolved();
       }, 2000);
       window.setTimeout(() => { if (pollRef.current) window.clearInterval(pollRef.current); }, 15000);
     } catch (e: any) {
@@ -475,6 +558,35 @@ int main() {
       <div className="leetcode-problem-page">
         <div className="error-container">
           <div className="error">Error: {error || 'Problem not found'}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt for unauthenticated users
+  if (!currentUser) {
+    return (
+      <div className="leetcode-problem-page">
+        <div className="error-container">
+          <div className="error">
+            <h2>🔐 Login Required</h2>
+            <p>Please log in to submit code and track your progress.</p>
+            <button 
+              onClick={() => navigate('/login')}
+              style={{
+                background: '#007acc',
+                color: 'white',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '6px',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                marginTop: '1rem'
+              }}
+            >
+              Go to Login
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -659,10 +771,7 @@ int main() {
                   <h2>Submission History</h2>
                   <button 
                     className="refresh-button"
-                    onClick={() => {
-                      const demoUserId = '68b9b6507ebf2bdb220894bb';
-                      refreshSubmissions(demoUserId);
-                    }}
+                    onClick={() => refreshSubmissions()}
                     disabled={loadingSubs}
                   >
                     {loadingSubs ? 'Loading...' : 'Refresh'}
@@ -716,6 +825,7 @@ int main() {
                     onChange={(e) => setLanguage(e.target.value)}
                     className="language-dropdown"
                   >
+                    <option value="python">Python</option>
                     <option value="javascript">JavaScript</option>
                     <option value="java">Java</option>
                     <option value="cpp">C++</option>

@@ -14,6 +14,18 @@ type Problem = {
   category?: { _id: string; name: string; slug: string };
   tags?: string[];
   testCases?: TestCase[];
+  starterCode?: {
+    python?: string;
+    javascript?: string;
+    java?: string;
+    cpp?: string;
+  };
+  functionName?: {
+    python?: string;
+    javascript?: string;
+    java?: string;
+    cpp?: string;
+  };
 };
 
 type Submission = {
@@ -74,6 +86,14 @@ const DSAProblemPage: React.FC = () => {
       refreshSubmissions();
     }
   }, [currentUser, id]);
+
+  // Load starter code when language or problem changes
+  useEffect(() => {
+    if (problem && language) {
+      const starterCode = problem.starterCode?.[language as keyof typeof problem.starterCode] || '';
+      setCode(starterCode);
+    }
+  }, [problem, language]);
 
   const refreshSubmissions = async () => {
     if (!currentUser || !id) return;

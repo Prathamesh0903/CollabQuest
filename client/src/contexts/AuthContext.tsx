@@ -1,21 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { auth } from '../firebase';
+import { supabase } from '../supabaseClient';
+
+interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  getIdToken: () => Promise<string | null>;
+}
 
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
+  currentUser: AuthUser | null;
   loading: boolean;
+  token: string | null;
   signInWithGoogle: () => Promise<void>;
+  signInWithDiscord: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -30,62 +32,106 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
+    const redirectTo = window.location.origin;
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    if (error) {
+      // eslint-disable-next-line no-console
       console.error('Error signing in with Google:', error);
       throw error;
     }
   };
 
+  const signInWithDiscord = async () => {
+    const redirectTo = window.location.origin;
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo } });
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error signing in with Discord:', error);
+      throw error;
+    }
+  };
+
   const signInWithEmail = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      // eslint-disable-next-line no-console
       console.error('Error signing in with email:', error);
       throw error;
     }
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    if (error) {
+      // eslint-disable-next-line no-console
       console.error('Error signing up with email:', error);
       throw error;
     }
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`
+    });
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      // eslint-disable-next-line no-console
       console.error('Error signing out:', error);
       throw error;
     }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('AuthContext: Firebase auth state changed:', { user: !!user, uid: user?.uid });
-      setCurrentUser(user);
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const authUser = session?.user;
+      setToken(session?.access_token || null);
+      if (authUser) {
+        setCurrentUser({
+          uid: authUser.id,
+          email: authUser.email || null,
+          displayName: authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
+          avatarUrl: authUser.user_metadata?.avatar_url || null,
+          getIdToken: async () => session?.access_token || null
+        });
+      } else {
+        setCurrentUser(null);
+      }
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      subscription.subscription.unsubscribe();
+    };
   }, []);
 
   const value = {
     currentUser,
     loading,
+    token,
     signInWithGoogle,
+    signInWithDiscord,
     signInWithEmail,
     signUpWithEmail,
+    resetPassword,
     logout
   };
 

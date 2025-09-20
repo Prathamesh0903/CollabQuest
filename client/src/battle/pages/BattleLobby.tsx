@@ -4,7 +4,7 @@ import { useBattleSocket } from '../hooks/useBattleSocket';
 import { useBattleContext } from '../context/BattleProvider';
 import { PlayerCard } from '../components/PlayerCard';
 import { Countdown } from '../components/Countdown';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { LoadingOverlay } from '../components/LoadingOverlay';
 
@@ -13,7 +13,7 @@ export const BattleLobby: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useBattleContext();
   const { joinLobby, toggleReady, startBattle } = useBattleSocket();
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownTime, setCountdownTime] = useState(0);
@@ -32,7 +32,7 @@ export const BattleLobby: React.FC = () => {
     return (
       state.participants.length >= 2 &&
       state.participants.every(p => p.isReady) &&
-      state.currentBattle?.host === user?.uid
+      state.currentBattle?.host === currentUser?.uid
     );
   };
 
@@ -100,12 +100,12 @@ export const BattleLobby: React.FC = () => {
       <div className="lobby-actions">
         <button 
           onClick={handleToggleReady}
-          className={`ready-btn ${state.participants.find(p => p.userId === user?.uid)?.isReady ? 'ready' : 'not-ready'}`}
+          className={`ready-btn ${state.participants.find(p => p.userId === currentUser?.uid)?.isReady ? 'ready' : 'not-ready'}`}
         >
-          {state.participants.find(p => p.userId === user?.uid)?.isReady ? 'Ready!' : 'Not Ready'}
+          {state.participants.find(p => p.userId === currentUser?.uid)?.isReady ? 'Ready!' : 'Not Ready'}
         </button>
 
-        {state.currentBattle?.host === user?.uid && (
+        {state.currentBattle?.host === currentUser?.uid && (
           <button 
             onClick={handleStartBattle}
             disabled={!canStartBattle()}

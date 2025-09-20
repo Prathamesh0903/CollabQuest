@@ -1,5 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { asyncHandler } = require('../middleware/errorHandler');
+const {
+  validateProblemId,
+  validateProblemQuery,
+  validateSubmission,
+  validateProgressUpdate,
+  validateProgressQuery,
+  validateUserMapping,
+  checkDatabaseIntegrity,
+  submissionRateLimit,
+  progressRateLimit
+} = require('../middleware/validation');
+const { QueryOptimizer, performanceMonitor } = require('../utils/databaseOptimization');
 
 const DSAUser = require('../models/dsa/DSAUser');
 const DSACategory = require('../models/dsa/Category');
@@ -10,6 +23,62 @@ const UserMapping = require('../models/dsa/UserMapping');
 
 const router = express.Router();
 
+// Helper function to get progress fallback for unauthenticated users
+async function getProgressFallback(req, res) {
+  try {
+    const { category, difficulty, limit = 500 } = req.query;
+    
+    // Build filter for problems
+    const problemFilter = { isActive: true };
+    if (category) {
+      if (mongoose.isValidObjectId(category)) {
+        problemFilter.category = category;
+      } else {
+        const cat = await DSACategory.findOne({ slug: String(category).toLowerCase() }).select('_id');
+        if (cat) problemFilter.category = cat._id;
+      }
+    }
+    if (difficulty) {
+      problemFilter.difficulty = { $in: String(difficulty).split(',') };
+    }
+
+    // Get problems without progress data
+    const problems = await DSAProblem.find(problemFilter)
+      .select('_id title difficulty category tags problemNumber')
+      .populate('category', 'name slug')
+      .sort({ problemNumber: 1 })
+      .limit(parseInt(limit));
+
+    // Return problems with default progress values
+    const problemsWithDefaultProgress = problems.map(problem => ({
+      _id: problem._id,
+      title: problem.title,
+      difficulty: problem.difficulty,
+      category: problem.category,
+      tags: problem.tags,
+      problemNumber: problem.problemNumber,
+      isCompleted: false,
+      completedAt: null,
+      notes: ''
+    }));
+
+    return res.json({
+      success: true,
+      problems: problemsWithDefaultProgress,
+      total: problemsWithDefaultProgress.length,
+      completed: 0,
+      message: 'Progress data available after login'
+    });
+  } catch (error) {
+    console.error('Progress fallback error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to load problems',
+      error: error.message
+    });
+  }
+}
+
 // Import authentication middleware
 const { optionalAuth } = require('../middleware/auth');
 
@@ -19,7 +88,7 @@ function toInt(value, defaultValue) {
 }
 
 // GET /api/dsa/problems
-router.get('/problems', async (req, res) => {
+router.get('/problems', checkDatabaseIntegrity, validateProblemQuery, asyncHandler(async (req, res) => {
   try {
     const page = Math.max(1, toInt(req.query.page, 1));
     const limit = Math.min(100, Math.max(1, toInt(req.query.limit, 20)));
@@ -54,24 +123,29 @@ router.get('/problems', async (req, res) => {
       ];
     }
 
+    // Execute optimized query with performance monitoring
+    const startTime = Date.now();
     const [items, total] = await Promise.all([
-          DSAProblem.find(filter)
-      .select('problemNumber title difficulty category tags acceptanceRate isActive created_at functionName')
-      .populate('category', 'name slug')
-      .sort({ problemNumber: 1 })
-      .skip(skip)
-      .limit(limit),
+      DSAProblem.find(filter)
+        .select('problemNumber title difficulty category tags acceptanceRate isActive created_at functionName')
+        .populate('category', 'name slug')
+        .sort({ problemNumber: 1 })
+        .skip(skip)
+        .limit(limit),
       DSAProblem.countDocuments(filter)
     ]);
+    
+    const queryTime = Date.now() - startTime;
+    performanceMonitor.recordQuery(queryTime, 'DSAProblem.find');
 
     res.json({ page, limit, total, items });
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch problems', error: err.message });
   }
-});
+}));
 
 // GET /api/dsa/problems/:id
-router.get('/problems/:id', async (req, res) => {
+router.get('/problems/:id', checkDatabaseIntegrity, validateProblemId, asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) {
@@ -89,14 +163,14 @@ router.get('/problems/:id', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch problem', error: err.message });
   }
-});
+}));
 
 // POST /api/dsa/submissions
-router.post('/submissions', optionalAuth, async (req, res) => {
+router.post('/submissions', optionalAuth, checkDatabaseIntegrity, validateUserMapping, submissionRateLimit, validateSubmission, asyncHandler(async (req, res) => {
   try {
-    const firebaseUid = req.user?.uid;
+    const supabaseUid = req.user?.uid;
     
-    if (!firebaseUid) {
+    if (!supabaseUid) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
@@ -112,32 +186,21 @@ router.post('/submissions', optionalAuth, async (req, res) => {
       return res.status(400).json({ message: 'language is required' });
     }
 
-    // Get or create DSA user mapping for Firebase user
-    const mapping = await UserMapping.findOne({ firebaseUid, isActive: true });
-    let dsaUserId;
-    
-    if (mapping) {
-      dsaUserId = mapping.dsaUserId;
-    } else {
-      // Create new DSA user and mapping
-      const firebaseUser = req.user;
-      const dsaUser = new DSAUser({
-        username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'user',
-        email: firebaseUser.email,
-        hashed_password: 'firebase_authenticated_' + firebaseUid // Placeholder
+    // Get or create DSA user mapping with enhanced error handling
+    let mapping;
+    try {
+      console.log(`[DSA] Creating user mapping for UID: ${req.user?.uid}`);
+      mapping = await UserMapping.createUserMappingWithRetry(req.user);
+      console.log(`[DSA] User mapping created/retrieved: ${mapping.dsaUserId}`);
+    } catch (error) {
+      console.error('Failed to create user mapping for submission:', error);
+      return res.status(500).json({ 
+        message: 'Failed to create user mapping', 
+        error: error.message 
       });
-      await dsaUser.save();
-      
-      // Create mapping
-      await UserMapping.create({
-        firebaseUid,
-        dsaUserId: dsaUser._id,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName
-      });
-      
-      dsaUserId = dsaUser._id;
     }
+    
+    const dsaUserId = mapping.dsaUserId;
 
     // Ensure problem exists
     const problem = await DSAProblem.findById(problem_id).select('_id isActive');
@@ -160,14 +223,14 @@ router.post('/submissions', optionalAuth, async (req, res) => {
     }
     res.status(500).json({ message: 'Failed to create submission', error: err.message });
   }
-});
+}));
 
 // GET /api/dsa/submissions - Get current user's submissions
 router.get('/submissions', optionalAuth, async (req, res) => {
   try {
-    const firebaseUid = req.user?.uid;
+    const supabaseUid = req.user?.uid;
     
-    if (!firebaseUid) {
+    if (!supabaseUid) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
@@ -177,7 +240,7 @@ router.get('/submissions', optionalAuth, async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Get DSA user ID from mapping
-    const mapping = await UserMapping.findOne({ firebaseUid, isActive: true });
+    const mapping = await UserMapping.findOne({ firebaseUid: supabaseUid, isActive: true });
     if (!mapping) {
       return res.json({ page, limit, total: 0, items: [] });
     }
@@ -233,41 +296,26 @@ router.get('/users/:userId/submissions', async (req, res) => {
   }
 });
 
-// GET /api/dsa/progress - Get user's progress for all problems
-router.get('/progress', optionalAuth, async (req, res) => {
+// GET /api/dsa/progress - Get user's progress for all problems with fallback
+router.get('/progress', optionalAuth, checkDatabaseIntegrity, validateProgressQuery, asyncHandler(async (req, res) => {
   try {
-    const firebaseUid = req.user?.uid;
+    const supabaseUid = req.user?.uid;
     
-    if (!firebaseUid) {
-      return res.status(401).json({ message: 'Authentication required' });
+    if (!supabaseUid) {
+      // Return problems without progress for unauthenticated users
+      return await getProgressFallback(req, res);
     }
 
     const { category, difficulty, limit = 500 } = req.query;
     
-    // Get or create DSA user mapping
-    const mapping = await UserMapping.findOne({ firebaseUid, isActive: true });
-    let dsaUserId;
-    
-    if (mapping) {
-      dsaUserId = mapping.dsaUserId;
-    } else {
-      // Create new DSA user and mapping if doesn't exist
-      const firebaseUser = req.user;
-      const dsaUser = new DSAUser({
-        username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'user',
-        email: firebaseUser.email,
-        hashed_password: 'firebase_authenticated_' + firebaseUid
-      });
-      await dsaUser.save();
-      
-      await UserMapping.create({
-        firebaseUid,
-        dsaUserId: dsaUser._id,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName
-      });
-      
-      dsaUserId = dsaUser._id;
+    // Get or create DSA user mapping with enhanced error handling
+    let mapping;
+    try {
+      mapping = await UserMapping.createUserMappingWithRetry(req.user);
+    } catch (error) {
+      console.error('Failed to create user mapping:', error);
+      // Fallback to problems without progress if mapping fails
+      return await getProgressFallback(req, res);
     }
     
     // Build filter for problems
@@ -285,15 +333,21 @@ router.get('/progress', optionalAuth, async (req, res) => {
     }
 
     // Get all problems with progress (using firebaseUid for progress, dsaUserId for submissions)
-    const [problems, progressRecords] = await Promise.all([
-      DSAProblem.find(problemFilter)
-        .select('_id title difficulty category tags problemNumber')
-        .populate('category', 'name slug')
-        .sort({ problemNumber: 1 })
-        .limit(parseInt(limit)),
-      DSAProgress.find({ firebaseUid })
-        .select('problemId isCompleted completedAt notes')
-    ]);
+    let problems, progressRecords;
+    try {
+      [problems, progressRecords] = await Promise.all([
+        DSAProblem.find(problemFilter)
+          .select('_id title difficulty category tags problemNumber')
+          .populate('category', 'name slug')
+          .sort({ problemNumber: 1 })
+          .limit(parseInt(limit)),
+        DSAProgress.find({ firebaseUid })
+          .select('problemId isCompleted completedAt notes')
+      ]);
+    } catch (error) {
+      console.error('Failed to fetch problems or progress:', error);
+      return await getProgressFallback(req, res);
+    }
 
     // Create progress map for efficient lookup
     const progressMap = new Map();
@@ -327,16 +381,23 @@ router.get('/progress', optionalAuth, async (req, res) => {
     console.error('Error fetching progress:', err);
     res.status(500).json({ message: 'Failed to fetch progress', error: err.message });
   }
-});
+}));
 
 // POST /api/dsa/progress - Update problem completion status
-router.post('/progress', optionalAuth, async (req, res) => {
+router.post('/progress', optionalAuth, checkDatabaseIntegrity, validateUserMapping, progressRateLimit, validateProgressUpdate, asyncHandler(async (req, res) => {
   try {
-    const firebaseUid = req.user?.uid;
+    console.log(`[PROGRESS] POST /progress - Request received`);
+    console.log(`[PROGRESS] User object:`, req.user ? { uid: req.user.uid, email: req.user.email } : 'null');
+    console.log(`[PROGRESS] Request body:`, req.body);
     
-    if (!firebaseUid) {
+    const supabaseUid = req.user?.uid;
+    
+    if (!supabaseUid) {
+      console.log(`[PROGRESS] No supabaseUid found, returning 401`);
       return res.status(401).json({ message: 'Authentication required' });
     }
+    
+    console.log(`[PROGRESS] Processing progress update for UID: ${supabaseUid}`);
 
     const { problemId, isCompleted, notes } = req.body;
 
@@ -348,23 +409,17 @@ router.post('/progress', optionalAuth, async (req, res) => {
       return res.status(400).json({ message: 'isCompleted must be a boolean' });
     }
 
-    // Ensure mapping exists
-    const mapping = await UserMapping.findOne({ firebaseUid, isActive: true });
-    if (!mapping) {
-      // Create new DSA user and mapping if doesn't exist
-      const firebaseUser = req.user;
-      const dsaUser = new DSAUser({
-        username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'user',
-        email: firebaseUser.email,
-        hashed_password: 'firebase_authenticated_' + firebaseUid
-      });
-      await dsaUser.save();
-      
-      await UserMapping.create({
-        firebaseUid,
-        dsaUserId: dsaUser._id,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName
+    // Ensure mapping exists with enhanced error handling
+    let mapping;
+    try {
+      console.log(`[DSA] Creating user mapping for progress update, UID: ${req.user?.uid}`);
+      mapping = await UserMapping.createUserMappingWithRetry(req.user);
+      console.log(`[DSA] User mapping created/retrieved for progress: ${mapping.dsaUserId}`);
+    } catch (error) {
+      console.error('Failed to create user mapping for progress update:', error);
+      return res.status(500).json({ 
+        message: 'Failed to create user mapping', 
+        error: error.message 
       });
     }
 
@@ -375,12 +430,20 @@ router.post('/progress', optionalAuth, async (req, res) => {
     }
 
     // Update or create progress record
+    console.log(`[PROGRESS] Updating progress for UID: ${supabaseUid}, Problem: ${problemId}, Completed: ${isCompleted}`);
+    
     const progress = await DSAProgress.updateCompletion(
-      firebaseUid, 
+      supabaseUid, 
       problemId, 
       isCompleted, 
       notes || ''
     );
+    
+    console.log(`[PROGRESS] Progress updated successfully:`, {
+      problemId: progress.problemId,
+      isCompleted: progress.isCompleted,
+      completedAt: progress.completedAt
+    });
 
     res.json({
       success: true,
@@ -395,20 +458,20 @@ router.post('/progress', optionalAuth, async (req, res) => {
     console.error('Error updating progress:', err);
     res.status(500).json({ message: 'Failed to update progress', error: err.message });
   }
-});
+}));
 
 // GET /api/dsa/progress/stats - Get user's progress statistics
-router.get('/progress/stats', optionalAuth, async (req, res) => {
+router.get('/progress/stats', optionalAuth, asyncHandler(async (req, res) => {
   try {
-    const firebaseUid = req.user?.uid;
+    const supabaseUid = req.user?.uid;
     
-    if (!firebaseUid) {
+    if (!supabaseUid) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const [stats, categoryProgress] = await Promise.all([
-      DSAProgress.getUserStats(firebaseUid),
-      DSAProgress.getProgressByCategory(firebaseUid)
+      DSAProgress.getUserStats(supabaseUid),
+      DSAProgress.getProgressByCategory(supabaseUid)
     ]);
 
     // Calculate completion percentage
@@ -428,15 +491,30 @@ router.get('/progress/stats', optionalAuth, async (req, res) => {
     console.error('Error fetching progress stats:', err);
     res.status(500).json({ message: 'Failed to fetch progress stats', error: err.message });
   }
-});
+}));
+
+// GET /api/dsa/performance - Get performance metrics (admin only)
+router.get('/performance', asyncHandler(async (req, res) => {
+  try {
+    const metrics = performanceMonitor.getMetrics();
+    res.json({
+      success: true,
+      metrics,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Error fetching performance metrics:', err);
+    res.status(500).json({ message: 'Failed to fetch performance metrics', error: err.message });
+  }
+}));
 
 // GET /api/dsa/progress/:problemId - Get progress for specific problem
-router.get('/progress/:problemId', optionalAuth, async (req, res) => {
+router.get('/progress/:problemId', optionalAuth, asyncHandler(async (req, res) => {
   try {
-    const firebaseUid = req.user?.uid;
+    const supabaseUid = req.user?.uid;
     const { problemId } = req.params;
 
-    if (!firebaseUid) {
+    if (!supabaseUid) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
@@ -476,6 +554,6 @@ router.get('/progress/:problemId', optionalAuth, async (req, res) => {
     console.error('Error fetching problem progress:', err);
     res.status(500).json({ message: 'Failed to fetch problem progress', error: err.message });
   }
-});
+}));
 
 module.exports = router;

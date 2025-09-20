@@ -25,9 +25,9 @@ const UserProfile: React.FC = () => {
   return (
     <div className="user-profile">
       <div className="user-avatar" onClick={toggleDropdown}>
-        {currentUser.photoURL ? (
+        {currentUser.avatarUrl ? (
           <img 
-            src={currentUser.photoURL} 
+            src={currentUser.avatarUrl} 
             alt={currentUser.displayName || 'User'} 
             className="avatar-image"
           />
