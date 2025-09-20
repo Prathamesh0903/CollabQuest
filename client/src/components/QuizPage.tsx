@@ -5,6 +5,8 @@ import {
   BookOpen, ArrowRight, Home, Brain, Zap,
   Award, TrendingUp, Star, Eye, EyeOff, HelpCircle
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../utils/api';
 import './QuizPage.css';
 
 interface QuizCategory {
@@ -28,9 +30,9 @@ interface QuizConfig {
 
 interface Question {
   id: string;
-  type: 'multiple-choice' | 'true-false' | 'fill-blank';
+  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding';
   question: string;
-  options?: string[];
+  options?: Array<{text: string, isCorrect: boolean}>;
   correctAnswer?: string | number | boolean;
   explanation?: string;
   points: number;
@@ -38,6 +40,13 @@ interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
   hint?: string;
+  codeSnippet?: string;
+  language?: string;
+  testCases?: Array<{
+    input: string;
+    expectedOutput: string;
+    description: string;
+  }>;
 }
 
 interface UserAnswer {
@@ -48,13 +57,18 @@ interface UserAnswer {
   points: number;
 }
 
-// Enhanced sample questions with hints
+// Enhanced sample questions with hints (fallback)
 const sampleQuestions: Question[] = [
   {
     id: 'q1',
     type: 'multiple-choice',
     question: 'What is the time complexity of binary search?',
-    options: ['O(1)', 'O(log n)', 'O(n)', 'O(n²)'],
+    options: [
+      { text: 'O(1)', isCorrect: false },
+      { text: 'O(log n)', isCorrect: true },
+      { text: 'O(n)', isCorrect: false },
+      { text: 'O(n²)', isCorrect: false }
+    ],
     correctAnswer: 1,
     explanation: 'Binary search has a time complexity of O(log n) as it divides the search space in half with each iteration.',
     hint: 'Think about how binary search works - it eliminates half of the remaining elements in each step.',
@@ -67,7 +81,12 @@ const sampleQuestions: Question[] = [
     id: 'q2',
     type: 'multiple-choice',
     question: 'Which data structure uses LIFO (Last In, First Out) principle?',
-    options: ['Queue', 'Stack', 'Tree', 'Graph'],
+    options: [
+      { text: 'Queue', isCorrect: false },
+      { text: 'Stack', isCorrect: true },
+      { text: 'Tree', isCorrect: false },
+      { text: 'Graph', isCorrect: false }
+    ],
     correctAnswer: 1,
     explanation: 'A Stack uses the LIFO principle where the last element added is the first one to be removed.',
     hint: 'Think of a stack of plates - you can only add or remove from the top.',
@@ -80,7 +99,10 @@ const sampleQuestions: Question[] = [
     id: 'q3',
     type: 'true-false',
     question: 'A binary tree can have more than two children per node.',
-    options: ['True', 'False'],
+    options: [
+      { text: 'True', isCorrect: false },
+      { text: 'False', isCorrect: true }
+    ],
     correctAnswer: false,
     explanation: 'A binary tree can have at most two children per node. If it can have more than two children, it\'s called a general tree.',
     hint: 'The word "binary" gives us a clue about the number of children allowed.',
@@ -93,7 +115,12 @@ const sampleQuestions: Question[] = [
     id: 'q4',
     type: 'multiple-choice',
     question: 'What is the space complexity of merge sort?',
-    options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+    options: [
+      { text: 'O(1)', isCorrect: false },
+      { text: 'O(log n)', isCorrect: false },
+      { text: 'O(n)', isCorrect: true },
+      { text: 'O(n log n)', isCorrect: false }
+    ],
     correctAnswer: 2,
     explanation: 'Merge sort requires O(n) additional space to store the merged arrays during the sorting process.',
     hint: 'Merge sort creates temporary arrays to store the merged results.',
@@ -106,7 +133,12 @@ const sampleQuestions: Question[] = [
     id: 'q5',
     type: 'fill-blank',
     question: 'The process of converting a recursive algorithm to an iterative one is called _____ optimization.',
-    options: ['Tail recursion', 'Memoization', 'Dynamic programming', 'Greedy'],
+    options: [
+      { text: 'Tail recursion', isCorrect: true },
+      { text: 'Memoization', isCorrect: false },
+      { text: 'Dynamic programming', isCorrect: false },
+      { text: 'Greedy', isCorrect: false }
+    ],
     correctAnswer: 0,
     explanation: 'Tail recursion optimization converts recursive calls to iterative loops to improve space efficiency.',
     hint: 'This optimization is specifically about the last operation in a recursive function.',
@@ -120,6 +152,7 @@ const sampleQuestions: Question[] = [
 const QuizPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -133,6 +166,9 @@ const QuizPage: React.FC = () => {
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -140,33 +176,103 @@ const QuizPage: React.FC = () => {
   const quizConfig = location.state?.quizConfig as QuizConfig;
   const category = location.state?.category as QuizCategory;
 
+  // Fetch JavaScript quiz from API
+  const fetchJavaScriptQuiz = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_BASE}/advanced-quizzes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Find the JavaScript Fundamentals Quiz
+      const jsQuiz = data.quizzes?.find((quiz: any) => 
+        quiz.title === 'JavaScript Fundamentals Quiz'
+      );
+      
+      if (jsQuiz) {
+        // Convert API questions to our format
+        const convertedQuestions: Question[] = jsQuiz.questions.map((q: any, index: number) => ({
+          id: q._id || `q${index}`,
+          type: q.type,
+          question: q.question,
+          options: q.options || [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          points: q.points,
+          timeLimit: q.timeLimit,
+          difficulty: q.difficulty,
+          tags: q.tags || [],
+          codeSnippet: q.codeSnippet,
+          language: q.language,
+          testCases: q.testCases
+        }));
+        
+        setQuestions(convertedQuestions);
+        setTotalQuestions(convertedQuestions.length);
+      } else {
+        // Fallback to sample questions if JavaScript quiz not found
+        console.warn('JavaScript Fundamentals Quiz not found, using sample questions');
+        setQuestions(sampleQuestions);
+        setTotalQuestions(sampleQuestions.length);
+      }
+    } catch (err) {
+      console.error('Error fetching JavaScript quiz:', err);
+      setError('Failed to load quiz questions');
+      // Fallback to sample questions
+      setQuestions(sampleQuestions);
+      setTotalQuestions(sampleQuestions.length);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!quizConfig || !category) {
       navigate('/advanced-quiz');
       return;
     }
 
-    setTimeLeft(quizConfig.timeLimit * 60);
-    setTotalQuestions(quizConfig.questionCount);
-    setQuestionStartTime(Date.now());
-    
-    // Start timer
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          handleQuizComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // Fetch quiz questions
+    fetchJavaScriptQuiz();
+  }, [quizConfig, category, navigate, currentUser]);
 
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [quizConfig, category, navigate]);
+  useEffect(() => {
+    if (questions.length > 0) {
+      setTimeLeft(quizConfig.timeLimit * 60);
+      setQuestionStartTime(Date.now());
+      
+      // Start timer
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            handleQuizComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
+    }
+  }, [questions, quizConfig]);
 
   useEffect(() => {
     setQuestionStartTime(Date.now());
@@ -189,9 +295,6 @@ const QuizPage: React.FC = () => {
     }
   };
 
-  const handleAnswerSelect = (answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-  };
 
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
@@ -204,10 +307,24 @@ const QuizPage: React.FC = () => {
   };
 
   const handleNextQuestion = () => {
-    if (selectedAnswer === null) return;
+    if (selectedAnswer === null || questions.length === 0) return;
 
-    const currentQ = sampleQuestions[currentQuestion % sampleQuestions.length];
-    const isCorrect = selectedAnswer === currentQ.correctAnswer;
+    const currentQ = questions[currentQuestion];
+    if (!currentQ) return;
+
+    // Handle different question types
+    let isCorrect = false;
+    if (currentQ.type === 'multiple-choice') {
+      // For multiple choice, check if selected answer index matches correct option
+      const correctOptionIndex = currentQ.options?.findIndex(opt => opt.isCorrect);
+      isCorrect = selectedAnswer === correctOptionIndex;
+    } else if (currentQ.type === 'true-false') {
+      isCorrect = selectedAnswer === currentQ.correctAnswer;
+    } else {
+      // For other types, use the correctAnswer directly
+      isCorrect = selectedAnswer === currentQ.correctAnswer;
+    }
+
     const points = isCorrect ? currentQ.points : 0;
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
 
@@ -239,7 +356,7 @@ const QuizPage: React.FC = () => {
       setShowExplanation(false);
       setSelectedAnswer(null);
       
-      if (currentQuestion + 1 < Math.min(quizConfig.questionCount, sampleQuestions.length)) {
+      if (currentQuestion + 1 < Math.min(quizConfig.questionCount, questions.length)) {
         setCurrentQuestion(prev => prev + 1);
       } else {
         handleQuizComplete();
@@ -265,10 +382,59 @@ const QuizPage: React.FC = () => {
     }
   };
 
+  const handleAnswerSelect = (index: number) => {
+    setSelectedAnswer(index);
+  };
+
 
 
   if (!quizConfig || !category) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="quiz-page">
+        <div className="quiz-container">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <h2>Loading JavaScript Fundamentals Quiz...</h2>
+            <p>Please wait while we fetch the latest questions.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="quiz-page">
+        <div className="quiz-container">
+          <div className="error-state">
+            <XCircle className="error-icon" />
+            <h2>Error Loading Quiz</h2>
+            <p>{error}</p>
+            <button onClick={() => fetchJavaScriptQuiz()} className="retry-button">
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="quiz-page">
+        <div className="quiz-container">
+          <div className="empty-state">
+            <BookOpen className="empty-icon" />
+            <h2>No Questions Available</h2>
+            <p>No questions found for this quiz.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (isQuizComplete) {
@@ -336,7 +502,7 @@ const QuizPage: React.FC = () => {
     );
   }
 
-  const currentQ = sampleQuestions[currentQuestion % sampleQuestions.length];
+  const currentQ = questions[currentQuestion];
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
 
   return (
@@ -378,7 +544,7 @@ const QuizPage: React.FC = () => {
                 key={index}
                 className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
                   showExplanation ? 
-                    (index === currentQ.correctAnswer ? 'correct' : 
+                    (typeof option === 'object' && option.isCorrect ? 'correct' : 
                      selectedAnswer === index ? 'incorrect' : '') : ''
                 }`}
                 onClick={() => !showExplanation && handleAnswerSelect(index)}
@@ -386,12 +552,12 @@ const QuizPage: React.FC = () => {
               >
                 <div className="answer-content">
                   <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
-                  <div className="answer-text">{option}</div>
+                  <div className="answer-text">{typeof option === 'string' ? option : option.text}</div>
                 </div>
-                {showExplanation && index === currentQ.correctAnswer && (
+                {showExplanation && typeof option === 'object' && option.isCorrect && (
                   <CheckCircle className="w-6 h-6 answer-icon correct" />
                 )}
-                {showExplanation && selectedAnswer === index && index !== currentQ.correctAnswer && (
+                {showExplanation && selectedAnswer === index && typeof option === 'object' && !option.isCorrect && (
                   <XCircle className="w-6 h-6 answer-icon incorrect" />
                 )}
               </button>

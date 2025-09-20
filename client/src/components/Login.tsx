@@ -4,7 +4,6 @@ import LoginToast, { LoginToastProps } from './LoginToast';
 import PasswordStrength from './PasswordStrength';
 import LoadingSpinner from './LoadingSpinner';
 import SpaceParticles from './SpaceParticles';
-import OAuthDebugger from './OAuthDebugger';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -110,7 +109,6 @@ const Login: React.FC = () => {
   return (
     <div className="login-container">
       <SpaceParticles />
-      <OAuthDebugger />
       <div className="login-card">
         <div className="login-header">
           <div className="logo-section">
