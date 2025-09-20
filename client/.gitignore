@@ -26,3 +26,5 @@ yarn-error.log*
 
 /build/*.mp4
 /public/*.mp4
+
+.vercel

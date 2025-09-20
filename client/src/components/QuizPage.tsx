@@ -193,6 +193,16 @@ const QuizPage: React.FC = () => {
     setSelectedAnswer(answerIndex);
   };
 
+  const handlePreviousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(prev => prev - 1);
+      setSelectedAnswer(null);
+      setShowExplanation(false);
+      setShowHint(false);
+      setQuestionStartTime(Date.now());
+    }
+  };
+
   const handleNextQuestion = () => {
     if (selectedAnswer === null) return;
 
@@ -255,14 +265,6 @@ const QuizPage: React.FC = () => {
     }
   };
 
-  const handleSkipQuestion = () => {
-    if (currentQuestion + 1 < Math.min(quizConfig.questionCount, sampleQuestions.length)) {
-      setCurrentQuestion(prev => prev + 1);
-      setStreak(0);
-    } else {
-      handleQuizComplete();
-    }
-  };
 
 
   if (!quizConfig || !category) {
@@ -421,16 +423,19 @@ const QuizPage: React.FC = () => {
           <div className="action-buttons">
             {!showExplanation && (
               <>
+                {currentQuestion > 0 && (
+                  <button className="back-btn" onClick={handlePreviousQuestion}>
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                )}
+                
                 {quizConfig.enableHints && currentQ.hint && !showHint && (
                   <button className="hint-btn" onClick={handleShowHint}>
                     <HelpCircle className="w-4 h-4" />
                     Show Hint
                   </button>
                 )}
-                
-                <button className="skip-btn" onClick={handleSkipQuestion}>
-                  Skip Question
-                </button>
               </>
             )}
 

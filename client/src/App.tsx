@@ -14,6 +14,7 @@ import DSAProblemPage from './components/DSASheet/DSAProblemPage';
 import Battle from './components/Battle';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
+import AuthCallback from './components/AuthCallback';
 import './App.css';
 
 // Session-based editor component
@@ -150,6 +151,7 @@ const App: React.FC = () => {
         
         {/* Auth routes - public routes */}
         <Route path="/auth" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Protected app routes */}
         <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />

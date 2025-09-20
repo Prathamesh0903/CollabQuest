@@ -8,7 +8,7 @@ const questionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['multiple-choice', 'true-false', 'fill-blank', 'matching'],
+    enum: ['multiple-choice', 'true-false', 'fill-blank', 'matching', 'coding'],
     default: 'multiple-choice'
   },
   options: [{
@@ -44,6 +44,29 @@ const questionSchema = new mongoose.Schema({
   tags: [{
     type: String,
     trim: true
+  }],
+  // Fields for coding questions
+  codeSnippet: {
+    type: String,
+    required: function() {
+      return this.type === 'coding';
+    }
+  },
+  language: {
+    type: String,
+    required: function() {
+      return this.type === 'coding';
+    },
+    enum: ['javascript', 'python', 'java', 'cpp', 'c']
+  },
+  testCases: [{
+    input: String,
+    expectedOutput: String,
+    description: String,
+    isHidden: {
+      type: Boolean,
+      default: false
+    }
   }]
 });
 

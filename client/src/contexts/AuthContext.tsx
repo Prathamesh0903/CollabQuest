@@ -37,8 +37,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const signInWithGoogle = async () => {
-    const redirectTo = window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({ 
+      provider: 'google', 
+      options: { 
+        redirectTo,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      } 
+    });
     if (error) {
       // eslint-disable-next-line no-console
       console.error('Error signing in with Google:', error);
@@ -47,8 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithDiscord = async () => {
-    const redirectTo = window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo } });
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({ 
+      provider: 'discord', 
+      options: { 
+        redirectTo 
+      } 
+    });
     if (error) {
       // eslint-disable-next-line no-console
       console.error('Error signing in with Discord:', error);
