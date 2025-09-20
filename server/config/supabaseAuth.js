@@ -1,18 +1,30 @@
-const { createRemoteJWKSet, jwtVerify } = require('jose');
+// Dynamic import for ES module
+let createRemoteJWKSet, jwtVerify;
 
 // Build JWKS URL from Supabase project URL if not explicitly provided
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || '';
 const SUPABASE_JWKS_URL = process.env.SUPABASE_JWKS_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/keys` : '');
 
 let jwks;
-if (SUPABASE_JWKS_URL) {
+
+// Initialize jose functions and JWKS
+const initializeJose = async () => {
   try {
-    jwks = createRemoteJWKSet(new URL(SUPABASE_JWKS_URL));
+    const jose = await import('jose');
+    createRemoteJWKSet = jose.createRemoteJWKSet;
+    jwtVerify = jose.jwtVerify;
+    
+    if (SUPABASE_JWKS_URL) {
+      jwks = createRemoteJWKSet(new URL(SUPABASE_JWKS_URL));
+    }
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('[SupabaseAuth] Invalid JWKS URL. Set SUPABASE_JWKS_URL or SUPABASE_URL');
+    console.error('[SupabaseAuth] Failed to initialize jose or JWKS:', e.message);
   }
-}
+};
+
+// Initialize immediately
+initializeJose();
 
 const normalizeSupabaseUser = (payload) => {
   return {
@@ -26,6 +38,11 @@ const normalizeSupabaseUser = (payload) => {
 // Verify bearer token from Authorization header, attach req.user (normalized) on success
 const authenticateToken = async (req, res, next) => {
   try {
+    // Ensure jose is initialized
+    if (!jwtVerify || !createRemoteJWKSet) {
+      await initializeJose();
+    }
+
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Access token required' });
@@ -44,6 +61,11 @@ const authenticateToken = async (req, res, next) => {
 // Socket.io authentication using the same JWT
 const authenticateSocket = async (socket, next) => {
   try {
+    // Ensure jose is initialized
+    if (!jwtVerify || !createRemoteJWKSet) {
+      await initializeJose();
+    }
+
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
     if (!token) return next(new Error('Authentication token required'));
     if (!jwks) return next(new Error('Auth not configured: missing JWKS'));
@@ -97,6 +119,11 @@ const getUserByFirebaseUid = async (uid) => {
 
 // Expose a direct verifier for custom flows
 const verifySupabaseToken = async (token) => {
+  // Ensure jose is initialized
+  if (!jwtVerify || !createRemoteJWKSet) {
+    await initializeJose();
+  }
+  
   if (!jwks) throw new Error('Auth not configured: missing JWKS');
   const { payload } = await jwtVerify(token, jwks, {});
   return normalizeSupabaseUser(payload);
