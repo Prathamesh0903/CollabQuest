@@ -12,7 +12,7 @@ router.get('/', auth, async (req, res) => {
     const quizzes = await Quiz.find({
       $or: [
         { createdBy: req.user._id },
-        { isPublic: true }
+        { 'settings.isPublic': true }
       ]
     }).populate('createdBy', 'displayName email');
 
@@ -48,7 +48,9 @@ router.post('/', auth, async (req, res) => {
       title,
       description,
       questions,
-      isPublic,
+      settings: {
+        isPublic: isPublic
+      },
       createdBy: req.user._id
     });
 
