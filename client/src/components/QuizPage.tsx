@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, Clock, Target, CheckCircle, XCircle, 
-  BookOpen, Timer, ArrowRight, Home, Brain, Zap,
+  BookOpen, ArrowRight, Home, Brain, Zap,
   Award, TrendingUp, Star, Eye, EyeOff, HelpCircle
 } from 'lucide-react';
 import './QuizPage.css';
@@ -265,6 +264,7 @@ const QuizPage: React.FC = () => {
     }
   };
 
+
   if (!quizConfig || !category) {
     return null;
   }
@@ -276,13 +276,6 @@ const QuizPage: React.FC = () => {
     
     return (
       <div className="quiz-complete-page">
-        <div className="completion-background">
-          <div className="floating-elements">
-            {[...Array(20)].map((_, i) => (
-              <div key={i} className={`floating-element floating-element-${i % 4}`} />
-            ))}
-          </div>
-        </div>
         
         <div className="completion-container">
           <div className="completion-header">
@@ -346,45 +339,16 @@ const QuizPage: React.FC = () => {
 
   return (
     <div className="quiz-page">
-      {/* Header Section */}
-      <div className="quiz-header">
-        <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/advanced-quiz')}>
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
-        </div>
-
-        <div className="header-center">
-          <div className="quiz-title">{category.title}</div>
-          <div className="quiz-progress">
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span className="progress-text">{currentQuestion + 1} / {totalQuestions}</span>
-          </div>
-        </div>
-
-        <div className="header-right">
-          <div className="quiz-stats">
-            <div className="stat-item">
-              <Clock className="w-4 h-4" />
-              <span>{formatTime(timeLeft)}</span>
-            </div>
-            <div 
-              className="difficulty-badge"
-              style={{ 
-                backgroundColor: quizConfig.difficulty === 'Easy' ? '#059669' : 
-                                quizConfig.difficulty === 'Medium' ? '#d97706' : '#dc2626',
-                color: '#ffffff'
-              }}
-            >
-              {quizConfig.difficulty}
-            </div>
-          </div>
+      {/* Small Header with Timer */}
+      <div className="quiz-header-small">
+        <button className="exit-quiz-btn" onClick={() => navigate('/advanced-quiz')}>
+          <ChevronLeft className="w-4 h-4" />
+          Exit Quiz
+        </button>
+        <h1 className="quiz-title-small">{category.title}</h1>
+        <div className="timer-display">
+          <Clock className="timer-icon" />
+          <span className="timer-text">{formatTime(timeLeft)}</span>
         </div>
       </div>
 

@@ -18,34 +18,15 @@
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 2rem;
-  transition: all 0.3s ease;
   cursor: pointer;
   font-size: 1.25rem;
   font-weight: 600;
   color: #ffffff;
-  position: relative;
-  overflow: hidden;
-}
-
-.true-false-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.5s;
-}
-
-.true-false-button:hover:not(.answered)::before {
-  left: 100%;
 }
 
 .true-false-button:hover:not(.answered) {
   background: rgba(255, 255, 255, 0.1);
   border-color: #667eea;
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
 }
 
@@ -54,7 +35,6 @@
   border-color: #667eea;
   color: white;
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-  animation: neonGlow 2s ease-in-out infinite;
 }
 
 .true-false-button.correct {
@@ -76,14 +56,6 @@
   opacity: 0.8;
 }
 
-@keyframes neonGlow {
-  0%, 100% {
-    box-shadow: 0 0 5px rgba(102, 126, 234, 0.5), 0 0 10px rgba(102, 126, 234, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 10px rgba(102, 126, 234, 0.8), 0 0 20px rgba(102, 126, 234, 0.5);
-  }
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {

@@ -16,14 +16,12 @@
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 1rem;
-  transition: all 0.3s ease;
   color: #ffffff;
 }
 
 .matching-pair:hover:not(.answered) {
   background: rgba(255, 255, 255, 0.1);
   border-color: #667eea;
-  transform: translateY(-2px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
 }
 
@@ -49,7 +47,6 @@
   font-size: 0.875rem;
   background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
-  transition: all 0.3s ease;
 }
 
 .matching-input::placeholder {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { 
   ChevronLeft, Clock, Target, Trophy, Zap, BookOpen, Code, Brain, Star,
   CheckCircle, XCircle, AlertCircle, Play, Pause, RotateCcw, BarChart3,
@@ -271,11 +270,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
 
   if (showResults) {
     return (
-      <motion.div 
-        className="quiz-container"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
+      <div className="quiz-container">
         {renderFloatingElements()}
         {renderParticles()}
         {renderGlowOrbs()}
@@ -296,16 +291,12 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
             }
           }}
         />
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div 
-      className="quiz-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
+    <div className="quiz-container">
       {renderFloatingElements()}
       {renderParticles()}
       {renderGlowOrbs()}
@@ -320,18 +311,14 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           </button>
           
           <div className="quiz-hero">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6 }}
-            >
+            <div>
               <h1 className="quiz-hero-title">
                 Advanced Quiz Mode
               </h1>
               <p className="quiz-hero-subtitle">
                 Challenge yourself with advanced questions, power-ups, and real-time feedback
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -347,12 +334,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
         </div>
 
         <div className="quiz-stats">
-          <motion.div 
-            className="stats-card"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
+          <div className="stats-card">
             <div className="stat-item-large">
               <Star className="w-8 h-8 text-yellow-500" />
               <div>
@@ -383,7 +365,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
       
@@ -393,7 +375,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
         onStart={startQuizWithConfig}
         category={selectedCategoryForConfig!}
       />
-    </motion.div>
+    </div>
   );
 };
 

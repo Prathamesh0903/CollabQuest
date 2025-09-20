@@ -35,31 +35,13 @@
   border-radius: 8px;
   font-weight: 500;
   font-size: 0.875rem;
-  transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
   cursor: pointer;
 }
 
-.back-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.back-button:hover::before {
-  left: 100%;
-}
 
 .back-button:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   border-color: rgba(102, 126, 234, 0.5);
 }
@@ -107,27 +89,9 @@
   height: 100%;
   background: linear-gradient(90deg, #3b82f6, #1d4ed8);
   border-radius: 2px;
-  transition: width 0.3s ease;
   position: relative;
 }
 
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: progressShine 2s infinite;
-}
-
-@keyframes progressShine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Enhanced Timer with Pulse Effect */
 .timer {
   display: flex;
   align-items: center;
@@ -138,40 +102,6 @@
   border-radius: 12px;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-  animation: timerPulse 2s infinite;
-  position: relative;
-  overflow: hidden;
-}
-
-.timer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: timerShine 3s infinite;
-}
-
-@keyframes timerPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
-  }
-}
-
-@keyframes timerShine {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
 }
 
 .difficulty-badge {
@@ -210,7 +140,6 @@
   padding: 0.5rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,7 +149,6 @@
   background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   border-color: rgba(102, 126, 234, 0.5);
-  transform: translateY(-1px);
 }
 
 .pause-button {
@@ -234,12 +162,10 @@
   border-radius: 50%;
   color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .pause-button:hover {
   background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
 }
 
 /* Responsive Design */

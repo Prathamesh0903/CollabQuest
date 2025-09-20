@@ -46,9 +46,9 @@ NODE_ENV=production
 PORT=10000
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/collaborative_coding?retryWrites=true&w=majority
 JWT_SECRET=your-super-secret-jwt-key-change-this
-FIREBASE_PROJECT_ID=your-firebase-project-id
-FIREBASE_PRIVATE_KEY=your-firebase-private-key
-FIREBASE_CLIENT_EMAIL=your-firebase-client-email
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_JWKS_URL=https://your-project.supabase.co/auth/v1/keys
 CLIENT_URL=https://your-frontend.onrender.com
 DOCKER_ENABLED=false
 EOF
@@ -79,7 +79,7 @@ echo "3. Connect your GitHub repository"
 echo "4. Render will automatically detect render.yaml and create services"
 echo "5. Update environment variables in Render dashboard with your actual values:"
 echo "   - MongoDB Atlas connection string"
-echo "   - Firebase credentials"
+echo "   - Supabase URL and service role key"
 echo "   - JWT secret"
 echo "6. Update CLIENT_URL and REACT_APP_API_URL with your actual Render URLs"
 echo ""

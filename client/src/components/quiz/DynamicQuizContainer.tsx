@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { 
   ChevronLeft, Clock, Brain, Trophy, Code, CheckCircle, XCircle,
   Play, Pause, RotateCcw, BarChart3, Users, TrendingUp, Lightbulb,
@@ -362,11 +361,7 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
 
   if (!isQuizActive) {
     return (
-      <motion.div 
-        className="quiz-start"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
+      <div className="quiz-start">
         <div className="start-card">
           <div className="start-header">
             <Brain className="w-16 h-16 text-blue-500 mb-4" />
@@ -404,18 +399,14 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   const currentQ = questions[currentQuestionIndex];
 
   return (
-    <motion.div 
-      className="advanced-quiz-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
+    <div className="advanced-quiz-container">
       <QuizHeader
         selectedCategory={null}
         currentQuestion={currentQuestionIndex}
@@ -435,14 +426,7 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
           onPowerUp={handlePowerUp}
         />
 
-        <motion.div 
-          className="question-card"
-          key={currentQuestionIndex}
-          initial={{ x: 300, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -300, opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="question-card">
           <div className="question-header">
             <span className="question-number">Question {currentQuestionIndex + 1}</span>
             <span className="question-type">{currentQ.type.replace('-', ' ').toUpperCase()}</span>
@@ -481,9 +465,9 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
               </button>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

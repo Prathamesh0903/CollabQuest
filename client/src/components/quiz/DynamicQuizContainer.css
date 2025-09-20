@@ -100,20 +100,17 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
   flex: 1;
   min-width: 150px;
 }
 
 .btn-submit:hover:not(:disabled) {
   background: #5a67d8;
-  transform: translateY(-2px);
 }
 
 .btn-submit:disabled {
   background: #cbd5e0;
   cursor: not-allowed;
-  transform: none;
 }
 
 .btn-hint {
@@ -128,18 +125,15 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-hint:hover:not(:disabled) {
   background: #d97706;
-  transform: translateY(-2px);
 }
 
 .btn-hint:disabled {
   background: #cbd5e0;
   cursor: not-allowed;
-  transform: none;
 }
 
 /* Quiz Start Screen */
@@ -212,13 +206,11 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
   min-width: 120px;
 }
 
 .btn-primary:hover {
   background: #5a67d8;
-  transform: translateY(-2px);
 }
 
 .btn-secondary {
@@ -230,13 +222,11 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
   min-width: 120px;
 }
 
 .btn-secondary:hover {
   background: #cbd5e0;
-  transform: translateY(-2px);
 }
 
 /* Error State */

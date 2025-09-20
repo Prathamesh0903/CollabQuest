@@ -3,7 +3,7 @@ services:
     name: collab-backend
     env: node
     buildCommand: cd server && npm install
-    startCommand: cd server && npm start
+    startCommand: cd server && npm run start:with-seed
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,11 +15,11 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-      - key: FIREBASE_PROJECT_ID
+      - key: SUPABASE_URL
         sync: false
-      - key: FIREBASE_PRIVATE_KEY
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: FIREBASE_CLIENT_EMAIL
+      - key: SUPABASE_JWKS_URL
         sync: false
       - key: CLIENT_URL
         value: https://your-frontend.onrender.com
