@@ -1,0 +1,130 @@
+/* Multiple Choice Question Styles */
+.multiple-choice-container {
+  margin-bottom: 2rem;
+}
+
+.options-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Enhanced Option Buttons */
+.option-button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  animation: optionHover 4s ease-in-out infinite;
+}
+
+.option-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.option-button:hover::before {
+  left: 100%;
+}
+
+.option-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+}
+
+.option-button.selected {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  animation: neonGlow 2s ease-in-out infinite;
+}
+
+.option-button.correct {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.option-button.incorrect {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #ef4444;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+.option-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+@keyframes optionHover {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes neonGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.5), 0 0 10px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.8), 0 0 20px rgba(102, 126, 234, 0.5);
+  }
+}
+
+.option-letter {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.option-button.selected .option-letter,
+.option-button.correct .option-letter {
+  background: white;
+  color: #667eea;
+}
+
+.option-button.incorrect .option-letter {
+  background: white;
+  color: #ef4444;
+}
+
+.option-text {
+  flex: 1;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .option-button {
+    padding: 1rem;
+  }
+}

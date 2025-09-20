@@ -1,0 +1,46 @@
+/* Fill in the Blank Question Styles */
+.fill-blank-container {
+  margin-bottom: 2rem;
+}
+
+.fill-blank-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-family: inherit;
+}
+
+.fill-blank-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.fill-blank-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.fill-blank-input:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.explanation {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.explanation strong {
+  color: #10b981;
+}
