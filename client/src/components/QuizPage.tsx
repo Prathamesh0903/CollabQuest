@@ -374,10 +374,6 @@ const QuizPage: React.FC = () => {
               <Clock className="w-4 h-4" />
               <span>{formatTime(timeLeft)}</span>
             </div>
-            <div className="stat-item">
-              <Zap className="w-4 h-4" />
-              <span>{streak}</span>
-            </div>
             <div 
               className="difficulty-badge"
               style={{ 

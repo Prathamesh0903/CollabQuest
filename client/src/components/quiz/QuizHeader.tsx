@@ -53,6 +53,14 @@ const QuizHeader: React.FC<QuizHeaderProps> = ({
             <span className="question-counter">
               Question {currentQuestion + 1} of {totalQuestions}
             </span>
+            <div className="quiz-progress">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
+                />
+              </div>
+            </div>
             <div className="timer">
               <Clock className="w-4 h-4" />
               {formatTime(timeLeft)}
@@ -77,10 +85,6 @@ const QuizHeader: React.FC<QuizHeaderProps> = ({
           ))}
         </div>
 
-        <div className="streak-container">
-          <Zap className="w-5 h-5 text-yellow-500" />
-          <span>{currentStreak}</span>
-        </div>
 
         {onShowConfig && (
           <button 
