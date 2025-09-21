@@ -1,51 +1,110 @@
+// Quiz Service - Provides quiz data from local datasets instead of database
+// This service replaces database queries with static quiz data for better performance
+
 import { API_BASE } from '../utils/api';
 import { ServerQuiz, QuizConfig } from '../components/quiz/types';
 
+export interface QuizQuestion {
+  id: string;
+  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'matching' | 'coding' | 'predict-output';
+  question: string;
+  options?: Array<{
+    text: string;
+    isCorrect: boolean;
+  }>;
+  correctAnswer?: string;
+  explanation?: string;
+  points: number;
+  timeLimit: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+  codeSnippet?: string;
+  language?: string;
+  testCases?: Array<{
+    input: string;
+    expectedOutput: string;
+    description: string;
+    isHidden?: boolean;
+  }>;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  questions: QuizQuestion[];
+  category: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  tags: string[];
+  settings: {
+    isPublic: boolean;
+    allowRetakes: boolean;
+    maxAttempts: number;
+    showResults: boolean;
+    showCorrectAnswers: boolean;
+    randomizeQuestions: boolean;
+    timeLimit: number;
+  };
+  stats: {
+    totalAttempts: number;
+    totalParticipants: number;
+    averageScore: number;
+    averageTime: number;
+    completionRate: number;
+  };
+}
+
 export interface QuizFilters {
-  page?: number;
-  limit?: number;
   category?: string;
   difficulty?: string;
   search?: string;
+  page?: number;
+  limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  status?: string;
 }
 
 export interface QuizResponse {
   success: boolean;
-  quizzes: ServerQuiz[];
-  totalPages?: number;
-  currentPage?: number;
-  total?: number;
-}
-
-export interface SingleQuizResponse {
-  success: boolean;
-  quiz: ServerQuiz;
+  quizzes?: Quiz[];
+  quiz?: Quiz;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  stats?: {
+    totalQuizzes: number;
+    avgQuestions: number;
+    avgScore: number;
+    totalAttempts: number;
+  };
+  error?: string;
+  message?: string;
 }
 
 class QuizService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${API_BASE}/quizzes`;
+    this.baseUrl = '/api/quizzes';
   }
 
   private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
     const token = localStorage.getItem('token');
     
-    const defaultHeaders = {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
+      ...options,
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers
-      }
-    });
+    const response = await fetch(url, config);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -77,64 +136,45 @@ class QuizService {
       }
     });
 
-    const url = `${API_BASE}/advanced-quizzes${params.toString() ? `?${params.toString()}` : ''}`;
+    const url = `/api/advanced-quizzes${params.toString() ? `?${params.toString()}` : ''}`;
     return this.makeRequest<QuizResponse>(url);
   }
 
-  async getQuizById(id: string): Promise<SingleQuizResponse> {
-    const url = `${this.baseUrl}/${id}`;
-    return this.makeRequest<SingleQuizResponse>(url);
+  async getQuizById(id: string): Promise<QuizResponse> {
+    const url = `/api/advanced-quizzes/${id}`;
+    return this.makeRequest<QuizResponse>(url);
   }
 
-  async getAdvancedQuizById(id: string): Promise<SingleQuizResponse> {
-    const url = `${API_BASE}/advanced-quizzes/${id}`;
-    return this.makeRequest<SingleQuizResponse>(url);
-  }
-
-  async createQuiz(quizData: Partial<ServerQuiz>): Promise<SingleQuizResponse> {
-    return this.makeRequest<SingleQuizResponse>(this.baseUrl, {
+  async createQuiz(quizData: Partial<Quiz>): Promise<QuizResponse> {
+    const url = this.baseUrl;
+    return this.makeRequest<QuizResponse>(url, {
       method: 'POST',
-      body: JSON.stringify(quizData)
+      body: JSON.stringify(quizData),
     });
   }
 
-  async updateQuiz(id: string, quizData: Partial<ServerQuiz>): Promise<SingleQuizResponse> {
-    const url = `${this.baseUrl}/${id}`;
-    return this.makeRequest<SingleQuizResponse>(url, {
+  async updateQuiz(id: string, quizData: Partial<Quiz>): Promise<QuizResponse> {
+    const url = `/api/advanced-quizzes/${id}`;
+    return this.makeRequest<QuizResponse>(url, {
       method: 'PUT',
-      body: JSON.stringify(quizData)
+      body: JSON.stringify(quizData),
     });
   }
 
-  async deleteQuiz(id: string): Promise<{ success: boolean }> {
-    const url = `${this.baseUrl}/${id}`;
-    return this.makeRequest<{ success: boolean }>(url, {
-      method: 'DELETE'
+  async deleteQuiz(id: string): Promise<QuizResponse> {
+    const url = `/api/advanced-quizzes/${id}`;
+    return this.makeRequest<QuizResponse>(url, {
+      method: 'DELETE',
     });
   }
 
-  async submitQuizAttempt(quizId: string, answers: any[], timeSpent: number): Promise<{ success: boolean; score: number; totalQuestions: number }> {
-    const url = `${this.baseUrl}/${quizId}/attempt`;
-    return this.makeRequest<{ success: boolean; score: number; totalQuestions: number }>(url, {
+  async submitQuizAttempt(quizId: string, answers: any[]): Promise<QuizResponse> {
+    const url = `/api/advanced-quizzes/${quizId}/attempt`;
+    return this.makeRequest<QuizResponse>(url, {
       method: 'POST',
-      body: JSON.stringify({ answers, timeSpent })
+      body: JSON.stringify({ answers }),
     });
-  }
-
-  // Get quizzes by category
-  async getQuizzesByCategory(category: string, difficulty?: string): Promise<QuizResponse> {
-    const filters: QuizFilters = { category };
-    if (difficulty) {
-      filters.difficulty = difficulty;
-    }
-    return this.getAdvancedQuizzes(filters);
-  }
-
-  // Get JavaScript quizzes specifically
-  async getJavaScriptQuizzes(): Promise<QuizResponse> {
-    return this.getQuizzesByCategory('JavaScript Fundamentals');
   }
 }
 
-export const quizService = new QuizService();
-export default quizService;
+export default new QuizService();

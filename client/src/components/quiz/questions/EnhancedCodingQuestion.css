@@ -1,0 +1,263 @@
+/* Enhanced Coding Question Styles */
+.enhanced-coding-container {
+  margin-bottom: 2rem;
+}
+
+.code-editor-container {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  background: rgba(26, 32, 44, 0.8);
+}
+
+.code-editor-header {
+  background: rgba(45, 55, 72, 0.9);
+  color: white;
+  padding: 15px 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-editor-header span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.run-button:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.run-button:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.code-editor {
+  width: 100%;
+  min-height: 250px;
+  padding: 20px;
+  border: none;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: rgba(26, 32, 44, 0.8);
+  color: #e2e8f0;
+}
+
+.code-editor:focus {
+  outline: none;
+}
+
+.code-editor:disabled {
+  background: rgba(45, 55, 72, 0.8);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.code-editor::placeholder {
+  color: rgba(226, 232, 240, 0.5);
+}
+
+.test-cases {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.test-cases h4 {
+  margin: 0 0 15px 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-case {
+  margin-bottom: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.test-case:last-child {
+  margin-bottom: 0;
+}
+
+.test-case-header {
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.test-case-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.test-case-details code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.85rem;
+}
+
+.test-result {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.test-result.passed {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.test-result.failed {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.test-result div {
+  margin-top: 5px;
+  font-weight: normal;
+  font-size: 0.85rem;
+}
+
+.execution-output {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.output-header {
+  background: rgba(45, 55, 72, 0.9);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.output-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-summary {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.error-output,
+.success-output {
+  padding: 15px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.error-output {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.success-output {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.error-output pre,
+.success-output pre {
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+}
+
+.execution-time {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+}
+
+/* Animation for loading spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .code-editor {
+    min-height: 200px;
+    font-size: 0.8rem;
+  }
+  
+  .test-case-details {
+    font-size: 0.8rem;
+  }
+  
+  .run-button {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+}
