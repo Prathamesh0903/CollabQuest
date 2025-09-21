@@ -5,6 +5,7 @@ import {
   BookOpen, ArrowRight, Home, Brain, Zap,
   Award, TrendingUp, Star, Eye, EyeOff, HelpCircle
 } from 'lucide-react';
+import EnhancedCodingQuestion from './quiz/questions/EnhancedCodingQuestion';
 import './QuizPage.css';
 
 interface QuizCategory {
@@ -28,7 +29,7 @@ interface QuizConfig {
 
 interface Question {
   id: string;
-  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding';
+  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding' | 'predict-output';
   question: string;
   options?: Array<{text: string, isCorrect: boolean}>;
   correctAnswer?: string | number | boolean;
@@ -194,8 +195,9 @@ const javascriptQuestions: Question[] = [
   // Easy Predict Output Questions
   {
     id: 'js-easy-9',
-    type: 'multiple-choice',
+    type: 'predict-output',
     question: 'What will be the output of: console.log(typeof null);',
+    codeSnippet: 'console.log(typeof null);',
     options: [
       { text: 'null', isCorrect: false },
       { text: 'object', isCorrect: true },
@@ -211,8 +213,9 @@ const javascriptQuestions: Question[] = [
   
   {
     id: 'js-easy-10',
-    type: 'multiple-choice',
+    type: 'predict-output',
     question: 'What will be the output of: console.log(2 + 2 * 3);',
+    codeSnippet: 'console.log(2 + 2 * 3);',
     options: [
       { text: '12', isCorrect: false },
       { text: '8', isCorrect: true },
@@ -224,6 +227,42 @@ const javascriptQuestions: Question[] = [
     timeLimit: 30,
     difficulty: 'easy',
     tags: ['operator-precedence', 'arithmetic']
+  },
+
+  {
+    id: 'js-easy-11',
+    type: 'predict-output',
+    question: 'What will be the output of: console.log(5 + "5");',
+    codeSnippet: 'console.log(5 + "5");',
+    options: [
+      { text: '10', isCorrect: false },
+      { text: '55', isCorrect: true },
+      { text: 'Error', isCorrect: false },
+      { text: 'undefined', isCorrect: false }
+    ],
+    explanation: 'When adding a number and a string, JavaScript converts the number to a string and concatenates them.',
+    points: 10,
+    timeLimit: 30,
+    difficulty: 'easy',
+    tags: ['type-coercion', 'concatenation']
+  },
+
+  {
+    id: 'js-easy-12',
+    type: 'predict-output',
+    question: 'What will be the output of: console.log([1, 2, 3].length);',
+    codeSnippet: 'console.log([1, 2, 3].length);',
+    options: [
+      { text: '3', isCorrect: true },
+      { text: '2', isCorrect: false },
+      { text: '4', isCorrect: false },
+      { text: 'undefined', isCorrect: false }
+    ],
+    explanation: 'The length property returns the number of elements in the array.',
+    points: 10,
+    timeLimit: 30,
+    difficulty: 'easy',
+    tags: ['arrays', 'length', 'properties']
   },
   
   // ==================== MEDIUM LEVEL QUESTIONS ====================
@@ -375,8 +414,9 @@ const javascriptQuestions: Question[] = [
   // Medium Predict Output Questions
   {
     id: 'js-medium-9',
-    type: 'multiple-choice',
+    type: 'predict-output',
     question: 'What will be the output of: console.log([1, 2, 3] + [4, 5, 6]);',
+    codeSnippet: 'console.log([1, 2, 3] + [4, 5, 6]);',
     options: [
       { text: '[1, 2, 3, 4, 5, 6]', isCorrect: false },
       { text: '1,2,34,5,6', isCorrect: true },
@@ -392,8 +432,9 @@ const javascriptQuestions: Question[] = [
   
   {
     id: 'js-medium-10',
-    type: 'multiple-choice',
+    type: 'predict-output',
     question: 'What will be the output of: console.log(0.1 + 0.2 === 0.3);',
+    codeSnippet: 'console.log(0.1 + 0.2 === 0.3);',
     options: [
       { text: 'true', isCorrect: false },
       { text: 'false', isCorrect: true },
@@ -405,6 +446,24 @@ const javascriptQuestions: Question[] = [
     timeLimit: 45,
     difficulty: 'medium',
     tags: ['floating-point', 'precision', 'comparison']
+  },
+
+  {
+    id: 'js-medium-11',
+    type: 'predict-output',
+    question: 'What will be the output of: console.log(typeof function() {});',
+    codeSnippet: 'console.log(typeof function() {});',
+    options: [
+      { text: 'function', isCorrect: true },
+      { text: 'object', isCorrect: false },
+      { text: 'undefined', isCorrect: false },
+      { text: 'Error', isCorrect: false }
+    ],
+    explanation: 'Functions have their own typeof value in JavaScript.',
+    points: 15,
+    timeLimit: 45,
+    difficulty: 'medium',
+    tags: ['functions', 'typeof']
   },
   
   // ==================== HARD LEVEL QUESTIONS ====================
@@ -567,8 +626,9 @@ const javascriptQuestions: Question[] = [
   // Hard Predict Output Questions
   {
     id: 'js-hard-9',
-    type: 'multiple-choice',
+    type: 'predict-output',
     question: 'What will be the output of: console.log([...\'hello\'].map((c, i) => c + i).join(\'\'));',
+    codeSnippet: 'console.log([...\'hello\'].map((c, i) => c + i).join(\'\'));',
     options: [
       { text: 'hello', isCorrect: false },
       { text: 'h0e1l2l3o4', isCorrect: true },
@@ -584,8 +644,9 @@ const javascriptQuestions: Question[] = [
   
   {
     id: 'js-hard-10',
-    type: 'multiple-choice',
+    type: 'predict-output',
     question: 'What will be the output of: console.log((() => { let x = y = 1; })(); console.log(typeof x, typeof y);',
+    codeSnippet: 'console.log((() => { let x = y = 1; })(); console.log(typeof x, typeof y);',
     options: [
       { text: 'undefined undefined', isCorrect: false },
       { text: 'undefined number', isCorrect: true },
@@ -597,6 +658,141 @@ const javascriptQuestions: Question[] = [
     timeLimit: 60,
     difficulty: 'hard',
     tags: ['scope', 'let', 'global-variables', 'assignment']
+  },
+
+  {
+    id: 'js-hard-11',
+    type: 'predict-output',
+    question: 'What will be the output of: console.log(!![] + !!{});',
+    codeSnippet: 'console.log(!![] + !!{});',
+    options: [
+      { text: '2', isCorrect: true },
+      { text: 'true', isCorrect: false },
+      { text: 'false', isCorrect: false },
+      { text: 'Error', isCorrect: false }
+    ],
+    explanation: '!![] and !!{} both convert to true, then true + true = 2 (type coercion).',
+    points: 20,
+    timeLimit: 60,
+    difficulty: 'hard',
+    tags: ['type-coercion', 'boolean-conversion', 'arithmetic']
+  },
+
+  // ==================== MEDIUM CODING QUESTIONS ====================
+  {
+    id: 'js-medium-coding-1',
+    type: 'coding',
+    question: 'Write a function called `findMax` that takes an array of numbers and returns the maximum number. The function should handle edge cases like empty arrays.',
+    codeSnippet: 'function findMax(numbers) {\n  // Write your code here\n}',
+    language: 'javascript',
+    testCases: [
+      {
+        input: '[1, 5, 3, 9, 2]',
+        expectedOutput: '9',
+        description: 'Array with positive numbers'
+      },
+      {
+        input: '[-1, -5, -3, -9, -2]',
+        expectedOutput: '-1',
+        description: 'Array with negative numbers'
+      },
+      {
+        input: '[]',
+        expectedOutput: 'undefined',
+        description: 'Empty array'
+      }
+    ],
+    explanation: 'The function should iterate through the array and keep track of the maximum value found. For empty arrays, return undefined.',
+    points: 25,
+    timeLimit: 300,
+    difficulty: 'medium',
+    tags: ['functions', 'arrays', 'loops', 'edge-cases']
+  },
+
+  {
+    id: 'js-medium-coding-2',
+    type: 'coding',
+    question: 'Write a function called `isPalindrome` that checks if a given string is a palindrome (reads the same forwards and backwards). The function should be case-insensitive and ignore spaces.',
+    codeSnippet: 'function isPalindrome(str) {\n  // Write your code here\n}',
+    language: 'javascript',
+    testCases: [
+      {
+        input: '"racecar"',
+        expectedOutput: 'true',
+        description: 'Simple palindrome'
+      },
+      {
+        input: '"A man a plan a canal Panama"',
+        expectedOutput: 'true',
+        description: 'Palindrome with spaces and mixed case'
+      },
+      {
+        input: '"hello"',
+        expectedOutput: 'false',
+        description: 'Non-palindrome'
+      }
+    ],
+    explanation: 'Convert to lowercase, remove spaces, then compare the string with its reverse.',
+    points: 25,
+    timeLimit: 300,
+    difficulty: 'medium',
+    tags: ['strings', 'palindrome', 'string-manipulation', 'case-insensitive']
+  },
+
+  // ==================== HARD CODING QUESTIONS ====================
+  {
+    id: 'js-hard-coding-1',
+    type: 'coding',
+    question: 'Write a function called `deepClone` that creates a deep copy of a nested object. The function should handle objects, arrays, and primitive values.',
+    codeSnippet: 'function deepClone(obj) {\n  // Write your code here\n}',
+    language: 'javascript',
+    testCases: [
+      {
+        input: '{ a: 1, b: { c: 2, d: [3, 4] } }',
+        expectedOutput: '{ a: 1, b: { c: 2, d: [3, 4] } }',
+        description: 'Nested object with array'
+      },
+      {
+        input: '[1, { a: 2 }, [3, 4]]',
+        expectedOutput: '[1, { a: 2 }, [3, 4]]',
+        description: 'Array with nested objects'
+      },
+      {
+        input: 'null',
+        expectedOutput: 'null',
+        description: 'Null value'
+      }
+    ],
+    explanation: 'Use recursion to handle nested structures. Check for arrays, objects, and primitive values.',
+    points: 30,
+    timeLimit: 400,
+    difficulty: 'hard',
+    tags: ['objects', 'recursion', 'deep-clone', 'nested-structures']
+  },
+
+  {
+    id: 'js-hard-coding-2',
+    type: 'coding',
+    question: 'Write a function called `debounce` that limits the rate at which a function can fire. The function should delay the execution of the provided function until after a specified time has passed since its last invocation.',
+    codeSnippet: 'function debounce(func, delay) {\n  // Write your code here\n}',
+    language: 'javascript',
+    testCases: [
+      {
+        input: 'debounce(() => console.log("Hello"), 100)',
+        expectedOutput: 'Function that delays execution',
+        description: 'Basic debounce functionality'
+      },
+      {
+        input: 'debounce((x) => x * 2, 50)',
+        expectedOutput: 'Function that delays execution with parameters',
+        description: 'Debounce with parameters'
+      }
+    ],
+    explanation: 'Use setTimeout and clearTimeout to manage the delay. Store the timeout ID and clear it on each new call.',
+    points: 30,
+    timeLimit: 400,
+    difficulty: 'hard',
+    tags: ['functions', 'timers', 'setTimeout', 'clearTimeout', 'higher-order-functions']
   }
 ];
 
@@ -606,6 +802,7 @@ const QuizPage: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [codingAnswer, setCodingAnswer] = useState<string>('');
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isQuizComplete, setIsQuizComplete] = useState(false);
@@ -626,15 +823,89 @@ const QuizPage: React.FC = () => {
   const quizConfig = location.state?.quizConfig as QuizConfig;
   const category = location.state?.category as QuizCategory;
 
+  // Filter questions based on difficulty level
+  const filterQuestionsByDifficulty = (difficulty: string, questionCount: number): Question[] => {
+    let filteredQuestions: Question[] = [];
+    
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        // Easy: MCQ, True/False, Predict Output
+        const easyQuestions = javascriptQuestions.filter(q => 
+          q.difficulty === 'easy' && 
+          ['multiple-choice', 'true-false', 'predict-output'].includes(q.type)
+        );
+        filteredQuestions = easyQuestions;
+        break;
+        
+      case 'medium':
+        // Medium: Easy types + Coding questions (at least 2 per 5 questions)
+        const mediumQuestions = javascriptQuestions.filter(q => 
+          q.difficulty === 'medium' && 
+          ['multiple-choice', 'true-false', 'predict-output', 'coding'].includes(q.type)
+        );
+        
+        // Ensure at least 2 coding questions per 5 questions
+        const codingQuestions = mediumQuestions.filter(q => q.type === 'coding');
+        const nonCodingQuestions = mediumQuestions.filter(q => q.type !== 'coding');
+        
+        // Calculate how many coding questions we need
+        const requiredCodingQuestions = Math.max(2, Math.ceil(questionCount * 0.4));
+        const selectedCodingQuestions = codingQuestions.slice(0, Math.min(requiredCodingQuestions, codingQuestions.length));
+        
+        // Fill the rest with non-coding questions
+        const remainingSlots = questionCount - selectedCodingQuestions.length;
+        const selectedNonCodingQuestions = nonCodingQuestions.slice(0, remainingSlots);
+        
+        filteredQuestions = [...selectedCodingQuestions, ...selectedNonCodingQuestions];
+        break;
+        
+      case 'hard':
+        // Hard: Medium types with upgraded difficulty
+        const hardQuestions = javascriptQuestions.filter(q => 
+          q.difficulty === 'hard' && 
+          ['multiple-choice', 'true-false', 'predict-output', 'coding'].includes(q.type)
+        );
+        
+        // Ensure at least 2 coding questions per 5 questions
+        const hardCodingQuestions = hardQuestions.filter(q => q.type === 'coding');
+        const hardNonCodingQuestions = hardQuestions.filter(q => q.type !== 'coding');
+        
+        // Calculate how many coding questions we need
+        const requiredHardCodingQuestions = Math.max(2, Math.ceil(questionCount * 0.4));
+        const selectedHardCodingQuestions = hardCodingQuestions.slice(0, Math.min(requiredHardCodingQuestions, hardCodingQuestions.length));
+        
+        // Fill the rest with non-coding questions
+        const remainingHardSlots = questionCount - selectedHardCodingQuestions.length;
+        const selectedHardNonCodingQuestions = hardNonCodingQuestions.slice(0, remainingHardSlots);
+        
+        filteredQuestions = [...selectedHardCodingQuestions, ...selectedHardNonCodingQuestions];
+        break;
+        
+      default:
+        filteredQuestions = javascriptQuestions;
+    }
+    
+    // Shuffle and limit to requested count
+    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, questionCount);
+  };
+
   // Load JavaScript quiz dataset
   const loadJavaScriptQuiz = () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Use the local JavaScript questions dataset
-      setQuestions(javascriptQuestions);
-      setTotalQuestions(javascriptQuestions.length);
+      // Filter questions based on difficulty and question count
+      const filteredQuestions = filterQuestionsByDifficulty(quizConfig.difficulty, quizConfig.questionCount);
+      
+      if (filteredQuestions.length === 0) {
+        setError('No questions available for the selected difficulty level');
+        return;
+      }
+      
+      setQuestions(filteredQuestions);
+      setTotalQuestions(filteredQuestions.length);
     } catch (err) {
       console.error('Error loading JavaScript quiz:', err);
       setError('Failed to load quiz questions');
@@ -681,6 +952,7 @@ const QuizPage: React.FC = () => {
     setQuestionStartTime(Date.now());
     setShowHint(false);
     setSelectedAnswer(null);
+    setCodingAnswer('');
   }, [currentQuestion]);
 
   const formatTime = (seconds: number): string => {
@@ -703,6 +975,7 @@ const QuizPage: React.FC = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(prev => prev - 1);
       setSelectedAnswer(null);
+      setCodingAnswer('');
       setShowExplanation(false);
       setShowHint(false);
       setQuestionStartTime(Date.now());
@@ -710,30 +983,36 @@ const QuizPage: React.FC = () => {
   };
 
   const handleNextQuestion = () => {
-    if (selectedAnswer === null || questions.length === 0) return;
+    if (questions.length === 0) return;
 
     const currentQ = questions[currentQuestion];
     if (!currentQ) return;
 
     // Handle different question types
     let isCorrect = false;
-    if (currentQ.type === 'multiple-choice') {
-      // For multiple choice, check if selected answer index matches correct option
-      const correctOptionIndex = currentQ.options?.findIndex(opt => opt.isCorrect);
-      isCorrect = selectedAnswer === correctOptionIndex;
-    } else if (currentQ.type === 'true-false') {
-      isCorrect = selectedAnswer === currentQ.correctAnswer;
-    } else {
-      // For other types, use the correctAnswer directly
-      isCorrect = selectedAnswer === currentQ.correctAnswer;
+    if (currentQ.type === 'coding') {
+      // For coding questions, check if there's code written
+      isCorrect = codingAnswer.trim().length > 0;
+    } else if (selectedAnswer !== null) {
+      if (currentQ.type === 'multiple-choice') {
+        // For multiple choice, check if selected answer index matches correct option
+        const correctOptionIndex = currentQ.options?.findIndex(opt => opt.isCorrect);
+        isCorrect = selectedAnswer === correctOptionIndex;
+      } else if (currentQ.type === 'true-false') {
+        isCorrect = selectedAnswer === currentQ.correctAnswer;
+      } else {
+        // For other types, use the correctAnswer directly
+        isCorrect = selectedAnswer === currentQ.correctAnswer;
+      }
     }
+    // If no answer is provided, isCorrect remains false
 
     const points = isCorrect ? currentQ.points : 0;
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
 
     const userAnswer: UserAnswer = {
       questionId: currentQ.id,
-      answer: selectedAnswer,
+      answer: currentQ.type === 'coding' ? codingAnswer : (selectedAnswer !== null ? selectedAnswer : -1),
       timeSpent,
       isCorrect,
       points
@@ -916,12 +1195,18 @@ const QuizPage: React.FC = () => {
           <ChevronLeft className="w-4 h-4" />
           Exit Quiz
         </button>
-        <h1 className="quiz-title-small">{category.title}</h1>
+        <h1 className="quiz-title-small">
+          {category.title} 
+          <span className="progress-counter">
+            {currentQuestion + 1}/{Math.min(quizConfig.questionCount, questions.length)}
+          </span>
+        </h1>
         <div className="timer-display">
           <Clock className="timer-icon" />
           <span className="timer-text">{formatTime(timeLeft)}</span>
         </div>
       </div>
+
 
       {/* Main Quiz Content */}
       <div className="quiz-main">
@@ -931,6 +1216,9 @@ const QuizPage: React.FC = () => {
             <div className="question-meta">
               <span className="question-number">Question {currentQuestion + 1}</span>
               <span className="question-type">{currentQ.type.replace('-', ' ').toUpperCase()}</span>
+              <span className="difficulty-badge" style={{ backgroundColor: getDifficultyColor(quizConfig.difficulty) }}>
+                {quizConfig.difficulty}
+              </span>
             </div>
             <div className="question-points">{currentQ.points} pts</div>
           </div>
@@ -941,31 +1229,96 @@ const QuizPage: React.FC = () => {
           </div>
 
           {/* Answer Options */}
-          <div className="answer-grid">
-            {currentQ.options?.map((option, index) => (
-              <button
-                key={index}
-                className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
-                  showExplanation ? 
-                    (typeof option === 'object' && option.isCorrect ? 'correct' : 
-                     selectedAnswer === index ? 'incorrect' : '') : ''
-                }`}
-                onClick={() => !showExplanation && handleAnswerSelect(index)}
-                disabled={showExplanation}
-              >
-                <div className="answer-content">
-                  <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
-                  <div className="answer-text">{typeof option === 'string' ? option : option.text}</div>
+          {currentQ.type === 'coding' ? (
+            <EnhancedCodingQuestion
+              question={currentQ.question}
+              codeSnippet={currentQ.codeSnippet}
+              language={currentQ.language}
+              testCases={currentQ.testCases}
+              answer={codingAnswer}
+              showExplanation={showExplanation}
+              onAnswerChange={setCodingAnswer}
+            />
+          ) : currentQ.type === 'predict-output' ? (
+            <div className="predict-output-container">
+              {/* Code Snippet Display */}
+              {currentQ.codeSnippet && (
+                <div className="code-snippet-display">
+                  <div className="code-header">
+                    <span>Code:</span>
+                  </div>
+                  <pre className="code-content">
+                    <code>{currentQ.codeSnippet}</code>
+                  </pre>
                 </div>
-                {showExplanation && typeof option === 'object' && option.isCorrect && (
-                  <CheckCircle className="w-6 h-6 answer-icon correct" />
-                )}
-                {showExplanation && selectedAnswer === index && typeof option === 'object' && !option.isCorrect && (
-                  <XCircle className="w-6 h-6 answer-icon incorrect" />
-                )}
-              </button>
-            ))}
-          </div>
+              )}
+              
+              {/* Answer Options */}
+              <div className="answer-grid">
+                {currentQ.options?.map((option, index) => {
+                  const isObjectOption = typeof option === 'object' && 'text' in option && 'isCorrect' in option;
+                  const optionText = isObjectOption ? option.text : option as string;
+                  const isCorrect = isObjectOption ? option.isCorrect : false;
+                  
+                  return (
+                    <button
+                      key={index}
+                      className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
+                        showExplanation ? 
+                          (isCorrect ? 'correct' : 
+                           selectedAnswer === index ? 'incorrect' : '') : ''
+                      }`}
+                      onClick={() => !showExplanation && handleAnswerSelect(index)}
+                      disabled={showExplanation}
+                    >
+                      <div className="answer-content">
+                        <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
+                        <div className="answer-text">{optionText}</div>
+                      </div>
+                      {showExplanation && isCorrect && (
+                        <CheckCircle className="w-6 h-6 answer-icon correct" />
+                      )}
+                      {showExplanation && selectedAnswer === index && !isCorrect && (
+                        <XCircle className="w-6 h-6 answer-icon incorrect" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="answer-grid">
+              {currentQ.options?.map((option, index) => {
+                const isObjectOption = typeof option === 'object' && 'text' in option && 'isCorrect' in option;
+                const optionText = isObjectOption ? option.text : option as string;
+                const isCorrect = isObjectOption ? option.isCorrect : false;
+                
+                return (
+                  <button
+                    key={index}
+                    className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
+                      showExplanation ? 
+                        (isCorrect ? 'correct' : 
+                         selectedAnswer === index ? 'incorrect' : '') : ''
+                    }`}
+                    onClick={() => !showExplanation && handleAnswerSelect(index)}
+                    disabled={showExplanation}
+                  >
+                    <div className="answer-content">
+                      <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
+                      <div className="answer-text">{optionText}</div>
+                    </div>
+                    {showExplanation && isCorrect && (
+                      <CheckCircle className="w-6 h-6 answer-icon correct" />
+                    )}
+                    {showExplanation && selectedAnswer === index && !isCorrect && (
+                      <XCircle className="w-6 h-6 answer-icon incorrect" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Hint Section */}
           {quizConfig.enableHints && currentQ.hint && showHint && (
@@ -1008,12 +1361,18 @@ const QuizPage: React.FC = () => {
               </>
             )}
 
-            {selectedAnswer !== null && !showExplanation && (
+            {!showExplanation && (
               <button
                 className="next-btn"
                 onClick={handleNextQuestion}
+                disabled={currentQ.type === 'coding' ? codingAnswer.trim().length === 0 : selectedAnswer === null}
               >
-                <span>Next Question</span>
+                <span>
+                  {currentQuestion + 1 >= Math.min(quizConfig.questionCount, questions.length) 
+                    ? 'Submit Quiz' 
+                    : 'Next Question'
+                  }
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}

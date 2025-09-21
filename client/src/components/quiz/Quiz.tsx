@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  ChevronLeft, Clock, Target, Trophy, Zap, BookOpen, Code, Brain, Star,
+  ChevronLeft, Clock, Target, Trophy, BookOpen, Code, Brain, Star,
   CheckCircle, XCircle, AlertCircle, Play, Pause, RotateCcw, BarChart3,
   Users, TrendingUp, Lightbulb, Shield, Crown, Heart, Timer, Settings,
   Volume2, VolumeX, Eye, EyeOff, Lock, Unlock, Award, Target as TargetIcon
@@ -68,7 +68,7 @@ const quizCategories: QuizCategory[] = [
     id: 'system-design',
     title: 'System Design',
     description: 'Design scalable systems and architectures',
-    icon: <Zap className="w-6 h-6" />,
+    icon: <Settings className="w-6 h-6" />,
     color: '#f59e0b',
     questionCount: 12,
     difficulty: 'Hard',
@@ -208,7 +208,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           <BookOpen className="w-6 h-6 text-cyan-400" />
         </div>
         <div className="floating-element">
-          <Zap className="w-8 h-8 text-yellow-400" />
+          <Settings className="w-8 h-8 text-yellow-400" />
         </div>
         <div className="floating-element">
           <Star className="w-5 h-5 text-pink-400" />
@@ -356,15 +356,6 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
                 <p className="stat-description">Adaptive questions based on your level</p>
               </div>
             </div>
-            {isAdvanced && (
-              <div className="stat-item-large">
-                <Zap className="w-8 h-8 text-green-500" />
-                <div>
-                  <h4 className="stat-title">Power-ups & Lives</h4>
-                  <p className="stat-description">Use special abilities and manage your lives</p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

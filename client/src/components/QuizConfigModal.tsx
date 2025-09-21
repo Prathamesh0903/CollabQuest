@@ -226,8 +226,10 @@ const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                         }))}
                         className="config-select"
                       >
+                        <option value={5}>5 Minutes</option>
                         <option value={10}>10 Minutes</option>
                         <option value={15}>15 Minutes</option>
+                        <option value={20}>20 Minutes</option>
                         <option value={30}>30 Minutes</option>
                         <option value={45}>45 Minutes</option>
                       </select>

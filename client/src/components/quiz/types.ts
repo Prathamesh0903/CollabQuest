@@ -25,9 +25,9 @@ export interface QuizConfig {
 
 export interface Question {
   id: string;
-  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding' | 'matching' | 'essay';
+  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding' | 'matching' | 'essay' | 'predict-output';
   question: string;
-  options?: string[];
+  options?: Array<{text: string, isCorrect: boolean}> | string[];
   correctAnswer?: string | number | string[] | boolean;
   explanation?: string;
   points: number;

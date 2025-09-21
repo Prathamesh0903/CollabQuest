@@ -248,10 +248,14 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
 
     switch (currentQ.type) {
       case 'multiple-choice':
+        // Convert options to string array format
+        const mcqOptions = (currentQ.options || []).map(option => 
+          typeof option === 'string' ? option : option.text
+        );
         return (
           <MultipleChoiceQuestion
             question={currentQ.question}
-            options={currentQ.options || []}
+            options={mcqOptions}
             correctAnswer={currentQ.correctAnswer as number}
             selectedAnswer={selectedAnswer}
             showExplanation={showExplanation}
@@ -294,11 +298,65 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
           />
         );
 
+      case 'predict-output':
+        return (
+          <div className="predict-output-container">
+            {/* Code Snippet Display */}
+            {currentQ.codeSnippet && (
+              <div className="code-snippet-display">
+                <div className="code-header">
+                  <span>Code:</span>
+                </div>
+                <pre className="code-content">
+                  <code>{currentQ.codeSnippet}</code>
+                </pre>
+              </div>
+            )}
+            
+            {/* Answer Options */}
+            <div className="answer-grid">
+              {currentQ.options?.map((option, index) => {
+                const isObjectOption = typeof option === 'object' && 'text' in option && 'isCorrect' in option;
+                const optionText = isObjectOption ? option.text : option as string;
+                const isCorrect = isObjectOption ? option.isCorrect : false;
+                
+                return (
+                  <button
+                    key={index}
+                    className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
+                      showExplanation ? 
+                        (isCorrect ? 'correct' : 
+                         selectedAnswer === index ? 'incorrect' : '') : ''
+                    }`}
+                    onClick={() => !showExplanation && setSelectedAnswer(index)}
+                    disabled={showExplanation}
+                  >
+                    <div className="answer-content">
+                      <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
+                      <div className="answer-text">{optionText}</div>
+                    </div>
+                    {showExplanation && isCorrect && (
+                      <CheckCircle className="w-6 h-6 answer-icon correct" />
+                    )}
+                    {showExplanation && selectedAnswer === index && !isCorrect && (
+                      <XCircle className="w-6 h-6 answer-icon incorrect" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
       case 'matching':
+        // Convert options to string array format
+        const matchingOptions = (currentQ.options || []).map(option => 
+          typeof option === 'string' ? option : option.text
+        );
         return (
           <MatchingQuestion
             question={currentQ.question}
-            options={currentQ.options || []}
+            options={matchingOptions}
             correctAnswer={currentQ.correctAnswer as string[]}
             answers={matchingAnswers}
             showExplanation={showExplanation}
