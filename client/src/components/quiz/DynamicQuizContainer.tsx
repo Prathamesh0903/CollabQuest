@@ -91,7 +91,7 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
         setLoading(true);
         setError(null);
         
-        const response = await quizService.getAdvancedQuizById(quizId);
+        const response = await quizService.getQuizById(quizId);
         if (response.success && response.quiz) {
           setQuestions(response.quiz.questions);
         } else {
