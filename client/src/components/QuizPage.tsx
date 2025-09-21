@@ -5,7 +5,7 @@ import {
   BookOpen, ArrowRight, Home, Brain, Zap,
   Award, TrendingUp, Star, Eye, EyeOff, HelpCircle
 } from 'lucide-react';
-import { quizService } from '../services/quizService';
+import quizService from '../services/quizService';
 import DynamicQuizContainer from './quiz/DynamicQuizContainer';
 import EnhancedCodingQuestion from './quiz/questions/EnhancedCodingQuestion';
 import './QuizPage.css';
@@ -801,8 +801,6 @@ const javascriptQuestions: Question[] = [
 const QuizPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-<<<<<<< HEAD
-=======
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -822,14 +820,10 @@ const QuizPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
->>>>>>> feature/quiz-difficulty-based-questions
   
   // Get quiz config from location state
   const quizConfig = location.state?.quizConfig as QuizConfig;
   const category = location.state?.category as QuizCategory;
-<<<<<<< HEAD
-  const quizId = location.state?.quizId as string;
-=======
 
   // Filter questions based on difficulty level
   const filterQuestionsByDifficulty = (difficulty: string, questionCount: number): Question[] => {
@@ -921,7 +915,6 @@ const QuizPage: React.FC = () => {
       setLoading(false);
     }
   };
->>>>>>> feature/quiz-difficulty-based-questions
 
   useEffect(() => {
     if (!quizConfig || !category) {
@@ -930,11 +923,6 @@ const QuizPage: React.FC = () => {
     }
   }, [quizConfig, category, navigate]);
 
-<<<<<<< HEAD
-  const handleQuizComplete = (score: number, totalQuestions: number, answers: any[]) => {
-    // Handle quiz completion
-    console.log('Quiz completed:', { score, totalQuestions, answers });
-=======
   useEffect(() => {
     if (questions.length > 0) {
       setTimeLeft(quizConfig.timeLimit * 60);
@@ -970,15 +958,11 @@ const QuizPage: React.FC = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
->>>>>>> feature/quiz-difficulty-based-questions
   };
 
   const handleClose = () => {
     navigate('/advanced-quiz');
   };
-
-<<<<<<< HEAD
-=======
 
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
@@ -1077,22 +1061,133 @@ const QuizPage: React.FC = () => {
     setSelectedAnswer(index);
   };
 
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return '#10b981';
+      case 'Medium': return '#f59e0b';
+      case 'Hard': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
 
-
->>>>>>> feature/quiz-difficulty-based-questions
   if (!quizConfig || !category) {
     return null;
   }
 
+  if (loading) {
+    return (
+      <div className="quiz-page">
+        <div className="quiz-container">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <h2>Loading JavaScript Fundamentals Quiz...</h2>
+            <p>Please wait while we fetch the latest questions.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="quiz-page">
+        <div className="quiz-container">
+          <div className="error-state">
+            <XCircle className="error-icon" />
+            <h2>Error Loading Quiz</h2>
+            <p>{error}</p>
+            <button onClick={() => loadJavaScriptQuiz()} className="retry-button">
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="quiz-page">
+        <div className="quiz-container">
+          <div className="empty-state">
+            <BookOpen className="empty-icon" />
+            <h2>No Questions Available</h2>
+            <p>No questions found for this quiz.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isQuizComplete) {
+    const accuracy = Math.round((userAnswers.filter(a => a.isCorrect).length / userAnswers.length) * 100);
+    const totalPossibleScore = totalQuestions * 10;
+    const scorePercentage = Math.round((score / totalPossibleScore) * 100);
+    
+    return (
+      <div className="quiz-complete-page">
+        
+        <div className="completion-container">
+          <div className="completion-header">
+            <div className="completion-icon">
+              <Award className="w-8 h-8" />
+            </div>
+            <h1 className="completion-title">Quiz Complete!</h1>
+            <p className="completion-subtitle">Great job completing the {category.title} quiz</p>
+          </div>
+
+          <div className="stats-grid">
+            <div className="stat-card primary">
+              <div className="stat-icon">
+                <Target className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{score}/{totalPossibleScore}</div>
+              <div className="stat-label">Final Score</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{accuracy}%</div>
+              <div className="stat-label">Accuracy</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{maxStreak}</div>
+              <div className="stat-label">Best Streak</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <div className="stat-value">{hintsUsed}</div>
+              <div className="stat-label">Hints Used</div>
+            </div>
+          </div>
+
+          <div className="completion-actions">
+            <button 
+              className="home-btn"
+              onClick={() => navigate('/')}
+            >
+              <Home className="w-4 h-4" />
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentQ = questions[currentQuestion];
+  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+
   return (
-<<<<<<< HEAD
-    <DynamicQuizContainer
-      quizId={quizId}
-      timeLimit={quizConfig.timeLimit}
-      onComplete={handleQuizComplete}
-      onClose={handleClose}
-    />
-=======
     <div className="quiz-page">
       {/* Small Header with Timer */}
       <div className="quiz-header-small">
@@ -1285,7 +1380,6 @@ const QuizPage: React.FC = () => {
         </div>
       </div>
     </div>
->>>>>>> feature/quiz-difficulty-based-questions
   );
 };
 

@@ -6,7 +6,7 @@ import {
   Lock, Unlock, Award, Target as TargetIcon
 } from 'lucide-react';
 import { Question, UserAnswer, QuizStats, PowerUps, ServerQuiz } from './types';
-import { quizService } from '../../services/quizService';
+import quizService from '../../services/quizService';
 import QuizHeader from './QuizHeader';
 import PowerUpsComponent from './PowerUps';
 import QuizResults from './QuizResults';
