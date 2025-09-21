@@ -21,13 +21,52 @@ export interface QuizConfig {
   timeLimit: number;
   questionCount: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
+  enableHints?: boolean;
+  showExplanations?: boolean;
+}
+
+export interface QuizSettings {
+  isPublic: boolean;
+  allowRetakes: boolean;
+  maxAttempts: number;
+  showResults: boolean;
+  showCorrectAnswers: boolean;
+  randomizeQuestions: boolean;
+  timeLimit: number;
+}
+
+export interface ServerQuiz {
+  _id: string;
+  title: string;
+  description: string;
+  createdBy: string | {
+    _id: string;
+    displayName: string;
+    email: string;
+  };
+  questions: Question[];
+  settings: QuizSettings;
+  category: string;
+  tags: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  status: 'draft' | 'published' | 'archived';
+  stats: {
+    totalAttempts: number;
+    totalParticipants: number;
+    averageScore: number;
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 export interface Question {
   id: string;
   type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding' | 'matching' | 'essay';
   question: string;
-  options?: string[];
+  options?: string[] | Array<{
+    text: string;
+    isCorrect: boolean;
+  }>;
   correctAnswer?: string | number | string[] | boolean;
   explanation?: string;
   points: number;
@@ -40,6 +79,7 @@ export interface Question {
     input: string;
     expectedOutput: string;
     description: string;
+    isHidden?: boolean;
   }>;
 }
 

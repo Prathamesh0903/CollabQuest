@@ -5,7 +5,8 @@ import {
   Shield, Crown, Heart, Timer, Settings, Volume2, VolumeX, Eye, EyeOff,
   Lock, Unlock, Award, Target as TargetIcon
 } from 'lucide-react';
-import { Question, UserAnswer, QuizStats, PowerUps } from './types';
+import { Question, UserAnswer, QuizStats, PowerUps, ServerQuiz } from './types';
+import { quizService } from '../../services/quizService';
 import QuizHeader from './QuizHeader';
 import PowerUpsComponent from './PowerUps';
 import QuizResults from './QuizResults';
@@ -19,18 +20,23 @@ import {
 import './DynamicQuizContainer.css';
 
 interface DynamicQuizContainerProps {
-  questions: Question[];
+  questions?: Question[];
+  quizId?: string;
   timeLimit: number;
   onComplete: (score: number, totalQuestions: number, answers: UserAnswer[]) => void;
   onClose: () => void;
 }
 
 const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
-  questions,
+  questions: propQuestions,
+  quizId,
   timeLimit,
   onComplete,
   onClose
 }) => {
+  const [questions, setQuestions] = useState<Question[]>(propQuestions || []);
+  const [loading, setLoading] = useState(!propQuestions);
+  const [error, setError] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timeLimit * 60);
   const [isQuizActive, setIsQuizActive] = useState(false);
@@ -75,6 +81,32 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
   // Refs
   const questionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch quiz data if quizId is provided
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      if (!quizId || propQuestions) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await quizService.getAdvancedQuizById(quizId);
+        if (response.success && response.quiz) {
+          setQuestions(response.quiz.questions);
+        } else {
+          throw new Error('Failed to load quiz');
+        }
+      } catch (err) {
+        console.error('Error fetching quiz:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load quiz');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuiz();
+  }, [quizId, propQuestions]);
 
   // Initialize quiz
   useEffect(() => {
@@ -329,6 +361,35 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
         return false;
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="quiz-loading">
+        <div className="loading-card">
+          <div className="loading-spinner"></div>
+          <h2>Loading Quiz...</h2>
+          <p>Please wait while we prepare your quiz questions</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="quiz-error">
+        <div className="error-card">
+          <XCircle className="w-16 h-16 text-red-500 mb-4" />
+          <h2>Error Loading Quiz</h2>
+          <p>{error}</p>
+          <button className="btn-primary" onClick={onClose}>
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (showResults) {
     return (

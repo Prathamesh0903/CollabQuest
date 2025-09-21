@@ -5,6 +5,8 @@ import {
   BookOpen, ArrowRight, Home, Brain, Zap,
   Award, TrendingUp, Star, Eye, EyeOff, HelpCircle
 } from 'lucide-react';
+import { quizService } from '../services/quizService';
+import DynamicQuizContainer from './quiz/DynamicQuizContainer';
 import './QuizPage.css';
 
 interface QuizCategory {
@@ -603,424 +605,39 @@ const javascriptQuestions: Question[] = [
 const QuizPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [isQuizComplete, setIsQuizComplete] = useState(false);
-  const [score, setScore] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [showHint, setShowHint] = useState(false);
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [maxStreak, setMaxStreak] = useState(0);
-  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get quiz config from location state
   const quizConfig = location.state?.quizConfig as QuizConfig;
   const category = location.state?.category as QuizCategory;
-
-  // Load JavaScript quiz dataset
-  const loadJavaScriptQuiz = () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Use the local JavaScript questions dataset
-      setQuestions(javascriptQuestions);
-      setTotalQuestions(javascriptQuestions.length);
-    } catch (err) {
-      console.error('Error loading JavaScript quiz:', err);
-      setError('Failed to load quiz questions');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const quizId = location.state?.quizId as string;
 
   useEffect(() => {
     if (!quizConfig || !category) {
       navigate('/advanced-quiz');
       return;
     }
-
-    // Load JavaScript quiz questions
-    loadJavaScriptQuiz();
   }, [quizConfig, category, navigate]);
 
-  useEffect(() => {
-    if (questions.length > 0) {
-      setTimeLeft(quizConfig.timeLimit * 60);
-      setQuestionStartTime(Date.now());
-      
-      // Start timer
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            handleQuizComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-      };
-    }
-  }, [questions, quizConfig]);
-
-  useEffect(() => {
-    setQuestionStartTime(Date.now());
-    setShowHint(false);
-    setSelectedAnswer(null);
-  }, [currentQuestion]);
-
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const handleQuizComplete = (score: number, totalQuestions: number, answers: any[]) => {
+    // Handle quiz completion
+    console.log('Quiz completed:', { score, totalQuestions, answers });
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return '#10b981';
-      case 'Medium': return '#f59e0b';
-      case 'Hard': return '#ef4444';
-      default: return '#6b7280';
-    }
+  const handleClose = () => {
+    navigate('/advanced-quiz');
   };
-
-
-  const handlePreviousQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-      setSelectedAnswer(null);
-      setShowExplanation(false);
-      setShowHint(false);
-      setQuestionStartTime(Date.now());
-    }
-  };
-
-  const handleNextQuestion = () => {
-    if (selectedAnswer === null || questions.length === 0) return;
-
-    const currentQ = questions[currentQuestion];
-    if (!currentQ) return;
-
-    // Handle different question types
-    let isCorrect = false;
-    if (currentQ.type === 'multiple-choice') {
-      // For multiple choice, check if selected answer index matches correct option
-      const correctOptionIndex = currentQ.options?.findIndex(opt => opt.isCorrect);
-      isCorrect = selectedAnswer === correctOptionIndex;
-    } else if (currentQ.type === 'true-false') {
-      isCorrect = selectedAnswer === currentQ.correctAnswer;
-    } else {
-      // For other types, use the correctAnswer directly
-      isCorrect = selectedAnswer === currentQ.correctAnswer;
-    }
-
-    const points = isCorrect ? currentQ.points : 0;
-    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
-
-    const userAnswer: UserAnswer = {
-      questionId: currentQ.id,
-      answer: selectedAnswer,
-      timeSpent,
-      isCorrect,
-      points
-    };
-
-    setUserAnswers(prev => [...prev, userAnswer]);
-    setScore(prev => prev + points);
-
-    // Update streak
-    if (isCorrect) {
-      setStreak(prev => {
-        const newStreak = prev + 1;
-        setMaxStreak(prevMax => Math.max(prevMax, newStreak));
-        return newStreak;
-      });
-    } else {
-      setStreak(0);
-    }
-
-    setShowExplanation(true);
-    
-    setTimeout(() => {
-      setShowExplanation(false);
-      setSelectedAnswer(null);
-      
-      if (currentQuestion + 1 < Math.min(quizConfig.questionCount, questions.length)) {
-        setCurrentQuestion(prev => prev + 1);
-      } else {
-        handleQuizComplete();
-      }
-    }, 3000);
-  };
-
-  const handleQuizComplete = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    setIsQuizComplete(true);
-  };
-
-  const handleGoHome = () => {
-    navigate('/');
-  };
-
-  const handleShowHint = () => {
-    if (!showHint && quizConfig.enableHints) {
-      setShowHint(true);
-      setHintsUsed(prev => prev + 1);
-    }
-  };
-
-  const handleAnswerSelect = (index: number) => {
-    setSelectedAnswer(index);
-  };
-
-
 
   if (!quizConfig || !category) {
     return null;
   }
 
-  if (loading) {
-    return (
-      <div className="quiz-page">
-        <div className="quiz-container">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <h2>Loading JavaScript Fundamentals Quiz...</h2>
-            <p>Please wait while we fetch the latest questions.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="quiz-page">
-        <div className="quiz-container">
-          <div className="error-state">
-            <XCircle className="error-icon" />
-            <h2>Error Loading Quiz</h2>
-            <p>{error}</p>
-            <button onClick={() => loadJavaScriptQuiz()} className="retry-button">
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (questions.length === 0) {
-    return (
-      <div className="quiz-page">
-        <div className="quiz-container">
-          <div className="empty-state">
-            <BookOpen className="empty-icon" />
-            <h2>No Questions Available</h2>
-            <p>No questions found for this quiz.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isQuizComplete) {
-    const accuracy = Math.round((userAnswers.filter(a => a.isCorrect).length / userAnswers.length) * 100);
-    const totalPossibleScore = totalQuestions * 10;
-    const scorePercentage = Math.round((score / totalPossibleScore) * 100);
-    
-    return (
-      <div className="quiz-complete-page">
-        
-        <div className="completion-container">
-          <div className="completion-header">
-            <div className="completion-icon">
-              <Award className="w-8 h-8" />
-            </div>
-            <h1 className="completion-title">Quiz Complete!</h1>
-            <p className="completion-subtitle">Great job completing the {category.title} quiz</p>
-          </div>
-
-          <div className="stats-grid">
-            <div className="stat-card primary">
-              <div className="stat-icon">
-                <Target className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{score}/{totalPossibleScore}</div>
-              <div className="stat-label">Final Score</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{accuracy}%</div>
-              <div className="stat-label">Accuracy</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{maxStreak}</div>
-              <div className="stat-label">Best Streak</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">
-                <HelpCircle className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{hintsUsed}</div>
-              <div className="stat-label">Hints Used</div>
-            </div>
-          </div>
-
-          <div className="completion-actions">
-            <button 
-              className="home-btn"
-              onClick={handleGoHome}
-            >
-              <Home className="w-4 h-4" />
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const currentQ = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
-
   return (
-    <div className="quiz-page">
-      {/* Small Header with Timer */}
-      <div className="quiz-header-small">
-        <button className="exit-quiz-btn" onClick={() => navigate('/advanced-quiz')}>
-          <ChevronLeft className="w-4 h-4" />
-          Exit Quiz
-        </button>
-        <h1 className="quiz-title-small">{category.title}</h1>
-        <div className="timer-display">
-          <Clock className="timer-icon" />
-          <span className="timer-text">{formatTime(timeLeft)}</span>
-        </div>
-      </div>
-
-      {/* Main Quiz Content */}
-      <div className="quiz-main">
-        <div className="question-container">
-          {/* Question Header */}
-          <div className="question-header">
-            <div className="question-meta">
-              <span className="question-number">Question {currentQuestion + 1}</span>
-              <span className="question-type">{currentQ.type.replace('-', ' ').toUpperCase()}</span>
-            </div>
-            <div className="question-points">{currentQ.points} pts</div>
-          </div>
-
-          {/* Question Text */}
-          <div className="question-text">
-            {currentQ.question}
-          </div>
-
-          {/* Answer Options */}
-          <div className="answer-grid">
-            {currentQ.options?.map((option, index) => (
-              <button
-                key={index}
-                className={`answer-card ${selectedAnswer === index ? 'selected' : ''} ${
-                  showExplanation ? 
-                    (typeof option === 'object' && option.isCorrect ? 'correct' : 
-                     selectedAnswer === index ? 'incorrect' : '') : ''
-                }`}
-                onClick={() => !showExplanation && handleAnswerSelect(index)}
-                disabled={showExplanation}
-              >
-                <div className="answer-content">
-                  <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
-                  <div className="answer-text">{typeof option === 'string' ? option : option.text}</div>
-                </div>
-                {showExplanation && typeof option === 'object' && option.isCorrect && (
-                  <CheckCircle className="w-6 h-6 answer-icon correct" />
-                )}
-                {showExplanation && selectedAnswer === index && typeof option === 'object' && !option.isCorrect && (
-                  <XCircle className="w-6 h-6 answer-icon incorrect" />
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Hint Section */}
-          {quizConfig.enableHints && currentQ.hint && showHint && (
-            <div className="hint-section">
-              <div className="hint-content">
-                <Brain className="w-5 h-5" />
-                <span>{currentQ.hint}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Explanation */}
-          {showExplanation && currentQ.explanation && (
-            <div className="explanation-section">
-              <div className="explanation-header">
-                <Eye className="w-5 h-5" />
-                <span>Explanation</span>
-              </div>
-              <div className="explanation-text">{currentQ.explanation}</div>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="action-buttons">
-            {!showExplanation && (
-              <>
-                {currentQuestion > 0 && (
-                  <button className="back-btn" onClick={handlePreviousQuestion}>
-                    <ChevronLeft className="w-4 h-4" />
-                    <span>Back</span>
-                  </button>
-                )}
-                
-                {quizConfig.enableHints && currentQ.hint && !showHint && (
-                  <button className="hint-btn" onClick={handleShowHint}>
-                    <HelpCircle className="w-4 h-4" />
-                    Show Hint
-                  </button>
-                )}
-              </>
-            )}
-
-            {selectedAnswer !== null && !showExplanation && (
-              <button
-                className="next-btn"
-                onClick={handleNextQuestion}
-              >
-                <span>Next Question</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <DynamicQuizContainer
+      quizId={quizId}
+      timeLimit={quizConfig.timeLimit}
+      onComplete={handleQuizComplete}
+      onClose={handleClose}
+    />
   );
 };
 

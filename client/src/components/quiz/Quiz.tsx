@@ -82,7 +82,12 @@ const advancedQuestions: Question[] = [
     id: 'q1',
     type: 'multiple-choice',
     question: 'What is the output of the following code?\n\n```javascript\nconst arr = [1, 2, 3];\nconst [a, ...rest] = arr;\nconsole.log(rest);\n```',
-    options: ['[1, 2, 3]', '[2, 3]', '[1]', 'undefined'],
+    options: [
+      { text: '[1, 2, 3]', isCorrect: false },
+      { text: '[2, 3]', isCorrect: true },
+      { text: '[1]', isCorrect: false },
+      { text: 'undefined', isCorrect: false }
+    ],
     correctAnswer: 1,
     explanation: 'The rest operator (...) collects the remaining elements into an array. Since a = 1, rest becomes [2, 3].',
     points: 10,
@@ -132,7 +137,12 @@ const advancedQuestions: Question[] = [
     id: 'q5',
     type: 'matching',
     question: 'Match each JavaScript method with its purpose:',
-    options: ['map()', 'filter()', 'reduce()', 'forEach()'],
+    options: [
+      { text: 'map()', isCorrect: false },
+      { text: 'filter()', isCorrect: false },
+      { text: 'reduce()', isCorrect: false },
+      { text: 'forEach()', isCorrect: false }
+    ],
     correctAnswer: ['Transform each element', 'Select elements', 'Accumulate values', 'Execute for each element'],
     explanation: 'These are fundamental array methods in JavaScript with distinct purposes.',
     points: 12,

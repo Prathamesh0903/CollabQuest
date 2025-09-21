@@ -1,81 +1,147 @@
-/* Matching Question Styles */
 .matching-container {
-  margin-bottom: 2rem;
+  width: 100%;
+  padding: 1rem;
 }
 
-.matching-pairs {
+.matching-grid {
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.matching-column {
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
-.matching-pair {
+.column-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 0.5rem;
+}
+
+.matching-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  justify-content: space-between;
   padding: 1rem;
-  color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 3rem;
+  position: relative;
 }
 
-.matching-pair:hover:not(.answered) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #667eea;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+.matching-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
 
-.matching-pair.matched {
-  background: linear-gradient(135deg, #10b981, #059669);
+.matching-item.selected {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.matching-item.correct {
   border-color: #10b981;
-  color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
 
-.matching-term {
-  font-weight: 600;
-  color: #ffffff;
-  min-width: 150px;
-  flex-shrink: 0;
+.matching-item.incorrect {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
-.matching-input {
+.item-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+}
+
+.match-indicator {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  margin-left: 0.5rem;
+}
+
+.explanation-icon {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.matching-instructions {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 0.75rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.matching-instructions p {
+  margin: 0;
   font-size: 0.875rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  color: #6b7280;
+  line-height: 1.5;
 }
 
-.matching-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.matching-input:focus {
-  outline: none;
-  border-color: #667eea;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-}
-
-.matching-input:disabled {
-  background: rgba(255, 255, 255, 0.05);
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
-/* Responsive Design */
+/* Responsive design */
 @media (max-width: 768px) {
-  .matching-pair {
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
+  .matching-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
-  .matching-term {
-    min-width: auto;
-    text-align: center;
+  .matching-item {
+    padding: 0.75rem;
+    min-height: 2.5rem;
   }
+  
+  .item-text {
+    font-size: 0.875rem;
+  }
+}
+
+/* Animation for match creation */
+@keyframes matchCreated {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.matching-item.matched {
+  animation: matchCreated 0.3s ease;
+}
+
+/* Focus styles for accessibility */
+.matching-item:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.matching-item:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
