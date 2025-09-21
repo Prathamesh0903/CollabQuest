@@ -1,41 +1,74 @@
 {
-  "name": "docker-code-executor",
+  "name": "collabquest",
   "version": "1.0.0",
-  "description": "Secure Docker-based code execution system for Python, JavaScript, and Java",
-  "main": "docker-code-executor.js",
+  "description": "A comprehensive collaborative coding platform with real-time collaboration, competitive programming, and educational features",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "executor"
+  ],
   "scripts": {
-    "start": "node docker-code-executor.js",
-    "test": "node tests/manual/test-executor.js",
-    "example": "node docker-code-executor.js"
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm start",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm start",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "lint": "npm run lint:server && npm run lint:client",
+    "lint:server": "cd server && npm run lint",
+    "lint:client": "cd client && npm run lint",
+    "lint:fix": "npm run lint:fix:server && npm run lint:fix:client",
+    "lint:fix:server": "cd server && npm run lint:fix",
+    "lint:fix:client": "cd client && npm run lint:fix",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install && cd ../executor && npm install",
+    "clean": "npm run clean:server && npm run clean:client",
+    "clean:server": "cd server && rm -rf node_modules dist build",
+    "clean:client": "cd client && rm -rf node_modules build",
+    "seed": "cd server && npm run seed:dsa && npm run seed:quiz",
+    "setup": "npm run install:all && npm run setup:env",
+    "setup:env": "node scripts/setup-env.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "deploy:render": "deploy-render.bat",
+    "deploy:vercel": "deploy-vercel.bat"
   },
   "keywords": [
-    "docker",
+    "collaborative-coding",
+    "real-time",
+    "competitive-programming",
+    "dsa",
+    "quiz",
+    "battle-system",
     "code-execution",
-    "sandbox",
-    "security",
-    "python",
-    "javascript",
-    "java"
+    "react",
+    "nodejs",
+    "websocket",
+    "mongodb",
+    "supabase"
   ],
-  "author": "Your Name",
+  "author": "Aman <iamaman2901@gmail.com>",
   "license": "MIT",
-  "dependencies": {
-    "dockerode": "^3.3.5"
-  },
-  "devDependencies": {
-    "axios": "^1.11.0",
-    "nodemon": "^3.0.1",
-    "socket.io-client": "^4.8.1"
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/docker-code-executor.git"
+    "url": "https://github.com/Prathamesh0903/CollabQuest.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/docker-code-executor/issues"
+    "url": "https://github.com/Prathamesh0903/CollabQuest/issues"
   },
-  "homepage": "https://github.com/yourusername/docker-code-executor#readme"
+  "homepage": "https://github.com/Prathamesh0903/CollabQuest#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }

@@ -3,42 +3,61 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
-# Environment variables
+# Environment variables - CRITICAL: Never commit real secrets!
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+client/.env.local
+client/.env.production
+client/.env.vercel
+server/.env
+server/.env.production
 
 # Build outputs
 dist/
 build/
 .next/
 out/
+*.tsbuildinfo
 
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
-logs
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
 
 # Coverage directory used by tools like istanbul
 coverage/
+*.lcov
 
 # nyc test coverage
 .nyc_output
@@ -49,6 +68,9 @@ jspm_packages/
 # Optional npm cache directory
 .npm
 
+# Optional eslint cache
+.eslintcache
+
 # Optional REPL history
 .node_repl_history
 
@@ -58,7 +80,69 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
 # Temporary files and uploads
 server/temp/
 server/uploads/
-*-5 signpdf-f4ff2-firebase-adminsdk-fbsvc-be1c69484d.json
+executor/temp/
+*.tmp
+*.temp
+
+# Firebase and service account keys
+*-firebase-adminsdk-*.json
+service-account-*.json
+firebase-adminsdk-*.json
+
+# Docker
+.dockerignore
+
+# Testing
+.jest/
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Local development
+.local/
+local/
