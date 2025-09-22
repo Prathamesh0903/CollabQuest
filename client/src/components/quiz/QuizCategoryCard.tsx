@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import { QuizCategory } from './types';
 import './QuizCategoryCard.css';
+import quizService from '../../services/quizService';
 
 interface QuizCategoryCardProps {
   category: QuizCategory;
@@ -11,16 +12,17 @@ interface QuizCategoryCardProps {
 }
 
 const QuizCategoryCard: React.FC<QuizCategoryCardProps> = ({ category, index, onClick }) => {
+  const isAvailable = quizService.isQuizAvailable(category.id);
 
   return (
     <motion.div
-      className="category-card"
+      className={`category-card${isAvailable ? '' : ' category-card--disabled'}`}
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      whileHover={{ y: -5, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => onClick(category)}
+      whileHover={isAvailable ? { y: -5, scale: 1.02 } : undefined}
+      whileTap={isAvailable ? { scale: 0.98 } : undefined}
+      onClick={() => isAvailable && onClick(category)}
     >
       <div 
         className="category-icon"
@@ -32,7 +34,9 @@ const QuizCategoryCard: React.FC<QuizCategoryCardProps> = ({ category, index, on
       <div className="category-content">
         <h3 className="category-title">{category.title}</h3>
         <p className="category-description">{category.description}</p>
-        
+        {!isAvailable && (
+          <p className="category-unavailable">Coming soon</p>
+        )}
       </div>
       
       <div className="category-arrow">

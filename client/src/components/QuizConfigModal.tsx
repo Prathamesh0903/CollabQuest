@@ -77,7 +77,7 @@ const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
       state: {
         quizConfig: config,
         category: categoryForState,
-        quizId: 'javascript-fundamentals' // Default quiz ID for now
+        quizId: categoryForState.id // Use the selected category's id so the correct subject loads
       }
     });
   };

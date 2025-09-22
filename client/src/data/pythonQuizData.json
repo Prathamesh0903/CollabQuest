@@ -1,0 +1,399 @@
+{
+  "quiz": {
+    "id": "python-essentials-quiz",
+    "title": "Python Essentials Quiz",
+    "description": "Comprehensive quiz covering Python fundamentals from basic syntax to advanced concepts including OOP, decorators, generators, and memory management.",
+    "category": "Python Essentials",
+    "difficulty": "intermediate",
+    "tags": ["python", "essentials", "programming", "fundamentals"],
+    "settings": {
+      "isPublic": true,
+      "allowRetakes": true,
+      "maxAttempts": 5,
+      "showResults": true,
+      "showCorrectAnswers": true,
+      "randomizeQuestions": true,
+      "timeLimit": 0
+    },
+    "stats": {
+      "totalAttempts": 0,
+      "totalParticipants": 0,
+      "averageScore": 0,
+      "averageTime": 0,
+      "completionRate": 0
+    },
+    "questions": [
+      {
+        "id": "py-easy-1",
+        "type": "multiple-choice",
+        "question": "What is the correct way to declare a variable in Python?",
+        "options": [
+          { "text": "var my_var = 5", "isCorrect": false },
+          { "text": "my_var = 5", "isCorrect": true },
+          { "text": "variable my_var = 5", "isCorrect": false },
+          { "text": "declare my_var = 5", "isCorrect": false }
+        ],
+        "explanation": "Python doesn't require explicit variable declaration. Simply assign a value using the assignment operator (=).",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["variables", "declaration", "syntax"]
+      },
+      {
+        "id": "py-easy-2",
+        "type": "multiple-choice",
+        "question": "Which of the following is NOT a Python data type?",
+        "options": [
+          { "text": "str", "isCorrect": false },
+          { "text": "int", "isCorrect": false },
+          { "text": "bool", "isCorrect": false },
+          { "text": "char", "isCorrect": true }
+        ],
+        "explanation": "Python doesn't have a separate 'char' type. Single characters are represented as strings of length 1.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["data-types", "primitives"]
+      },
+      {
+        "id": "py-easy-3",
+        "type": "multiple-choice",
+        "question": "What does the 'type()' function return for a list?",
+        "options": [
+          { "text": "list", "isCorrect": true },
+          { "text": "object", "isCorrect": false },
+          { "text": "array", "isCorrect": false },
+          { "text": "sequence", "isCorrect": false }
+        ],
+        "explanation": "The type() function returns the actual type of the object, which is 'list' for Python lists.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["type", "lists", "functions"]
+      },
+      {
+        "id": "py-easy-4",
+        "type": "multiple-choice",
+        "question": "Which method is used to add an element to the end of a list?",
+        "options": [
+          { "text": "append()", "isCorrect": true },
+          { "text": "add()", "isCorrect": false },
+          { "text": "insert()", "isCorrect": false },
+          { "text": "push()", "isCorrect": false }
+        ],
+        "explanation": "The append() method adds a single element to the end of a list.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["lists", "methods", "append"]
+      },
+      {
+        "id": "py-easy-5",
+        "type": "multiple-choice",
+        "question": "Whats the result of: 5 + '5'?",
+        "options": [
+          { "text": "10", "isCorrect": false },
+          { "text": "55", "isCorrect": false },
+          { "text": "TypeError", "isCorrect": true },
+          { "text": "undefined", "isCorrect": false }
+        ],
+        "explanation": "Python doesn't perform automatic type coercion like JavaScript. Adding an int and str raises a TypeError.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["type-coercion", "operators", "error-handling"]
+      },
+      {
+        "id": "py-easy-6",
+        "type": "true-false",
+        "question": "Python is a case-sensitive language.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Python is case-sensitive, meaning 'my_var' and 'My_Var' are different variables.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["case-sensitivity", "syntax"]
+      },
+      {
+        "id": "py-easy-7",
+        "type": "true-false",
+        "question": "All variables in Python must be declared before use.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Python variables are created when first assigned a value. No explicit declaration is required.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["variables", "declaration", "assignment"]
+      },
+      {
+        "id": "py-easy-8",
+        "type": "true-false",
+        "question": "Python functions can return multiple values.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Python functions can return multiple values as a tuple, which can be unpacked by the caller.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["functions", "return-values", "tuples"]
+      },
+      {
+        "id": "py-easy-9",
+        "type": "multiple-choice",
+        "question": "What will be the output of: print(type(None))",
+        "options": [
+          { "text": "None", "isCorrect": false },
+          { "text": "NoneType", "isCorrect": true },
+          { "text": "null", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "The type of None is NoneType, which is Python's null type.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["type", "None", "NoneType"]
+      },
+      {
+        "id": "py-easy-10",
+        "type": "multiple-choice",
+        "question": "What will be the output of: print(2 + 2 * 3)",
+        "options": [
+          { "text": "12", "isCorrect": false },
+          { "text": "8", "isCorrect": true },
+          { "text": "10", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "Due to operator precedence, multiplication (2 * 3 = 6) happens before addition (2 + 6 = 8).",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["operator-precedence", "arithmetic"]
+      },
+      {
+        "id": "py-medium-1",
+        "type": "multiple-choice",
+        "question": "What is the difference between '==' and 'is' in Python?",
+        "options": [
+          { "text": "No difference, they work the same way", "isCorrect": false },
+          { "text": "== compares values, is compares object identity", "isCorrect": true },
+          { "text": "is is faster than ==", "isCorrect": false },
+          { "text": "== can only be used with numbers", "isCorrect": false }
+        ],
+        "explanation": "== compares the values of objects, while 'is' compares their identity (memory location).",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["operators", "comparison", "identity", "equality"]
+      },
+      {
+        "id": "py-medium-2",
+        "type": "multiple-choice",
+        "question": "What will happen when you try to access a key that doesn't exist in a dictionary?",
+        "options": [
+          { "text": "It will return None", "isCorrect": false },
+          { "text": "It will return an empty string", "isCorrect": false },
+          { "text": "It will raise a KeyError", "isCorrect": true },
+          { "text": "It will return False", "isCorrect": false }
+        ],
+        "explanation": "Accessing a non-existent key in a dictionary raises a KeyError. Use .get() method to avoid this.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["dictionaries", "keys", "KeyError", "exceptions"]
+      },
+      {
+        "id": "py-medium-3",
+        "type": "multiple-choice",
+        "question": "Which of the following is NOT a way to create a list in Python?",
+        "options": [
+          { "text": "list()", "isCorrect": false },
+          { "text": "[]", "isCorrect": false },
+          { "text": "[1, 2, 3]", "isCorrect": false },
+          { "text": "list.new()", "isCorrect": true }
+        ],
+        "explanation": "list.new() is not a valid way to create lists in Python.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["lists", "creation", "constructors"]
+      },
+      {
+        "id": "py-medium-7",
+        "type": "true-false",
+        "question": "Lambda functions in Python can have multiple statements.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Lambda functions in Python can only contain a single expression, not multiple statements.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["lambda", "functions", "expressions"]
+      },
+      {
+        "id": "py-medium-8",
+        "type": "true-false",
+        "question": "Python supports function overloading.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Python doesn't support traditional function overloading. The last function with the same name will override previous ones.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["functions", "overloading", "overriding"]
+      },
+      {
+        "id": "py-medium-9",
+        "type": "multiple-choice",
+        "question": "What will be the output of: print([1, 2, 3] + [4, 5, 6])",
+        "options": [
+          { "text": "[1, 2, 3, 4, 5, 6]", "isCorrect": true },
+          { "text": "[5, 7, 9]", "isCorrect": false },
+          { "text": "Error", "isCorrect": false },
+          { "text": "None", "isCorrect": false }
+        ],
+        "explanation": "The + operator concatenates lists in Python, resulting in [1, 2, 3, 4, 5, 6].",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["lists", "concatenation", "operators"]
+      },
+      {
+        "id": "py-medium-10",
+        "type": "multiple-choice",
+        "question": "What will be the output of: print(0.1 + 0.2 == 0.3)",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true },
+          { "text": "Error", "isCorrect": false },
+          { "text": "None", "isCorrect": false }
+        ],
+        "explanation": "Due to floating-point precision issues, 0.1 + 0.2 equals approximately 0.30000000000000004, not exactly 0.3.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["floating-point", "precision", "comparison"]
+      },
+      {
+        "id": "py-hard-1",
+        "type": "multiple-choice",
+        "question": "What is the output of: print(type(lambda x: x))",
+        "options": [
+          { "text": "lambda", "isCorrect": false },
+          { "text": "function", "isCorrect": true },
+          { "text": "object", "isCorrect": false },
+          { "text": "callable", "isCorrect": false }
+        ],
+        "explanation": "Lambda functions in Python are of type 'function', just like regular functions.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["lambda", "type", "functions"]
+      },
+      {
+        "id": "py-hard-2",
+        "type": "multiple-choice",
+        "question": "Which of the following will NOT cause a memory issue in Python?",
+        "options": [
+          { "text": "Creating circular references", "isCorrect": false },
+          { "text": "Not closing file handles", "isCorrect": false },
+          { "text": "Using generators properly", "isCorrect": true },
+          { "text": "Storing large objects in global variables", "isCorrect": false }
+        ],
+        "explanation": "Generators are memory-efficient as they yield values one at a time. The other options can cause memory issues.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["memory", "generators", "file-handles", "circular-references"]
+      },
+      {
+        "id": "py-hard-3",
+        "type": "multiple-choice",
+        "question": "What is the difference between 'deepcopy' and 'copy' in Python?",
+        "options": [
+          { "text": "No difference, they work the same", "isCorrect": false },
+          { "text": "deepcopy copies nested objects, copy doesn't", "isCorrect": true },
+          { "text": "copy is faster than deepcopy", "isCorrect": false },
+          { "text": "deepcopy can only copy lists", "isCorrect": false }
+        ],
+        "explanation": "copy() creates a shallow copy (nested objects are referenced), while deepcopy() creates a deep copy (nested objects are also copied).",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["copy", "deepcopy", "shallow-copy", "nested-objects"]
+      },
+      {
+        "id": "py-hard-7",
+        "type": "true-false",
+        "question": "In Python, all functions are objects.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Functions in Python are first-class objects - they can have attributes, be assigned to variables, and be passed as arguments.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["functions", "objects", "first-class", "attributes"]
+      },
+      {
+        "id": "py-hard-8",
+        "type": "true-false",
+        "question": "Python's method resolution order (MRO) follows depth-first search.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Python 3 uses C3 linearization (not depth-first search) for method resolution order to handle complex inheritance hierarchies.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["inheritance", "mro", "c3-linearization", "multiple-inheritance"]
+      },
+      {
+        "id": "py-hard-9",
+        "type": "multiple-choice",
+        "question": "What will be the output of: print([x for x in 'hello' if x in 'aeiou'])",
+        "options": [
+          { "text": "['h', 'e', 'l', 'l', 'o']", "isCorrect": false },
+          { "text": "['e', 'o']", "isCorrect": true },
+          { "text": "['a', 'e', 'i', 'o', 'u']", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "List comprehension filters characters in 'hello' that are vowels, resulting in ['e', 'o'].",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["list-comprehension", "filtering", "vowels", "strings"]
+      },
+      {
+        "id": "py-hard-10",
+        "type": "multiple-choice",
+        "question": "What will be the output of: print((lambda x: x * 2)(5))",
+        "options": [
+          { "text": "10", "isCorrect": true },
+          { "text": "25", "isCorrect": false },
+          { "text": "55", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "Lambda function takes x and returns x * 2. When called with 5, it returns 5 * 2 = 10.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["lambda", "functions", "anonymous-functions", "arithmetic"]
+      }
+    ]
+  }
+}
+

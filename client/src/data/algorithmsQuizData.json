@@ -1,0 +1,108 @@
+{
+  "quiz": {
+    "id": "algorithms",
+    "title": "Algorithms Quiz",
+    "description": "Evaluate your knowledge of algorithmic techniques such as sorting, searching, recursion, dynamic programming, and greedy strategies.",
+    "category": "Algorithms",
+    "difficulty": "advanced",
+    "tags": ["algorithms", "sorting", "searching", "dp", "greedy"],
+    "settings": {
+      "isPublic": true,
+      "allowRetakes": true,
+      "maxAttempts": 5,
+      "showResults": true,
+      "showCorrectAnswers": true,
+      "randomizeQuestions": true,
+      "timeLimit": 0
+    },
+    "stats": {
+      "totalAttempts": 0,
+      "totalParticipants": 0,
+      "averageScore": 0,
+      "averageTime": 0,
+      "completionRate": 0
+    },
+    "questions": [
+      {
+        "id": "algo-easy-1",
+        "type": "multiple-choice",
+        "question": "Which sorting algorithm has the best average-case time complexity?",
+        "options": [
+          { "text": "Bubble Sort", "isCorrect": false },
+          { "text": "Insertion Sort", "isCorrect": false },
+          { "text": "Merge Sort", "isCorrect": true },
+          { "text": "Selection Sort", "isCorrect": false }
+        ],
+        "explanation": "Merge Sort runs in O(n log n) on average and worst case.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["sorting", "complexity"]
+      },
+      {
+        "id": "algo-medium-1",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of binary search on a sorted array of size n?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Binary search halves the search space each step, yielding O(log n).",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["search", "binary-search"]
+      },
+      {
+        "id": "algo-medium-2",
+        "type": "true-false",
+        "question": "Greedy algorithms always produce the globally optimal solution.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Greedy works optimally only for problems with the greedy-choice property and optimal substructure.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["greedy", "optimality"]
+      },
+      {
+        "id": "algo-hard-1",
+        "type": "multiple-choice",
+        "question": "Which problem is typically solved using dynamic programming rather than greedy?",
+        "options": [
+          { "text": "Activity selection", "isCorrect": false },
+          { "text": "Fractional knapsack", "isCorrect": false },
+          { "text": "0/1 knapsack", "isCorrect": true },
+          { "text": "Minimum spanning tree", "isCorrect": false }
+        ],
+        "explanation": "0/1 knapsack lacks the greedy-choice property; DP is required for optimality.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["dynamic-programming", "knapsack"]
+      },
+      {
+        "id": "algo-hard-2",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of Dijkstra's algorithm with a binary heap on a graph with V vertices and E edges?",
+        "options": [
+          { "text": "O(V^2)", "isCorrect": false },
+          { "text": "O(E + V log V)", "isCorrect": true },
+          { "text": "O(E log E)", "isCorrect": false },
+          { "text": "O(V log E)", "isCorrect": false }
+        ],
+        "explanation": "Using a binary heap priority queue yields O(E + V log V).",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["graphs", "dijkstra", "priority-queue"]
+      }
+    ]
+  }
+}
+
+

@@ -10,27 +10,28 @@ import QuizConfigModal from '../QuizConfigModal';
 import QuizCategoryCard from './QuizCategoryCard';
 import DynamicQuizContainer from './DynamicQuizContainer';
 import QuizResults from './QuizResults';
+import quizService from '../../services/quizService';
 import '../Quiz.css';
 
 // Quiz categories data
 const quizCategories: QuizCategory[] = [
   {
-    id: 'javascript-basics',
+    id: 'javascript-fundamentals-quiz',
     title: 'JavaScript Fundamentals',
     description: 'Master the basics of JavaScript programming',
     icon: <Code className="w-6 h-6" />,
     color: '#f7df1e',
-    questionCount: 15,
+    questionCount: 30,
     difficulty: 'Easy',
     timeLimit: 20
   },
   {
-    id: 'python-basics',
+    id: 'python-essentials-quiz',
     title: 'Python Essentials',
     description: 'Learn Python programming fundamentals',
     icon: <Code className="w-6 h-6" />,
     color: '#3776ab',
-    questionCount: 15,
+    questionCount: 30,
     difficulty: 'Easy',
     timeLimit: 20
   },
@@ -180,20 +181,45 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     setShowConfigModal(true);
   };
 
-  const startQuizWithConfig = (config: QuizConfig) => {
+  const startQuizWithConfig = async (config: QuizConfig) => {
     if (!selectedCategoryForConfig) return;
+    
+    console.log('🎯 Quiz.tsx: Starting quiz with category:', selectedCategoryForConfig.title);
+    console.log('🆔 Quiz.tsx: Category ID:', selectedCategoryForConfig.id);
     
     setQuizConfig(config);
     setSelectedCategory(selectedCategoryForConfig);
     setShowConfigModal(false);
     
     if (isAdvanced) {
-      setQuizStats(prev => ({
-        ...prev,
-        totalQuestions: advancedQuestions.length,
-        totalPoints: advancedQuestions.reduce((sum, q) => sum + q.points, 0),
-        timeRemaining: config.timeLimit * 60
-      }));
+      // Load quiz data from service
+      try {
+        console.log('📡 Quiz.tsx: Calling quizService.getQuizById with:', selectedCategoryForConfig.id);
+        const response = await quizService.getQuizById(selectedCategoryForConfig.id);
+        console.log('📊 Quiz.tsx: Service response:', response);
+        
+        if (response.success && response.quiz) {
+          console.log('✅ Quiz.tsx: Quiz loaded successfully:', response.quiz.title);
+          console.log('📝 Quiz.tsx: First question:', response.quiz.questions[0]?.question);
+          
+          setQuizStats(prev => ({
+            ...prev,
+            totalQuestions: response.quiz!.questions.length,
+            totalPoints: response.quiz!.questions.reduce((sum, q) => sum + q.points, 0),
+            timeRemaining: config.timeLimit * 60
+          }));
+        }
+      } catch (error) {
+        console.error('💥 Quiz.tsx: Error loading quiz:', error);
+        // Fallback to advancedQuestions if service fails
+        console.log('🔄 Quiz.tsx: Using fallback advancedQuestions (JavaScript)');
+        setQuizStats(prev => ({
+          ...prev,
+          totalQuestions: advancedQuestions.length,
+          totalPoints: advancedQuestions.reduce((sum, q) => sum + q.points, 0),
+          timeRemaining: config.timeLimit * 60
+        }));
+      }
     }
   };
 
@@ -202,69 +228,11 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     onComplete?.(score, totalQuestions);
   };
 
-  const renderFloatingElements = () => {
-    return (
-      <div className="floating-elements">
-        <div className="floating-element">
-          <Code className="w-8 h-8 text-blue-400" />
-        </div>
-        <div className="floating-element">
-          <Brain className="w-6 h-6 text-purple-400" />
-        </div>
-        <div className="floating-element">
-          <Target className="w-7 h-7 text-green-400" />
-        </div>
-        <div className="floating-element">
-          <BookOpen className="w-6 h-6 text-cyan-400" />
-        </div>
-        <div className="floating-element">
-          <Settings className="w-8 h-8 text-yellow-400" />
-        </div>
-        <div className="floating-element">
-          <Star className="w-5 h-5 text-pink-400" />
-        </div>
-        <div className="floating-element">
-          <Trophy className="w-7 h-7 text-orange-400" />
-        </div>
-        <div className="floating-element">
-          <Crown className="w-6 h-6 text-indigo-400" />
-        </div>
-      </div>
-    );
-  };
-
-  const renderParticles = () => {
-    return (
-      <div className="particles">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="particle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 8}s`,
-              animationDuration: `${6 + Math.random() * 4}s`
-            }}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  const renderGlowOrbs = () => {
-    return (
-      <div className="glow-orbs">
-        <div className="glow-orb" />
-        <div className="glow-orb" />
-        <div className="glow-orb" />
-      </div>
-    );
-  };
 
   if (isAdvanced && selectedCategory) {
     return (
       <DynamicQuizContainer
-        questions={advancedQuestions}
+        quizId={selectedCategory.id}
         timeLimit={quizConfig.timeLimit}
         onComplete={handleQuizComplete}
         onClose={() => {
@@ -280,36 +248,31 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
 
   if (showResults) {
     return (
-      <div className="quiz-container">
-        {renderFloatingElements()}
-        {renderParticles()}
-        {renderGlowOrbs()}
-        <QuizResults
-          quizStats={quizStats}
-          timeLimit={quizConfig.timeLimit}
-          timeLeft={0}
-          isAdvanced={isAdvanced}
-          onRetake={() => {
-            setShowResults(false);
-            setSelectedCategory(null);
-          }}
-          onBackToDashboard={() => {
-            setShowResults(false);
-            setSelectedCategory(null);
-            if (onClose) {
-              onClose();
-            }
-          }}
-        />
-      </div>
+      <QuizResults
+        quizStats={quizStats}
+        timeLimit={quizConfig.timeLimit}
+        timeLeft={0}
+        isAdvanced={isAdvanced}
+        quizId={selectedCategory?.id}
+        userAnswers={[]}
+        questions={[]}
+        onRetake={() => {
+          setShowResults(false);
+          setSelectedCategory(null);
+        }}
+        onBackToDashboard={() => {
+          setShowResults(false);
+          setSelectedCategory(null);
+          if (onClose) {
+            onClose();
+          }
+        }}
+      />
     );
   }
 
   return (
     <div className="quiz-container">
-      {renderFloatingElements()}
-      {renderParticles()}
-      {renderGlowOrbs()}
       <div className="quiz-landing">
         <div className="quiz-header-landing">
           <button 

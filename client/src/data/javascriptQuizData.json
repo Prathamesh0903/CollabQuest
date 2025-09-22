@@ -1,0 +1,497 @@
+{
+  "quiz": {
+    "id": "javascript-fundamentals-quiz",
+    "title": "JavaScript Fundamentals Quiz",
+    "description": "Comprehensive quiz covering JavaScript fundamentals from basic syntax to advanced concepts including closures, promises, and memory management.",
+    "category": "JavaScript Fundamentals",
+    "difficulty": "intermediate",
+    "tags": ["javascript", "fundamentals", "programming", "web-development"],
+    "settings": {
+      "isPublic": true,
+      "allowRetakes": true,
+      "maxAttempts": 5,
+      "showResults": true,
+      "showCorrectAnswers": true,
+      "randomizeQuestions": true,
+      "timeLimit": 0
+    },
+    "stats": {
+      "totalAttempts": 0,
+      "totalParticipants": 0,
+      "averageScore": 0,
+      "averageTime": 0,
+      "completionRate": 0
+    },
+    "questions": [
+      {
+        "id": "js-easy-1",
+        "type": "multiple-choice",
+        "question": "What is the correct way to declare a variable in JavaScript?",
+        "options": [
+          { "text": "var myVar = 5;", "isCorrect": true },
+          { "text": "variable myVar = 5;", "isCorrect": false },
+          { "text": "v myVar = 5;", "isCorrect": false },
+          { "text": "declare myVar = 5;", "isCorrect": false }
+        ],
+        "explanation": "The correct way to declare a variable in JavaScript is using 'var', 'let', or 'const' keywords.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["variables", "declaration", "syntax"]
+      },
+      {
+        "id": "js-easy-2",
+        "type": "multiple-choice",
+        "question": "Which of the following is NOT a JavaScript data type?",
+        "options": [
+          { "text": "string", "isCorrect": false },
+          { "text": "number", "isCorrect": false },
+          { "text": "boolean", "isCorrect": false },
+          { "text": "float", "isCorrect": true }
+        ],
+        "explanation": "JavaScript has 'number' type which includes both integers and floating-point numbers. There's no separate 'float' type.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["data-types", "primitives"]
+      },
+      {
+        "id": "js-easy-3",
+        "type": "multiple-choice",
+        "question": "What does the 'typeof' operator return for an array?",
+        "options": [
+          { "text": "array", "isCorrect": false },
+          { "text": "object", "isCorrect": true },
+          { "text": "list", "isCorrect": false },
+          { "text": "undefined", "isCorrect": false }
+        ],
+        "explanation": "In JavaScript, arrays are objects, so typeof returns 'object' for arrays.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["typeof", "arrays", "operators"]
+      },
+      {
+        "id": "js-easy-4",
+        "type": "multiple-choice",
+        "question": "Which method is used to add an element to the end of an array?",
+        "options": [
+          { "text": "push()", "isCorrect": true },
+          { "text": "append()", "isCorrect": false },
+          { "text": "add()", "isCorrect": false },
+          { "text": "insert()", "isCorrect": false }
+        ],
+        "explanation": "The push() method adds one or more elements to the end of an array and returns the new length.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["arrays", "methods", "push"]
+      },
+      {
+        "id": "js-easy-5",
+        "type": "multiple-choice",
+        "question": "What is the result of: 5 + '5'?",
+        "options": [
+          { "text": "10", "isCorrect": false },
+          { "text": "55", "isCorrect": true },
+          { "text": "Error", "isCorrect": false },
+          { "text": "undefined", "isCorrect": false }
+        ],
+        "explanation": "When adding a number and a string, JavaScript converts the number to a string and concatenates them, resulting in '55'.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["type-coercion", "operators", "concatenation"]
+      },
+      {
+        "id": "js-easy-6",
+        "type": "true-false",
+        "question": "JavaScript is a case-sensitive language.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "JavaScript is case-sensitive, meaning 'myVar' and 'myvar' are different variables.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["case-sensitivity", "syntax"]
+      },
+      {
+        "id": "js-easy-7",
+        "type": "true-false",
+        "question": "All variables in JavaScript must be declared before use.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "While it's a best practice to declare variables, JavaScript allows undeclared variables (they become global).",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["variables", "declaration", "global-scope"]
+      },
+      {
+        "id": "js-easy-8",
+        "type": "true-false",
+        "question": "JavaScript functions can return multiple values.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "JavaScript functions can only return one value, but that value can be an object or array containing multiple values.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["functions", "return-values"]
+      },
+      {
+        "id": "js-easy-9",
+        "type": "multiple-choice",
+        "question": "What will be the output of: console.log(typeof null);",
+        "options": [
+          { "text": "null", "isCorrect": false },
+          { "text": "object", "isCorrect": true },
+          { "text": "undefined", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "typeof null returns 'object' - this is a known quirk in JavaScript.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["typeof", "null", "quirks"]
+      },
+      {
+        "id": "js-easy-10",
+        "type": "multiple-choice",
+        "question": "What will be the output of: console.log(2 + 2 * 3);",
+        "options": [
+          { "text": "12", "isCorrect": false },
+          { "text": "8", "isCorrect": true },
+          { "text": "10", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "Due to operator precedence, multiplication (2 * 3 = 6) happens before addition (2 + 6 = 8).",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["operator-precedence", "arithmetic"]
+      },
+      {
+        "id": "js-medium-1",
+        "type": "multiple-choice",
+        "question": "What is the difference between 'let' and 'var' in JavaScript?",
+        "options": [
+          { "text": "No difference, they work the same way", "isCorrect": false },
+          { "text": "let has block scope, var has function scope", "isCorrect": true },
+          { "text": "var is faster than let", "isCorrect": false },
+          { "text": "let can only be used in loops", "isCorrect": false }
+        ],
+        "explanation": "let has block scope (limited to the block where it's declared), while var has function scope.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["let", "var", "scope", "hoisting"]
+      },
+      {
+        "id": "js-medium-2",
+        "type": "multiple-choice",
+        "question": "What will happen when you try to access a property that doesn't exist on an object?",
+        "options": [
+          { "text": "It will throw an error", "isCorrect": false },
+          { "text": "It will return null", "isCorrect": false },
+          { "text": "It will return undefined", "isCorrect": true },
+          { "text": "It will return false", "isCorrect": false }
+        ],
+        "explanation": "Accessing a non-existent property on an object returns undefined, not an error.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["objects", "properties", "undefined"]
+      },
+      {
+        "id": "js-medium-3",
+        "type": "multiple-choice",
+        "question": "Which of the following is NOT a way to create an object in JavaScript?",
+        "options": [
+          { "text": "Object literal: {}", "isCorrect": false },
+          { "text": "Constructor function: new Object()", "isCorrect": false },
+          { "text": "Object.create()", "isCorrect": false },
+          { "text": "object.new()", "isCorrect": true }
+        ],
+        "explanation": "object.new() is not a valid way to create objects in JavaScript.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["objects", "creation", "constructors"]
+      },
+      {
+        "id": "js-medium-4",
+        "type": "coding",
+        "question": "Write a function that takes an array of numbers and returns the sum of all even numbers.",
+        "codeSnippet": "function sumEvenNumbers(numbers) {\n    // Your code here\n}",
+        "language": "javascript",
+        "testCases": [
+          { "input": "[1, 2, 3, 4, 5, 6]", "expectedOutput": "12", "description": "Sum of even numbers: 2 + 4 + 6 = 12" },
+          { "input": "[1, 3, 5, 7]", "expectedOutput": "0", "description": "No even numbers, sum is 0" },
+          { "input": "[2, 4, 6, 8]", "expectedOutput": "20", "description": "All even numbers: 2 + 4 + 6 + 8 = 20" }
+        ],
+        "explanation": "Use filter() to get even numbers, then reduce() to sum them up.",
+        "points": 20,
+        "timeLimit": 120,
+        "difficulty": "medium",
+        "tags": ["functions", "arrays", "filter", "reduce", "even-numbers"]
+      },
+      {
+        "id": "js-medium-5",
+        "type": "coding",
+        "question": "Create a function that removes duplicates from an array and returns a new array.",
+        "codeSnippet": "function removeDuplicates(arr) {\n    // Your code here\n}",
+        "language": "javascript",
+        "testCases": [
+          { "input": "[1, 2, 2, 3, 4, 4, 5]", "expectedOutput": "[1, 2, 3, 4, 5]", "description": "Remove duplicate numbers" },
+          { "input": "['a', 'b', 'a', 'c', 'b']", "expectedOutput": "['a', 'b', 'c']", "description": "Remove duplicate strings" },
+          { "input": "[1, 1, 1, 1]", "expectedOutput": "[1]", "description": "All elements are the same" }
+        ],
+        "explanation": "Use Set to remove duplicates, or use filter() with indexOf() to keep only first occurrences.",
+        "points": 20,
+        "timeLimit": 120,
+        "difficulty": "medium",
+        "tags": ["arrays", "duplicates", "set", "filter"]
+      },
+      {
+        "id": "js-medium-6",
+        "type": "coding",
+        "question": "Write a function that checks if a string is a palindrome (reads the same forwards and backwards).",
+        "codeSnippet": "function isPalindrome(str) {\n    // Your code here\n}",
+        "language": "javascript",
+        "testCases": [
+          { "input": "'racecar'", "expectedOutput": "true", "description": "Classic palindrome" },
+          { "input": "'hello'", "expectedOutput": "false", "description": "Not a palindrome" },
+          { "input": "'A man a plan a canal Panama'", "expectedOutput": "true", "description": "Palindrome with spaces and mixed case" }
+        ],
+        "explanation": "Convert to lowercase, remove non-alphanumeric characters, then compare with reversed string.",
+        "points": 20,
+        "timeLimit": 120,
+        "difficulty": "medium",
+        "tags": ["strings", "palindrome", "reverse", "regex"]
+      },
+      {
+        "id": "js-medium-7",
+        "type": "true-false",
+        "question": "Arrow functions have their own 'this' binding.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Arrow functions don't have their own 'this' binding - they inherit 'this' from the enclosing scope.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["arrow-functions", "this-binding", "scope"]
+      },
+      {
+        "id": "js-medium-8",
+        "type": "true-false",
+        "question": "JavaScript supports function overloading.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "JavaScript doesn't support function overloading. The last function with the same name will override previous ones.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["functions", "overloading", "overriding"]
+      },
+      {
+        "id": "js-medium-9",
+        "type": "multiple-choice",
+        "question": "What will be the output of: console.log([1, 2, 3] + [4, 5, 6]);",
+        "options": [
+          { "text": "[1, 2, 3, 4, 5, 6]", "isCorrect": false },
+          { "text": "1,2,34,5,6", "isCorrect": true },
+          { "text": "Error", "isCorrect": false },
+          { "text": "undefined", "isCorrect": false }
+        ],
+        "explanation": "Arrays are converted to strings and concatenated: '1,2,3' + '4,5,6' = '1,2,34,5,6'.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["arrays", "type-coercion", "concatenation"]
+      },
+      {
+        "id": "js-medium-10",
+        "type": "multiple-choice",
+        "question": "What will be the output of: console.log(0.1 + 0.2 === 0.3);",
+        "options": [
+          { "text": "true", "isCorrect": false },
+          { "text": "false", "isCorrect": true },
+          { "text": "Error", "isCorrect": false },
+          { "text": "undefined", "isCorrect": false }
+        ],
+        "explanation": "Due to floating-point precision issues, 0.1 + 0.2 equals approximately 0.30000000000000004, not exactly 0.3.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["floating-point", "precision", "comparison"]
+      },
+      {
+        "id": "js-hard-1",
+        "type": "multiple-choice",
+        "question": "What is the output of: (function() { return typeof arguments; })();",
+        "options": [
+          { "text": "arguments", "isCorrect": false },
+          { "text": "object", "isCorrect": true },
+          { "text": "array", "isCorrect": false },
+          { "text": "undefined", "isCorrect": false }
+        ],
+        "explanation": "The arguments object is an array-like object, so typeof returns 'object'.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["arguments", "typeof", "functions", "array-like"]
+      },
+      {
+        "id": "js-hard-2",
+        "type": "multiple-choice",
+        "question": "Which of the following will NOT cause a memory leak in JavaScript?",
+        "options": [
+          { "text": "Creating circular references", "isCorrect": false },
+          { "text": "Not removing event listeners", "isCorrect": false },
+          { "text": "Using closures properly", "isCorrect": true },
+          { "text": "Storing DOM references in global variables", "isCorrect": false }
+        ],
+        "explanation": "Properly used closures don't cause memory leaks. The other options are common causes of memory leaks.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["memory-leaks", "closures", "event-listeners", "dom"]
+      },
+      {
+        "id": "js-hard-3",
+        "type": "multiple-choice",
+        "question": "What is the difference between '==' and '===' operators?",
+        "options": [
+          { "text": "No difference, they work the same", "isCorrect": false },
+          { "text": "=== performs type coercion, == doesn't", "isCorrect": false },
+          { "text": "== performs type coercion, === doesn't", "isCorrect": true },
+          { "text": "=== is faster than ==", "isCorrect": false }
+        ],
+        "explanation": "== performs type coercion before comparison, while === performs strict comparison without type coercion.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["operators", "comparison", "type-coercion", "strict-equality"]
+      },
+      {
+        "id": "js-hard-4",
+        "type": "coding",
+        "question": "Implement a debounce function that delays the execution of a function until after a specified time has passed since its last invocation.",
+        "codeSnippet": "function debounce(func, delay) {\n    // Your code here\n}",
+        "language": "javascript",
+        "testCases": [
+          { "input": "debounce(() => console.log('Hello'), 100)", "expectedOutput": "Function that can be called", "description": "Should return a debounced function" },
+          { "input": "Multiple rapid calls should only execute once", "expectedOutput": "Last call executes after delay", "description": "Test debouncing behavior" }
+        ],
+        "explanation": "Use setTimeout and clearTimeout to implement debouncing. Store the timeout ID and clear it on each new call.",
+        "points": 25,
+        "timeLimit": 180,
+        "difficulty": "hard",
+        "tags": ["debounce", "closures", "setTimeout", "clearTimeout", "performance"]
+      },
+      {
+        "id": "js-hard-5",
+        "type": "coding",
+        "question": "Create a function that implements a simple Promise with then, catch, and finally methods.",
+        "codeSnippet": "class SimplePromise {\n    constructor(executor) {\n        // Your code here\n    }\n    \n    then(onFulfilled) {\n        // Your code here\n    }\n    \n    catch(onRejected) {\n        // Your code here\n    }\n    \n    finally(onFinally) {\n        // Your code here\n    }\n}",
+        "language": "javascript",
+        "testCases": [
+          { "input": "new SimplePromise((resolve) => resolve('success'))", "expectedOutput": "Promise that resolves", "description": "Basic promise resolution" },
+          { "input": "new SimplePromise((resolve, reject) => reject('error'))", "expectedOutput": "Promise that rejects", "description": "Basic promise rejection" }
+        ],
+        "explanation": "Implement a basic Promise with state management (pending, fulfilled, rejected) and method chaining.",
+        "points": 25,
+        "timeLimit": 180,
+        "difficulty": "hard",
+        "tags": ["promises", "async", "classes", "state-management"]
+      },
+      {
+        "id": "js-hard-6",
+        "type": "coding",
+        "question": "Write a function that implements deep cloning of objects, handling circular references.",
+        "codeSnippet": "function deepClone(obj) {\n    // Your code here\n}",
+        "language": "javascript",
+        "testCases": [
+          { "input": "{ a: 1, b: { c: 2 } }", "expectedOutput": "Deep copy of object", "description": "Basic deep cloning" },
+          { "input": "Object with circular reference", "expectedOutput": "Handle circular reference", "description": "Circular reference handling" }
+        ],
+        "explanation": "Use recursion and a WeakMap to track visited objects to handle circular references.",
+        "points": 25,
+        "timeLimit": 180,
+        "difficulty": "hard",
+        "tags": ["deep-clone", "recursion", "circular-references", "weakmap"]
+      },
+      {
+        "id": "js-hard-7",
+        "type": "true-false",
+        "question": "In JavaScript, all functions are objects.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Functions in JavaScript are first-class objects - they can have properties, methods, and be passed around like any other object.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["functions", "objects", "first-class", "properties"]
+      },
+      {
+        "id": "js-hard-8",
+        "type": "true-false",
+        "question": "JavaScript's prototypal inheritance is the same as classical inheritance.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "JavaScript uses prototypal inheritance, which is different from classical inheritance. Objects inherit directly from other objects.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["inheritance", "prototypes", "classical-inheritance", "prototypal-inheritance"]
+      },
+      {
+        "id": "js-hard-9",
+        "type": "multiple-choice",
+        "question": "What will be the output of: console.log([...'hello'].map((c, i) => c + i).join(''));",
+        "options": [
+          { "text": "hello", "isCorrect": false },
+          { "text": "h0e1l2l3o4", "isCorrect": true },
+          { "text": "01234", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "Spread operator converts string to array, map adds index to each character, join concatenates: 'h0e1l2l3o4'.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["spread-operator", "map", "join", "string-manipulation"]
+      },
+      {
+        "id": "js-hard-10",
+        "type": "multiple-choice",
+        "question": "What will be the output of: console.log((() => { let x = y = 1; })(); console.log(typeof x, typeof y);",
+        "options": [
+          { "text": "undefined undefined", "isCorrect": false },
+          { "text": "undefined number", "isCorrect": true },
+          { "text": "number number", "isCorrect": false },
+          { "text": "Error", "isCorrect": false }
+        ],
+        "explanation": "let x = y = 1 creates x in block scope (undefined outside) and y in global scope (number).",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["scope", "let", "global-variables", "assignment"]
+      }
+    ]
+  }
+}

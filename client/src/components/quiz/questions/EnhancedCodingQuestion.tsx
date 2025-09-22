@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Code, Play, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { localCodeExecutor } from '../../../utils/localCodeExecutor';
 import './EnhancedCodingQuestion.css';
 
 interface TestCase {
@@ -57,76 +58,8 @@ const EnhancedCodingQuestion: React.FC<CodingQuestionProps> = ({
     setShowOutput(true);
 
     try {
-      // Execute the code
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          language: language,
-          code: answer,
-          input: ''
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      // Run test cases if available
-      let testResults: Array<{ testCase: TestCase; passed: boolean; actualOutput: string }> = [];
-      
-      if (testCases && testCases.length > 0) {
-        for (const testCase of testCases) {
-          try {
-            // Create a test function that calls the user's code with the test input
-            const testCode = `
-              ${answer}
-              
-              // Test the function
-              try {
-                const result = ${getFunctionName(answer)}(${testCase.input});
-                console.log(JSON.stringify(result));
-              } catch (error) {
-                console.log("Error:", error.message);
-              }
-            `;
-
-            const testResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/execute`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                language: language,
-                code: testCode,
-                input: ''
-              })
-            });
-
-            if (testResponse.ok) {
-              const testResult = await testResponse.json();
-              const actualOutput = testResult.stdout?.trim() || testResult.stderr?.trim() || '';
-              const passed = actualOutput === testCase.expectedOutput;
-              
-              testResults.push({
-                testCase,
-                passed,
-                actualOutput
-              });
-            }
-          } catch (error) {
-            testResults.push({
-              testCase,
-              passed: false,
-              actualOutput: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-            });
-          }
-        }
-      }
+      // Use local code executor; route by language for Python support
+      const { result, testResults } = await localCodeExecutor.executeCodeGeneric(language || 'javascript', answer, testCases);
 
       setExecutionResult({
         output: result.stdout || '',
@@ -138,18 +71,15 @@ const EnhancedCodingQuestion: React.FC<CodingQuestionProps> = ({
     } catch (error) {
       setExecutionResult({
         output: '',
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        executionTime: 0,
+        testResults: []
       });
     } finally {
       setIsExecuting(false);
     }
   };
 
-  // Extract function name from code snippet
-  const getFunctionName = (code: string): string => {
-    const match = code.match(/function\s+(\w+)/);
-    return match ? match[1] : 'yourFunction';
-  };
 
   const getPassedTests = () => {
     if (!executionResult?.testResults) return 0;

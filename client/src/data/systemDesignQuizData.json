@@ -1,0 +1,108 @@
+{
+  "quiz": {
+    "id": "system-design",
+    "title": "System Design Quiz",
+    "description": "Validate your understanding of scalable architectures, databases, caching, load balancing, and consistency trade-offs.",
+    "category": "System Design",
+    "difficulty": "advanced",
+    "tags": ["system-design", "scalability", "databases", "caching", "consistency"],
+    "settings": {
+      "isPublic": true,
+      "allowRetakes": true,
+      "maxAttempts": 5,
+      "showResults": true,
+      "showCorrectAnswers": true,
+      "randomizeQuestions": true,
+      "timeLimit": 0
+    },
+    "stats": {
+      "totalAttempts": 0,
+      "totalParticipants": 0,
+      "averageScore": 0,
+      "averageTime": 0,
+      "completionRate": 0
+    },
+    "questions": [
+      {
+        "id": "sd-easy-1",
+        "type": "multiple-choice",
+        "question": "Which component distributes incoming traffic across multiple servers?",
+        "options": [
+          { "text": "Load balancer", "isCorrect": true },
+          { "text": "Cache", "isCorrect": false },
+          { "text": "Message queue", "isCorrect": false },
+          { "text": "CDN", "isCorrect": false }
+        ],
+        "explanation": "A load balancer routes requests to multiple backend instances to improve availability and throughput.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["load-balancer", "scalability"]
+      },
+      {
+        "id": "sd-medium-1",
+        "type": "multiple-choice",
+        "question": "Which database choice favors flexible schema and horizontal scalability?",
+        "options": [
+          { "text": "Relational (SQL)", "isCorrect": false },
+          { "text": "Document (NoSQL)", "isCorrect": true },
+          { "text": "Graph (NoSQL)", "isCorrect": false },
+          { "text": "Time-series (NoSQL)", "isCorrect": false }
+        ],
+        "explanation": "Document databases are well-suited for flexible schemas and horizontal sharding/replication.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["databases", "nosql"]
+      },
+      {
+        "id": "sd-medium-2",
+        "type": "true-false",
+        "question": "CDNs reduce latency by caching static assets closer to users.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Content Delivery Networks place cached content at edge locations to reduce round-trip time.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["cdn", "latency", "caching"]
+      },
+      {
+        "id": "sd-hard-1",
+        "type": "multiple-choice",
+        "question": "In the CAP theorem, which two properties are typically chosen for an AP system?",
+        "options": [
+          { "text": "Consistency and Availability", "isCorrect": false },
+          { "text": "Consistency and Partition Tolerance", "isCorrect": false },
+          { "text": "Availability and Partition Tolerance", "isCorrect": true },
+          { "text": "All three at once", "isCorrect": false }
+        ],
+        "explanation": "AP systems remain available and partition-tolerant, relaxing strict consistency under partitions.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["cap", "consistency", "availability", "partition-tolerance"]
+      },
+      {
+        "id": "sd-hard-2",
+        "type": "multiple-choice",
+        "question": "Which cache invalidation strategy ensures reads always fetch the most up-to-date data at the cost of higher latency?",
+        "options": [
+          { "text": "Write-through", "isCorrect": false },
+          { "text": "Write-back (write-behind)", "isCorrect": false },
+          { "text": "Read-through", "isCorrect": true },
+          { "text": "Cache-aside with long TTL", "isCorrect": false }
+        ],
+        "explanation": "Read-through fetches from origin on miss and populates cache, ensuring freshness.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["caching", "patterns", "consistency"]
+      }
+    ]
+  }
+}
+
+

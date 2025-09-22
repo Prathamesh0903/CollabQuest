@@ -19,6 +19,10 @@ import {
 } from './questions';
 import './DynamicQuizContainer.css';
 
+// Debug: Check if service is imported correctly
+console.log('🔧 DynamicQuizContainer: quizService imported:', !!quizService);
+console.log('🔧 DynamicQuizContainer: quizService methods:', Object.getOwnPropertyNames(quizService));
+
 interface DynamicQuizContainerProps {
   questions?: Question[];
   quizId?: string;
@@ -85,20 +89,38 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
   // Fetch quiz data if quizId is provided
   useEffect(() => {
     const fetchQuiz = async () => {
-      if (!quizId || propQuestions) return;
+      if (!quizId || propQuestions) {
+        console.log('🔄 DynamicQuizContainer: Skipping fetch - quizId:', quizId, 'propQuestions:', !!propQuestions);
+        return;
+      }
+      
+      console.log('🔄 DynamicQuizContainer: Starting to fetch quiz with ID:', quizId);
+      console.log('🔄 DynamicQuizContainer: Service object:', quizService);
       
       try {
         setLoading(true);
         setError(null);
         
         const response = await quizService.getQuizById(quizId);
+        console.log('📡 DynamicQuizContainer: Service response:', response);
+        
         if (response.success && response.quiz) {
+          console.log('✅ DynamicQuizContainer: Setting questions:', response.quiz.questions.length);
+          console.log('📝 DynamicQuizContainer: First question:', response.quiz.questions[0]?.question);
+          
+          // CRITICAL CHECK: Verify we're getting the right questions
+          if (quizId === 'python-essentials-quiz' && response.quiz.questions[0]?.question.includes('JavaScript')) {
+            console.log('🚨 CRITICAL ERROR: Python quiz returned JavaScript questions!');
+            console.log('🚨 Expected Python, got:', response.quiz.questions[0]?.question);
+          }
+          
           setQuestions(response.quiz.questions);
         } else {
+          console.error('❌ DynamicQuizContainer: Failed to load quiz:', response.error);
           throw new Error('Failed to load quiz');
         }
       } catch (err) {
-        console.error('Error fetching quiz:', err);
+        console.error('💥 DynamicQuizContainer: Error fetching quiz:', err);
         setError(err instanceof Error ? err.message : 'Failed to load quiz');
       } finally {
         setLoading(false);
@@ -456,6 +478,9 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
         timeLimit={timeLimit}
         timeLeft={timeLeft}
         isAdvanced={true}
+        quizId={quizId}
+        userAnswers={userAnswers}
+        questions={questions}
         onRetake={() => {
           setShowResults(false);
           setCurrentQuestionIndex(0);

@@ -1,0 +1,122 @@
+{
+  "quiz": {
+    "id": "data-structures",
+    "title": "Data Structures Quiz",
+    "description": "Assess your understanding of core data structures including arrays, stacks, queues, linked lists, trees, and graphs.",
+    "category": "Data Structures",
+    "difficulty": "intermediate",
+    "tags": ["data-structures", "arrays", "linked-lists", "trees", "graphs"],
+    "settings": {
+      "isPublic": true,
+      "allowRetakes": true,
+      "maxAttempts": 5,
+      "showResults": true,
+      "showCorrectAnswers": true,
+      "randomizeQuestions": true,
+      "timeLimit": 0
+    },
+    "stats": {
+      "totalAttempts": 0,
+      "totalParticipants": 0,
+      "averageScore": 0,
+      "averageTime": 0,
+      "completionRate": 0
+    },
+    "questions": [
+      {
+        "id": "ds-easy-1",
+        "type": "multiple-choice",
+        "question": "Which data structure operates on a First-In-First-Out (FIFO) principle?",
+        "options": [
+          { "text": "Stack", "isCorrect": false },
+          { "text": "Queue", "isCorrect": true },
+          { "text": "Deque", "isCorrect": false },
+          { "text": "Priority Queue", "isCorrect": false }
+        ],
+        "explanation": "Queues follow FIFO: the first element added is the first one removed.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["queue", "fifo", "basics"]
+      },
+      {
+        "id": "ds-easy-2",
+        "type": "true-false",
+        "question": "In a singly linked list, you can traverse the list backwards efficiently.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Singly linked lists have next pointers only; reverse traversal isn't efficient without extra structure.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["linked-list", "traversal"]
+      },
+      {
+        "id": "ds-medium-1",
+        "type": "multiple-choice",
+        "question": "What is the average time complexity to search for an element in a balanced binary search tree (BST)?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "In a balanced BST, height is O(log n), yielding O(log n) search time.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["bst", "time-complexity", "search"]
+      },
+      {
+        "id": "ds-medium-2",
+        "type": "multiple-choice",
+        "question": "Which structure is best for implementing an LRU cache?",
+        "options": [
+          { "text": "Array only", "isCorrect": false },
+          { "text": "HashMap + Doubly Linked List", "isCorrect": true },
+          { "text": "Stack", "isCorrect": false },
+          { "text": "Queue", "isCorrect": false }
+        ],
+        "explanation": "HashMap enables O(1) lookups; a doubly linked list supports O(1) insert/move/evict operations.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["lru", "hashmap", "doubly-linked-list"]
+      },
+      {
+        "id": "ds-hard-1",
+        "type": "multiple-choice",
+        "question": "For a graph with V vertices and E edges represented by an adjacency list, what is the time complexity of BFS?",
+        "options": [
+          { "text": "O(V)", "isCorrect": false },
+          { "text": "O(E)", "isCorrect": false },
+          { "text": "O(V + E)", "isCorrect": true },
+          { "text": "O(V * E)", "isCorrect": false }
+        ],
+        "explanation": "BFS visits each vertex and edge at most once with adjacency lists, leading to O(V + E).",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["graphs", "bfs", "complexity"]
+      },
+      {
+        "id": "ds-hard-2",
+        "type": "true-false",
+        "question": "A min-heap guarantees O(1) time to find the minimum element.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "The root of a min-heap is the minimum element and is accessible in O(1).",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["heap", "min-heap", "priority-queue"]
+      }
+    ]
+  }
+}
+
+

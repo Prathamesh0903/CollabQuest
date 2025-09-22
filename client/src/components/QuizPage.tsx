@@ -8,6 +8,7 @@ import {
 import quizService from '../services/quizService';
 import DynamicQuizContainer from './quiz/DynamicQuizContainer';
 import EnhancedCodingQuestion from './quiz/questions/EnhancedCodingQuestion';
+import QuizResults from './quiz/QuizResults';
 import './QuizPage.css';
 
 interface QuizCategory {
@@ -31,7 +32,7 @@ interface QuizConfig {
 
 interface Question {
   id: string;
-  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'coding' | 'predict-output';
+  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'matching' | 'coding' | 'predict-output';
   question: string;
   options?: Array<{text: string, isCorrect: boolean}>;
   correctAnswer?: string | number | boolean;
@@ -806,6 +807,7 @@ const QuizPage: React.FC = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [codingAnswer, setCodingAnswer] = useState<string>('');
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
+  const [submittedAnswers, setSubmittedAnswers] = useState<Set<string>>(new Set());
   const [showExplanation, setShowExplanation] = useState(false);
   const [isQuizComplete, setIsQuizComplete] = useState(false);
   const [score, setScore] = useState(0);
@@ -824,15 +826,16 @@ const QuizPage: React.FC = () => {
   // Get quiz config from location state
   const quizConfig = location.state?.quizConfig as QuizConfig;
   const category = location.state?.category as QuizCategory;
+  const quizId = (location.state as any)?.quizId as string | undefined;
 
   // Filter questions based on difficulty level
-  const filterQuestionsByDifficulty = (difficulty: string, questionCount: number): Question[] => {
+  const filterQuestionsByDifficulty = (difficulty: string, questionCount: number, questionsData: Question[] = javascriptQuestions): Question[] => {
     let filteredQuestions: Question[] = [];
     
     switch (difficulty.toLowerCase()) {
       case 'easy':
         // Easy: MCQ, True/False, Predict Output
-        const easyQuestions = javascriptQuestions.filter(q => 
+        const easyQuestions = questionsData.filter(q => 
           q.difficulty === 'easy' && 
           ['multiple-choice', 'true-false', 'predict-output'].includes(q.type)
         );
@@ -841,7 +844,7 @@ const QuizPage: React.FC = () => {
         
       case 'medium':
         // Medium: Easy types + Coding questions (at least 2 per 5 questions)
-        const mediumQuestions = javascriptQuestions.filter(q => 
+        const mediumQuestions = questionsData.filter(q => 
           q.difficulty === 'medium' && 
           ['multiple-choice', 'true-false', 'predict-output', 'coding'].includes(q.type)
         );
@@ -863,7 +866,7 @@ const QuizPage: React.FC = () => {
         
       case 'hard':
         // Hard: Medium types with upgraded difficulty
-        const hardQuestions = javascriptQuestions.filter(q => 
+        const hardQuestions = questionsData.filter(q => 
           q.difficulty === 'hard' && 
           ['multiple-choice', 'true-false', 'predict-output', 'coding'].includes(q.type)
         );
@@ -884,7 +887,7 @@ const QuizPage: React.FC = () => {
         break;
         
       default:
-        filteredQuestions = javascriptQuestions;
+        filteredQuestions = questionsData;
     }
     
     // Shuffle and limit to requested count
@@ -892,14 +895,22 @@ const QuizPage: React.FC = () => {
     return shuffled.slice(0, questionCount);
   };
 
-  // Load JavaScript quiz dataset
-  const loadJavaScriptQuiz = () => {
+  // Load selected subject quiz dataset
+  const loadQuiz = async () => {
     setLoading(true);
     setError(null);
     
     try {
+      // Use quizService to get the quiz data
+      const response = await quizService.getQuizById(quizId || 'javascript-fundamentals-quiz');
+      
+      if (!response.success || !response.quiz) {
+        setError('Failed to load quiz data');
+        return;
+      }
+      
       // Filter questions based on difficulty and question count
-      const filteredQuestions = filterQuestionsByDifficulty(quizConfig.difficulty, quizConfig.questionCount);
+      const filteredQuestions = filterQuestionsByDifficulty(quizConfig.difficulty, quizConfig.questionCount, response.quiz.questions);
       
       if (filteredQuestions.length === 0) {
         setError('No questions available for the selected difficulty level');
@@ -909,7 +920,7 @@ const QuizPage: React.FC = () => {
       setQuestions(filteredQuestions);
       setTotalQuestions(filteredQuestions.length);
     } catch (err) {
-      console.error('Error loading JavaScript quiz:', err);
+      console.error('Error loading quiz:', err);
       setError('Failed to load quiz questions');
     } finally {
       setLoading(false);
@@ -921,7 +932,10 @@ const QuizPage: React.FC = () => {
       navigate('/advanced-quiz');
       return;
     }
-  }, [quizConfig, category, navigate]);
+    
+    // Load the quiz when component mounts
+    loadQuiz();
+  }, [quizConfig, category, quizId, navigate]);
 
   useEffect(() => {
     if (questions.length > 0) {
@@ -950,9 +964,35 @@ const QuizPage: React.FC = () => {
   useEffect(() => {
     setQuestionStartTime(Date.now());
     setShowHint(false);
-    setSelectedAnswer(null);
-    setCodingAnswer('');
-  }, [currentQuestion]);
+    
+    // Restore previous answer if it exists and hasn't been submitted
+    const currentQ = questions[currentQuestion];
+    if (currentQ) {
+      const existingAnswer = userAnswers.find(ua => ua.questionId === currentQ.id);
+      if (existingAnswer && submittedAnswers.has(currentQ.id)) {
+        // Answer has been submitted, restore it but make it read-only
+        if (currentQ.type === 'coding') {
+          setCodingAnswer(existingAnswer.answer as string);
+        } else {
+          setSelectedAnswer(existingAnswer.answer as number);
+        }
+      } else if (existingAnswer) {
+        // Answer exists but not submitted, restore it
+        if (currentQ.type === 'coding') {
+          setCodingAnswer(existingAnswer.answer as string);
+        } else {
+          setSelectedAnswer(existingAnswer.answer as number);
+        }
+      } else {
+        // No existing answer, reset to null/empty
+        setSelectedAnswer(null);
+        setCodingAnswer('');
+      }
+    } else {
+      setSelectedAnswer(null);
+      setCodingAnswer('');
+    }
+  }, [currentQuestion, questions, userAnswers, submittedAnswers]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -967,8 +1007,6 @@ const QuizPage: React.FC = () => {
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(prev => prev - 1);
-      setSelectedAnswer(null);
-      setCodingAnswer('');
       setShowExplanation(false);
       setShowHint(false);
       setQuestionStartTime(Date.now());
@@ -980,6 +1018,17 @@ const QuizPage: React.FC = () => {
 
     const currentQ = questions[currentQuestion];
     if (!currentQ) return;
+
+    // Check if answer has already been submitted for this question
+    if (submittedAnswers.has(currentQ.id)) {
+      // Just move to next question without processing
+      if (currentQuestion + 1 < Math.min(quizConfig.questionCount, questions.length)) {
+        setCurrentQuestion(prev => prev + 1);
+      } else {
+        handleQuizComplete();
+      }
+      return;
+    }
 
     // Handle different question types
     let isCorrect = false;
@@ -1011,8 +1060,34 @@ const QuizPage: React.FC = () => {
       points
     };
 
-    setUserAnswers(prev => [...prev, userAnswer]);
-    setScore(prev => prev + points);
+    // Update user answers (replace if exists, add if new)
+    setUserAnswers(prev => {
+      const existingIndex = prev.findIndex(ua => ua.questionId === currentQ.id);
+      if (existingIndex >= 0) {
+        // Replace existing answer
+        const newAnswers = [...prev];
+        newAnswers[existingIndex] = userAnswer;
+        return newAnswers;
+      } else {
+        // Add new answer
+        return [...prev, userAnswer];
+      }
+    });
+
+    // Mark this answer as submitted
+    setSubmittedAnswers(prev => new Set(Array.from(prev).concat(currentQ.id)));
+
+    // Update score only if this is a new submission
+    setScore(prev => {
+      const existingAnswer = userAnswers.find(ua => ua.questionId === currentQ.id);
+      if (existingAnswer) {
+        // Replace previous score
+        return prev - existingAnswer.points + points;
+      } else {
+        // Add new score
+        return prev + points;
+      }
+    });
 
     // Update streak
     if (isCorrect) {
@@ -1029,7 +1104,6 @@ const QuizPage: React.FC = () => {
     
     setTimeout(() => {
       setShowExplanation(false);
-      setSelectedAnswer(null);
       
       if (currentQuestion + 1 < Math.min(quizConfig.questionCount, questions.length)) {
         setCurrentQuestion(prev => prev + 1);
@@ -1039,10 +1113,44 @@ const QuizPage: React.FC = () => {
     }, 3000);
   };
 
-  const handleQuizComplete = () => {
+  const handleQuizComplete = async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
+    
+    // Submit quiz attempt to track results
+    try {
+      // Create answers array in the same order as questions
+      const answers = questions.map(question => {
+        const userAnswer = userAnswers.find(ua => ua.questionId === question.id);
+        if (!userAnswer) return '';
+        
+        if (question.type === 'multiple-choice') {
+          const selectedOption = question.options?.[userAnswer.answer as number];
+          return selectedOption?.text || '';
+        } else if (question.type === 'true-false') {
+          return userAnswer.answer ? 'True' : 'False';
+        } else if (question.type === 'coding') {
+          return userAnswer.answer as string;
+        }
+        
+        return userAnswer.answer as string;
+      });
+      
+      console.log('Submitting quiz with answers:', answers);
+      console.log('User answers:', userAnswers);
+      
+      const response = await quizService.submitQuizAttempt(quizId || 'javascript-fundamentals-quiz', answers);
+      
+      if (response.success) {
+        console.log('Quiz submitted successfully:', response.stats);
+      } else {
+        console.error('Failed to submit quiz:', response.error);
+      }
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+    }
+    
     setIsQuizComplete(true);
   };
 
@@ -1058,7 +1166,21 @@ const QuizPage: React.FC = () => {
   };
 
   const handleAnswerSelect = (index: number) => {
+    const currentQ = questions[currentQuestion];
+    if (currentQ && submittedAnswers.has(currentQ.id)) {
+      // Don't allow changes to submitted answers
+      return;
+    }
     setSelectedAnswer(index);
+  };
+
+  const handleCodingAnswerChange = (answer: string) => {
+    const currentQ = questions[currentQuestion];
+    if (currentQ && submittedAnswers.has(currentQ.id)) {
+      // Don't allow changes to submitted answers
+      return;
+    }
+    setCodingAnswer(answer);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -1080,8 +1202,8 @@ const QuizPage: React.FC = () => {
         <div className="quiz-container">
           <div className="loading-state">
             <div className="loading-spinner"></div>
-            <h2>Loading JavaScript Fundamentals Quiz...</h2>
-            <p>Please wait while we fetch the latest questions.</p>
+            <h2>Preparing {category.title} Quiz...</h2>
+            <p>Loading questions from local dataset.</p>
           </div>
         </div>
       </div>
@@ -1096,7 +1218,7 @@ const QuizPage: React.FC = () => {
             <XCircle className="error-icon" />
             <h2>Error Loading Quiz</h2>
             <p>{error}</p>
-            <button onClick={() => loadJavaScriptQuiz()} className="retry-button">
+            <button onClick={() => loadQuiz()} className="retry-button">
               Try Again
             </button>
           </div>
@@ -1122,65 +1244,45 @@ const QuizPage: React.FC = () => {
   if (isQuizComplete) {
     const accuracy = Math.round((userAnswers.filter(a => a.isCorrect).length / userAnswers.length) * 100);
     const totalPossibleScore = totalQuestions * 10;
-    const scorePercentage = Math.round((score / totalPossibleScore) * 100);
+    const timeUsed = quizConfig.timeLimit * 60 - timeLeft;
+    
+    // Create QuizStats object for the enhanced results
+    const quizStats = {
+      totalQuestions: totalQuestions,
+      correctAnswers: userAnswers.filter(a => a.isCorrect).length,
+      totalPoints: totalPossibleScore,
+      earnedPoints: score,
+      accuracy: accuracy,
+      averageTime: timeUsed / totalQuestions,
+      timeRemaining: timeLeft,
+      streak: 0,
+      maxStreak: maxStreak,
+      difficulty: quizConfig.difficulty.toLowerCase(),
+      hintsUsed: hintsUsed,
+      livesRemaining: 3
+    };
     
     return (
-      <div className="quiz-complete-page">
-        
-        <div className="completion-container">
-          <div className="completion-header">
-            <div className="completion-icon">
-              <Award className="w-8 h-8" />
-            </div>
-            <h1 className="completion-title">Quiz Complete!</h1>
-            <p className="completion-subtitle">Great job completing the {category.title} quiz</p>
-          </div>
-
-          <div className="stats-grid">
-            <div className="stat-card primary">
-              <div className="stat-icon">
-                <Target className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{score}/{totalPossibleScore}</div>
-              <div className="stat-label">Final Score</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{accuracy}%</div>
-              <div className="stat-label">Accuracy</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{maxStreak}</div>
-              <div className="stat-label">Best Streak</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">
-                <HelpCircle className="w-5 h-5" />
-              </div>
-              <div className="stat-value">{hintsUsed}</div>
-              <div className="stat-label">Hints Used</div>
-            </div>
-          </div>
-
-          <div className="completion-actions">
-            <button 
-              className="home-btn"
-              onClick={() => navigate('/')}
-            >
-              <Home className="w-4 h-4" />
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <QuizResults
+        quizStats={quizStats}
+        timeLimit={quizConfig.timeLimit}
+        timeLeft={timeLeft}
+        isAdvanced={false}
+        userAnswers={userAnswers}
+        questions={questions}
+        onRetake={() => {
+          setIsQuizComplete(false);
+          setCurrentQuestion(0);
+          setUserAnswers([]);
+          setScore(0);
+          setStreak(0);
+          setMaxStreak(0);
+          setHintsUsed(0);
+          setTimeLeft(quizConfig.timeLimit * 60);
+          setQuestionStartTime(Date.now());
+        }}
+        onBackToDashboard={() => navigate('/advanced-quiz')}
+      />
     );
   }
 
@@ -1237,7 +1339,7 @@ const QuizPage: React.FC = () => {
               testCases={currentQ.testCases}
               answer={codingAnswer}
               showExplanation={showExplanation}
-              onAnswerChange={setCodingAnswer}
+              onAnswerChange={handleCodingAnswerChange}
             />
           ) : currentQ.type === 'predict-output' ? (
             <div className="predict-output-container">
@@ -1267,9 +1369,9 @@ const QuizPage: React.FC = () => {
                         showExplanation ? 
                           (isCorrect ? 'correct' : 
                            selectedAnswer === index ? 'incorrect' : '') : ''
-                      }`}
-                      onClick={() => !showExplanation && handleAnswerSelect(index)}
-                      disabled={showExplanation}
+                      } ${submittedAnswers.has(currentQ.id) ? 'submitted' : ''}`}
+                      onClick={() => !showExplanation && !submittedAnswers.has(currentQ.id) && handleAnswerSelect(index)}
+                      disabled={showExplanation || submittedAnswers.has(currentQ.id)}
                     >
                       <div className="answer-content">
                         <div className="answer-letter">{String.fromCharCode(65 + index)}</div>
@@ -1300,9 +1402,9 @@ const QuizPage: React.FC = () => {
                       showExplanation ? 
                         (isCorrect ? 'correct' : 
                          selectedAnswer === index ? 'incorrect' : '') : ''
-                    }`}
-                    onClick={() => !showExplanation && handleAnswerSelect(index)}
-                    disabled={showExplanation}
+                    } ${submittedAnswers.has(currentQ.id) ? 'submitted' : ''}`}
+                    onClick={() => !showExplanation && !submittedAnswers.has(currentQ.id) && handleAnswerSelect(index)}
+                    disabled={showExplanation || submittedAnswers.has(currentQ.id)}
                   >
                     <div className="answer-content">
                       <div className="answer-letter">{String.fromCharCode(65 + index)}</div>

@@ -1,0 +1,122 @@
+{
+  "quiz": {
+    "id": "web-development",
+    "title": "Web Development Quiz",
+    "description": "Test your knowledge of HTML, CSS, and core web concepts including accessibility and performance.",
+    "category": "Web Development",
+    "difficulty": "intermediate",
+    "tags": ["web", "html", "css", "accessibility", "performance"],
+    "settings": {
+      "isPublic": true,
+      "allowRetakes": true,
+      "maxAttempts": 5,
+      "showResults": true,
+      "showCorrectAnswers": true,
+      "randomizeQuestions": true,
+      "timeLimit": 0
+    },
+    "stats": {
+      "totalAttempts": 0,
+      "totalParticipants": 0,
+      "averageScore": 0,
+      "averageTime": 0,
+      "completionRate": 0
+    },
+    "questions": [
+      {
+        "id": "web-easy-1",
+        "type": "multiple-choice",
+        "question": "Which HTML tag is used to define the most important heading?",
+        "options": [
+          { "text": "<h1>", "isCorrect": true },
+          { "text": "<head>", "isCorrect": false },
+          { "text": "<header>", "isCorrect": false },
+          { "text": "<title>", "isCorrect": false }
+        ],
+        "explanation": "<h1> defines the top-level heading.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["html", "headings"]
+      },
+      {
+        "id": "web-easy-2",
+        "type": "true-false",
+        "question": "CSS Flexbox is ideal for one-dimensional layouts.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Flexbox is optimized for one-dimensional layouts; Grid is for two-dimensional layouts.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["css", "flexbox"]
+      },
+      {
+        "id": "web-medium-1",
+        "type": "multiple-choice",
+        "question": "Which attribute improves accessibility by providing text for screen readers on images?",
+        "options": [
+          { "text": "title", "isCorrect": false },
+          { "text": "alt", "isCorrect": true },
+          { "text": "aria-role", "isCorrect": false },
+          { "text": "desc", "isCorrect": false }
+        ],
+        "explanation": "The alt attribute provides alternative text for images.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["accessibility", "html", "img"]
+      },
+      {
+        "id": "web-medium-2",
+        "type": "multiple-choice",
+        "question": "To minimize reflow and repaint, which practice is recommended?",
+        "options": [
+          { "text": "Modify styles one-by-one in a loop", "isCorrect": false },
+          { "text": "Batch DOM reads and writes", "isCorrect": true },
+          { "text": "Use inline styles for all elements", "isCorrect": false },
+          { "text": "Force layout with getBoundingClientRect in loops", "isCorrect": false }
+        ],
+        "explanation": "Batching DOM reads and writes reduces layout thrashing and improves performance.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["performance", "dom"]
+      },
+      {
+        "id": "web-hard-1",
+        "type": "multiple-choice",
+        "question": "Which HTTP header is used to enable cross-origin resource sharing (CORS) for specific origins?",
+        "options": [
+          { "text": "Content-Security-Policy", "isCorrect": false },
+          { "text": "Access-Control-Allow-Origin", "isCorrect": true },
+          { "text": "X-Frame-Options", "isCorrect": false },
+          { "text": "Strict-Transport-Security", "isCorrect": false }
+        ],
+        "explanation": "Access-Control-Allow-Origin specifies which origins are permitted to access the resource.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["cors", "http", "security"]
+      },
+      {
+        "id": "web-hard-2",
+        "type": "true-false",
+        "question": "CSS Grid can create both rows and columns simultaneously, making it suitable for two-dimensional layouts.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Grid excels at two-dimensional layouts unlike Flexbox which is one-dimensional.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["css", "grid"]
+      }
+    ]
+  }
+}
+
+

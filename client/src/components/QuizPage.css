@@ -386,6 +386,22 @@
   opacity: 0.6;
 }
 
+.answer-card.submitted {
+  border-color: #6b7280;
+  background: #f9fafb;
+  position: relative;
+}
+
+.answer-card.submitted::after {
+  content: "✓ Submitted";
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 .answer-content {
   display: flex;
   align-items: center;
