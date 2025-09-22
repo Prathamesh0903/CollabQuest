@@ -9,9 +9,9 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://collabquest.onrender.com",
-    "REACT_APP_SOCKET_URL": "https://collabquest.onrender.com",
-    "REACT_APP_SUPABASE_URL": "https://qrxjhmpudchgisaxfdtn.supabase.co",
-    "REACT_APP_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyeGpobXB1ZGNoZ2lzYXhmZHRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTEyNzYsImV4cCI6MjA3Mzg2NzI3Nn0.R_BE6DCzm31yNIDDQinuwea5Wx_BCBmsLInNb_OVPWM"
+    "REACT_APP_API_URL": "${REACT_APP_API_URL}",
+    "REACT_APP_SOCKET_URL": "${REACT_APP_SOCKET_URL}",
+    "REACT_APP_SUPABASE_URL": "${REACT_APP_SUPABASE_URL}",
+    "REACT_APP_SUPABASE_ANON_KEY": "${REACT_APP_SUPABASE_ANON_KEY}"
   }
 }

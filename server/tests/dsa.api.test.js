@@ -5,6 +5,8 @@ const DSAUser = require('../models/dsa/DSAUser');
 
 const BASE_URL = process.env.DSA_API_BASE_URL || 'http://localhost:5001';
 
+process.env.NODE_ENV = 'test';
+
 describe('DSA API (read-only and submissions)', () => {
   let createdUserId;
   let problemId;

@@ -1,5 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+process.env.NODE_ENV = 'test';
 const app = require('../server');
 const DSAProblem = require('../models/dsa/DSAProblem');
 const DSAProgress = require('../models/dsa/DSAProgress');
@@ -64,7 +65,7 @@ describe('DSA Critical Path Tests', () => {
     testUser = await DSAUser.create({
       username: 'testuser',
       email: 'test@example.com',
-      hashed_password: 'test_password'
+      hashed_password: 'test_password_min_len________________'
     });
 
     // Create user mapping

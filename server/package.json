@@ -5,6 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "cross-env PORT=5001 node server.js",
+    "start:render": "node server.js",
+    "build": "echo \"No build step for server\"",
     "start:with-seed": "npm run seed:dsa && cross-env PORT=5001 node server.js",
     "dev": "cross-env PORT=5001 nodemon server.js",
     "test": "jest",

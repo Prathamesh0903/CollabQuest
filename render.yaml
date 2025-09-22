@@ -2,8 +2,8 @@ services:
   - type: web
     name: collab-backend
     env: node
-    buildCommand: cd server && npm install
-    startCommand: cd server && npm run start:with-seed
+    buildCommand: cd server && npm ci --omit=dev
+    startCommand: cd server && npm run start:render
     envVars:
       - key: NODE_ENV
         value: production

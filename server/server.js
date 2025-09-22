@@ -63,17 +63,22 @@ const corsOptions = {
   credentials: true
 };
 
-// Socket.io setup
-const io = new Server(server, {
-  cors: {
-    origin: corsOptions.origin,
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
+// Socket.io setup (disabled in test to avoid port usage)
+let io = null;
+if (process.env.NODE_ENV !== 'test') {
+  io = new Server(server, {
+    cors: {
+      origin: corsOptions.origin,
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
+}
 
 // Make io available to routes via app
-app.set('io', io);
+if (io) {
+  app.set('io', io);
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -116,19 +121,19 @@ if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
 app.get('/api/health', asyncHandler(healthCheck));
 
 // Socket.io middleware
-io.use(socketAuth);
-
-// Socket.io connection handling
-io.on('connection', (socket) => {
-  handleSocketConnection(socket, io);
-});
+if (io) {
+  io.use(socketAuth);
+  io.on('connection', (socket) => {
+    handleSocketConnection(socket, io);
+  });
+}
 
 // Enhanced error handling middleware
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Database connection (tolerate missing DB in development)
-if (process.env.MONGODB_URI) {
+// Database connection (skip in test; tolerate missing DB in development)
+if (process.env.NODE_ENV !== 'test' && process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
       console.log('Connected to MongoDB');
@@ -152,7 +157,7 @@ if (process.env.MONGODB_URI) {
         roomStateManager.initialize().catch(console.error);
       }
     });
-} else {
+} else if (process.env.NODE_ENV !== 'test') {
   console.warn('MONGODB_URI not set. Running without database. Some features may be disabled.');
   
   // Initialize room state manager even without database
@@ -162,10 +167,12 @@ if (process.env.MONGODB_URI) {
 
 const PORT = process.env.PORT || 5001;
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+  });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
@@ -174,3 +181,6 @@ process.on('SIGTERM', () => {
     console.log('Process terminated');
   });
 }); 
+
+// Export app for testing with supertest
+module.exports = app;

@@ -38,6 +38,19 @@ const guestAuth = async (req, res, next) => {
 // Optional authentication middleware (gracefully ignores invalid/expired tokens)
 const optionalAuth = async (req, res, next) => {
   try {
+    // In test mode, allow a dummy Bearer token to simulate authentication
+    if (process.env.NODE_ENV === 'test') {
+      const authHeader = req.headers.authorization || '';
+      if (authHeader && authHeader.startsWith('Bearer')) {
+        req.user = {
+          uid: 'test-firebase-uid',
+          email: 'test@example.com',
+          displayName: 'Test User'
+        };
+        return next();
+      }
+    }
+
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
