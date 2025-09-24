@@ -3,7 +3,37 @@ const { createRemoteJWKSet, jwtVerify } = require('jose');
 
 // Build JWKS URL from Supabase project URL if not explicitly provided
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || '';
-const SUPABASE_JWKS_URL = process.env.SUPABASE_JWKS_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/keys` : '');
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLIC_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Prefer explicit env; otherwise derive. Append apikey when a key is available and not already present
+let SUPABASE_JWKS_URL = process.env.SUPABASE_JWKS_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/keys` : '');
+try {
+  if (SUPABASE_JWKS_URL) {
+    const url = new URL(SUPABASE_JWKS_URL, SUPABASE_JWKS_URL.startsWith('http') ? undefined : SUPABASE_URL);
+    const hasApiKey = url.searchParams.has('apikey');
+    const keyToUse = SUPABASE_ANON_KEY || SUPABASE_SERVICE_ROLE_KEY || '';
+    if (!hasApiKey && keyToUse) {
+      url.searchParams.set('apikey', keyToUse);
+      SUPABASE_JWKS_URL = url.toString();
+    }
+
+    // Development visibility: log sanitized JWKS URL
+    if (process.env.NODE_ENV !== 'production') {
+      const sanitized = new URL(SUPABASE_JWKS_URL);
+      if (sanitized.searchParams.has('apikey')) {
+        const ak = sanitized.searchParams.get('apikey') || '';
+        const masked = ak.length > 8 ? `${ak.slice(0, 4)}***${ak.slice(-4)}` : '***';
+        sanitized.searchParams.set('apikey', masked);
+      }
+      // eslint-disable-next-line no-console
+      console.log('[SupabaseAuth] Using JWKS URL:', sanitized.toString());
+    }
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.warn('[SupabaseAuth] Could not normalize JWKS URL:', e.message);
+}
 
 let jwks;
 
