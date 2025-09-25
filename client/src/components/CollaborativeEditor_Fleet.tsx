@@ -115,10 +115,11 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
   // Initialize socket connection with reconnection logic
   const initializeSocket = useCallback(async () => {
-    if (!currentUser) return;
+    // Allow connection even without authentication in development
+    if (!currentUser && process.env.NODE_ENV !== 'development') return;
 
     try {
-      const token = await currentUser.getIdToken();
+      const token = currentUser ? await currentUser.getIdToken() : null;
       
       // Disconnect existing socket if any
       if (socketRef.current) {
@@ -147,9 +148,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         socketRef.current.emit('join-collab-room', {
           roomId,
           userInfo: {
-            userId: currentUser.id,
-            displayName: currentUser.displayName || 'Anonymous',
-            avatar: currentUser.avatarUrl
+            userId: currentUser?.id || 'dev-user',
+            displayName: currentUser?.displayName || 'Development User',
+            avatar: currentUser?.avatarUrl
           }
         });
       });
@@ -213,7 +214,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
       // Code collaboration handlers
       socketRef.current.on('code-change', (data: { code: string, change: EditorChange, userId: string }) => {
-        if (data.userId !== currentUser.id && editorRef.current) {
+        if (data.userId !== currentUser?.id && editorRef.current) {
           setCode(data.code);
           // Apply the change to the editor
           const model = editorRef.current.getModel();
@@ -224,7 +225,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       });
 
       socketRef.current.on('cursor-position', (data: CursorInfo) => {
-        if (data.userId !== currentUser.id) {
+        if (data.userId !== currentUser?.id) {
           setRemoteCursors(prev => ({
             ...prev,
             [data.userId]: data
@@ -235,7 +236,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       // Chat handlers
       socketRef.current.on('chat-message', (message: ChatMessage) => {
         setChatMessages(prev => [...prev, message]);
-        if (message.userId !== currentUser.id) {
+        if (message.userId !== currentUser?.id) {
           showInfo('Chat', `${message.displayName}: ${message.message}`, 3000);
         }
       });

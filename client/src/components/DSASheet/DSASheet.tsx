@@ -34,42 +34,72 @@ const DSASheet: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        // Load problems with user progress
-        const res = await fetch(`${API_BASE}/dsa/progress?limit=500`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        const items = Array.isArray(json.problems) ? json.problems : [];
-        
-        // Log if we're in fallback mode (no user progress)
-        if (json.message && json.message.includes('after login')) {
-          console.log('Loading problems without user progress (fallback mode)');
-        }
-        
-        const byCategory: Record<string, Topic> = {};
-        for (const p of items) {
-          const catName = p?.category?.name || 'Misc';
-          const topicId = (p?.category?._id as string) || catName.toLowerCase().replace(/\s+/g, '-');
-          if (!byCategory[topicId]) {
-            byCategory[topicId] = {
-              id: topicId,
-              name: catName,
-              isExpanded: true,
-              problems: []
-            } as Topic;
+        // Try to load problems with user progress if authenticated
+        if (currentUser) {
+          const res = await fetch(`${API_BASE}/dsa/progress?limit=500`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          const items = Array.isArray(json.problems) ? json.problems : [];
+          
+          // Log if we're in fallback mode (no user progress)
+          if (json.message && json.message.includes('after login')) {
+            console.log('Loading problems without user progress (fallback mode)');
           }
-          byCategory[topicId].problems.push({
-            id: p._id,
-            title: p.title,
-            difficulty: p.difficulty,
-            tags: p.tags || [],
-            isCompleted: p.isCompleted || false,
-            url: `/dsa-sheet/problem/${p._id}`
-          } as Problem);
+          
+          const byCategory: Record<string, Topic> = {};
+          for (const p of items) {
+            const catName = p?.category?.name || 'Misc';
+            const topicId = (p?.category?._id as string) || catName.toLowerCase().replace(/\s+/g, '-');
+            if (!byCategory[topicId]) {
+              byCategory[topicId] = {
+                id: topicId,
+                name: catName,
+                isExpanded: true,
+                problems: []
+              } as Topic;
+            }
+            byCategory[topicId].problems.push({
+              id: p._id,
+              title: p.title,
+              difficulty: p.difficulty,
+              tags: p.tags || [],
+              isCompleted: p.isCompleted || false,
+              url: `/dsa-sheet/problem/${p._id}`
+            } as Problem);
+          }
+          setTopics(Object.values(byCategory));
+        } else {
+          // Load problems without progress for unauthenticated users
+          const res = await fetch(`${API_BASE}/dsa/problems?limit=500`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          const items = Array.isArray(json.items) ? json.items : [];
+          const byCategory: Record<string, Topic> = {};
+          for (const p of items) {
+            const catName = p?.category?.name || 'Misc';
+            const topicId = (p?.category?._id as string) || catName.toLowerCase().replace(/\s+/g, '-');
+            if (!byCategory[topicId]) {
+              byCategory[topicId] = {
+                id: topicId,
+                name: catName,
+                isExpanded: true,
+                problems: []
+              } as Topic;
+            }
+            byCategory[topicId].problems.push({
+              id: p._id,
+              title: p.title,
+              difficulty: p.difficulty,
+              tags: p.tags || [],
+              isCompleted: false,
+              url: `/dsa-sheet/problem/${p._id}`
+            } as Problem);
+          }
+          setTopics(Object.values(byCategory));
         }
-        setTopics(Object.values(byCategory));
       } catch (e) {
-        console.error('Error loading DSA problems with progress:', e);
-        // Fallback to loading problems without progress
+        console.error('Error loading DSA problems:', e);
+        // Final fallback to loading problems without progress
         try {
           const res = await fetch(`${API_BASE}/dsa/problems?limit=500`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -105,12 +135,8 @@ const DSASheet: React.FC = () => {
       }
     };
     
-    // Only load if user is authenticated
-    if (currentUser) {
-      load();
-    } else {
-      setLoading(false);
-    }
+    // Load problems regardless of authentication status
+    load();
   }, [currentUser]);
 
   const toggleTopic = (topicId: string) => {
@@ -218,64 +244,77 @@ const DSASheet: React.FC = () => {
     return <div className="loading">Loading DSA Practice Sheet...</div>;
   }
 
-  // Show login prompt for unauthenticated users
-  if (!currentUser) {
-    return (
-      <div className="dsa-sheet">
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '4rem 2rem',
-          background: '#212121',
-          borderRadius: '10px',
-          margin: '2rem auto',
-          maxWidth: '600px'
-        }}>
-          <h2 style={{ color: '#ececec', marginBottom: '1rem' }}>
-            🔐 Login Required
-          </h2>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '2rem', fontSize: '1.1rem' }}>
-            Please log in to track your DSA practice progress and save your completion status.
-          </p>
-          <button 
-            onClick={() => navigate('/login')}
-            style={{
-              background: '#007acc',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              cursor: 'pointer',
-              transition: 'background 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = '#005a9e'}
-            onMouseOut={(e) => e.currentTarget.style.background = '#007acc'}
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Show login prompt for unauthenticated users (but still show problems)
+  const showLoginPrompt = !currentUser && topics.length === 0;
 
   return (
     <div className="dsa-sheet">
+      {/* Login prompt banner for unauthenticated users */}
+      {!currentUser && (
+        <div style={{ 
+          background: 'linear-gradient(135deg, #007acc, #005a9e)',
+          color: 'white',
+          padding: '1rem 2rem',
+          borderRadius: '8px',
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
+              🔐 Login to Track Progress
+            </h3>
+            <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>
+              Save your completion status and track your DSA practice progress
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }}
+          >
+            Login
+          </button>
+        </div>
+      )}
+
       <header className="dsa-header">
         <h1>DSA Practice Sheet</h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.1rem', marginBottom: '2rem' }}>
           Master Data Structures and Algorithms with our comprehensive practice problems
         </p>
-        <div className="progress-container">
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${progress}%` }}
-            ></div>
+        {currentUser && (
+          <div className="progress-container">
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <span className="progress-text">
+              {completedProblems} / {totalProblems} problems solved ({progress}%)
+            </span>
           </div>
-          <span className="progress-text">
-            {completedProblems} / {totalProblems} problems solved ({progress}%)
-          </span>
-        </div>
+        )}
       </header>
 
       <div className="filters">
@@ -339,8 +378,9 @@ const DSASheet: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={problem.isCompleted}
-                        onChange={() => toggleProblemStatus(topic.id, problem.id)}
+                        onChange={() => currentUser ? toggleProblemStatus(topic.id, problem.id) : navigate('/login')}
                         className="problem-checkbox"
+                        title={currentUser ? "Mark as completed" : "Login to track progress"}
                       />
                       <div 
                         className="problem-title"

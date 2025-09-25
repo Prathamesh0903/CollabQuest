@@ -83,12 +83,37 @@ const authenticateToken = async (req, res, next) => {
 const authenticateSocket = async (socket, next) => {
   try {
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+    
+    // In development mode, allow connections without authentication
+    if (process.env.NODE_ENV === 'development' && !token) {
+      console.log('[SupabaseAuth] Development mode: Allowing socket connection without authentication');
+      socket.user = {
+        uid: 'dev-user-' + Math.random().toString(36).substr(2, 9),
+        email: 'dev@example.com',
+        displayName: 'Development User',
+        picture: null
+      };
+      return next();
+    }
+    
     if (!token) return next(new Error('Authentication token required'));
     if (!jwks) return next(new Error('Auth not configured: missing JWKS'));
     const { payload } = await jwtVerify(token, jwks, {});
     socket.user = normalizeSupabaseUser(payload);
     next();
   } catch (error) {
+    // In development mode, allow connection with fallback user
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SupabaseAuth] Development mode: Allowing socket connection with fallback user due to auth error:', error.message);
+      socket.user = {
+        uid: 'dev-user-' + Math.random().toString(36).substr(2, 9),
+        email: 'dev@example.com',
+        displayName: 'Development User',
+        picture: null
+      };
+      return next();
+    }
+    
     // eslint-disable-next-line no-console
     console.error('[SupabaseAuth] Socket token verification error:', error && error.message ? error.message : error);
     next(new Error('Authentication failed'));

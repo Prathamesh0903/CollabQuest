@@ -520,7 +520,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     const showUserActivity = (userName: string, action: string) => {
       showInfo('User Activity', `${userName} ${action}`, 3000);
     };
-    if (!currentUser) return;
+    
+    // Allow connection even without authentication in development
+    if (!currentUser && process.env.NODE_ENV !== 'development') return;
 
     try {
       // Get Supabase token for authentication
@@ -554,8 +556,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           roomId: currentSessionId,
           language,
           userInfo: {
-            userId: currentUser?.id,
-            displayName: currentUser?.displayName || currentUser?.email || 'Anonymous',
+            userId: currentUser?.id || 'dev-user',
+            displayName: currentUser?.displayName || currentUser?.email || 'Development User',
             avatar: currentUser?.avatarUrl || undefined
           }
         });
