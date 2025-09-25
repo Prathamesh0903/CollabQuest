@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import reportWebVitals from './reportWebVitals';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -49,16 +49,42 @@ reportWebVitals();
 
     if (shouldAttachAuth(urlString)) {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          headers.set('Authorization', `Bearer ${session.access_token}`);
+        // Check if Supabase is properly configured
+        if (isSupabaseConfigured() && supabase && supabase.auth) {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) {
+            console.warn('Supabase auth error:', error.message);
+          } else if (session?.access_token) {
+            headers.set('Authorization', `Bearer ${session.access_token}`);
+          }
+        } else {
+          // Supabase not configured, proceed without authentication
+          console.debug('Supabase not configured, proceeding without authentication for:', urlString);
         }
       } catch (e) {
         // Silently ignore token fetch errors; proceed unauthenticated
+        console.warn('Failed to get Supabase session:', e);
       }
     }
 
     const finalInit: RequestInit = { ...init, headers };
-    return originalFetch(input as any, finalInit);
+    
+    try {
+      const response = await originalFetch(input as any, finalInit);
+      
+      // Log 403 errors for debugging
+      if (response.status === 403) {
+        console.warn(`403 Forbidden for ${urlString}:`, {
+          url: urlString,
+          hasAuth: headers.has('Authorization'),
+          status: response.status
+        });
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
+    }
   };
 })();
