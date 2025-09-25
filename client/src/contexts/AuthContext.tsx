@@ -38,7 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      // Use production URL for redirects in production, localhost for development
+      const isProduction = window.location.hostname !== 'localhost';
+      const redirectTo = isProduction 
+        ? 'https://collab-quest.vercel.app/auth/callback'
+        : `${window.location.origin}/auth/callback`;
       console.log('Starting Google OAuth with redirect:', redirectTo);
       
       const { data, error } = await supabase.auth.signInWithOAuth({ 
@@ -65,7 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithDiscord = async () => {
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    // Use production URL for redirects in production, localhost for development
+    const isProduction = window.location.hostname !== 'localhost';
+    const redirectTo = isProduction 
+      ? 'https://collab-quest.vercel.app/auth/callback'
+      : `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({ 
       provider: 'discord', 
       options: { 
