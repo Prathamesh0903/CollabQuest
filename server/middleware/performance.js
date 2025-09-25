@@ -61,24 +61,31 @@ const healthCheck = async (req, res) => {
   }
   
   try {
-    // Check Supabase connection using service role key
-    const { createClient } = require('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-    // Test with a simple query instead of getUser which requires authentication
-    const { data, error } = await supabase.from('_health_check').select('*').limit(1);
-    checks.supabase = !error;
+    // In development, mark Supabase healthy if URL or JWKS is configured
+    if (process.env.NODE_ENV === 'development') {
+      checks.supabase = Boolean(process.env.SUPABASE_URL || process.env.SUPABASE_JWKS_URL);
+    } else {
+      // Production: perform a lightweight check only if service role key is available
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const { createClient } = require('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        // Avoid requiring any schema setup: call the auth jwks endpoint as a quick ping
+        const fetch = require('node-fetch');
+        const jwksUrl = `${process.env.SUPABASE_URL.replace(/\/$/, '')}/auth/v1/keys`;
+        const res = await fetch(jwksUrl, { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
+        checks.supabase = res.ok;
+      } else {
+        checks.supabase = false;
+      }
+    }
   } catch (error) {
     console.error('Supabase health check failed:', error.message);
-    // In development, consider Supabase healthy if URL is configured
-    if (process.env.NODE_ENV === 'development' && process.env.SUPABASE_URL) {
-      checks.supabase = true;
-    }
   }
   
-  // In development, only MongoDB is required for health
+  // In development, only MongoDB is required for overall 200 status
   const isHealthy = checks.mongodb && (checks.supabase || process.env.NODE_ENV === 'development');
   res.status(isHealthy ? 200 : 503).json(checks);
 };
