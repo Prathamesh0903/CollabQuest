@@ -7,7 +7,7 @@ A robust Node.js backend server powering the CollabQuest platform with real-time
 ### Core Services
 - **Authentication**: Supabase-based user authentication and authorization
 - **Real-time Communication**: WebSocket-based live collaboration
-- **Code Execution**: Secure Docker-based code execution system
+- **Code Execution**: JavaScript-only execution via plugin/VM sandbox (no Docker)
 - **Database Management**: MongoDB with Mongoose ODM
 - **File Management**: Secure file upload and storage
 - **API Gateway**: RESTful API with comprehensive endpoints
@@ -97,8 +97,7 @@ JWT_SECRET=your-jwt-secret
 CLIENT_URL=http://localhost:3000
 
 # Code Execution
-DOCKER_ENABLED=true
-DOCKER_SOCKET=/var/run/docker.sock
+DOCKER_ENABLED=false
 ```
 
 ### Database Setup
@@ -262,7 +261,7 @@ services:
     depends_on:
       - mongo
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Docker socket not required
   
   mongo:
     image: mongo:5.0

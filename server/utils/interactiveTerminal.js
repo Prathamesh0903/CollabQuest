@@ -24,7 +24,7 @@ const SECURITY_CONFIG = {
     'mkdir', 'rmdir', 'touch', 'cp', 'mv', 'rm', 'chmod', 'chown',
     'ps', 'top', 'htop', 'df', 'du', 'free', 'whoami', 'id',
     'git', 'npm', 'node', 'python', 'python3', 'pip', 'pip3',
-    'gcc', 'g++', 'make', 'cmake', 'docker', 'docker-compose',
+    'gcc', 'g++', 'make', 'cmake',
     'curl', 'wget', 'ssh', 'scp', 'rsync', 'tar', 'zip', 'unzip',
     'vim', 'nano', 'emacs', 'less', 'more', 'man', 'help'
   ],

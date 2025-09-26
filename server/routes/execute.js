@@ -322,16 +322,7 @@ router.post('/secure', auth, async (req, res) => {
  */
 router.get('/languages', (req, res) => {
   const languages = [
-    { id: 'javascript', name: 'JavaScript', version: 'Node.js 18+', extension: '.js' },
-    { id: 'python', name: 'Python', version: '3.11+', extension: '.py' },
-    { id: 'java', name: 'Java', version: 'OpenJDK 17', extension: '.java' },
-    { id: 'cpp', name: 'C++', version: 'GCC 9.2+', extension: '.cpp' },
-    { id: 'csharp', name: 'C#', version: '.NET 7.0', extension: '.cs' },
-    { id: 'typescript', name: 'TypeScript', version: 'Node.js 18+', extension: '.ts' },
-    { id: 'go', name: 'Go', version: '1.21+', extension: '.go' },
-    { id: 'rust', name: 'Rust', version: '1.75+', extension: '.rs' },
-    { id: 'php', name: 'PHP', version: '8.2+', extension: '.php' },
-    { id: 'ruby', name: 'Ruby', version: '3.2+', extension: '.rb' }
+    { id: 'javascript', name: 'JavaScript', version: 'Node.js 18+', extension: '.js' }
   ];
 
   res.json({
@@ -404,10 +395,7 @@ router.post('/with-files', upload.array('files'), async (req, res) => {
     }
 
     // Validate language
-    const supportedLanguages = [
-      'javascript', 'python', 'java', 'cpp', 'csharp', 
-      'typescript', 'go', 'rust', 'php', 'ruby'
-    ];
+    const supportedLanguages = ['javascript'];
     
     if (!supportedLanguages.includes(language)) {
       return res.status(400).json({
@@ -517,10 +505,7 @@ router.post('/interactive', async (req, res) => {
     }
 
     // Validate language
-    const supportedLanguages = [
-      'javascript', 'python', 'java', 'cpp', 'csharp', 
-      'typescript', 'go', 'rust', 'php', 'ruby'
-    ];
+    const supportedLanguages = ['javascript'];
     
     if (!supportedLanguages.includes(language)) {
       return res.status(400).json({
