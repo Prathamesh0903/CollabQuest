@@ -59,8 +59,8 @@ const featureCards = [
     key: 'Weekly Contest',
     icon: '🚀',
     title: 'Weekly Contest',
-    desc: 'Try the interactive demo and get started in minutes.',
-    button: 'Start Demo',
+    desc: 'Join the weekly contest and climb the leaderboard.',
+    button: 'Explore Contest',
     animationClass: 'card-animate-demo',
   }
  
@@ -128,6 +128,9 @@ const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess
                   window.location.href = '/advanced-quiz';
                 }
                 else if (card.button === 'Start Demo') onStartDemo?.();
+              else if (card.button === 'Explore Contest') {
+                navigate('/contests');
+              }
                 else if (card.button === 'Start Battle') {
                   console.log('Start Battle condition met');
                   handleStartBattle();

@@ -26,7 +26,7 @@ const Navbar: React.FC = () => {
           <li><span role="button" onClick={() => navigate('/about')}>About</span></li>
           <li><span role="button">Code Together</span></li>
           <li><span role="button">Contest</span></li>
-          <li><span role="button">Discuss</span></li>
+          <li><span role="button" onClick={() => navigate('/discuss')}>Discuss</span></li>
           <li><span role="button" onClick={() => navigate('/dsa-sheet')}>DSA</span></li>
         </ul>
       </div>

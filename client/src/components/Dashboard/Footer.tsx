@@ -96,17 +96,7 @@ const Footer: React.FC = () => {
             <p>&copy; {currentYear} Collab Quest. All rights reserved.</p>
             <p>Made with ❤️ for developers worldwide</p>
           </div>
-          <div className="footer-stats">
-            <span className="stat-item">
-              <strong>10K+</strong> Developers
-            </span>
-            <span className="stat-item">
-              <strong>50K+</strong> Sessions
-            </span>
-            <span className="stat-item">
-              <strong>100+</strong> Countries
-            </span>
-          </div>
+          
         </div>
       </div>
     </footer>

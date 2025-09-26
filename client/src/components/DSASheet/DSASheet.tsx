@@ -249,6 +249,27 @@ const DSASheet: React.FC = () => {
 
   return (
     <div className="dsa-sheet">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            background: 'transparent',
+            color: '#ececec',
+            border: '1px solid rgba(229, 229, 229, 0.3)',
+            padding: '8px 14px',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          Dashboard
+        </button>
+      </div>
       {/* Login prompt banner for unauthenticated users */}
       {!currentUser && (
         <div style={{ 

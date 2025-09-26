@@ -49,10 +49,10 @@ const About: React.FC = () => {
   ];
 
   const stats = [
-    { number: '1000+', label: 'Active Users' },
-    { number: '500+', label: 'Coding Sessions' },
-    { number: '50+', label: 'Programming Languages' },
-    { number: '24/7', label: 'Platform Availability' }
+    { icon: '📘', title: 'DSA Sheets', subtitle: 'Structured interview prep' },
+    { icon: '🤝', title: 'Collaborative Coding', subtitle: 'Real-time pair programming' },
+    { icon: '🧠', title: 'Quizzes', subtitle: 'Practice and track progress' },
+    { icon: '⏱️', title: '24/7', subtitle: 'Always available' }
   ];
 
   const techStack = [
@@ -88,8 +88,10 @@ const About: React.FC = () => {
           <div className="hero-stats">
             {stats.map((stat, index) => (
               <div key={index} className="stat-item">
-                <div className="stat-number">{stat.number}</div>
-                <div className="stat-label">{stat.label}</div>
+                <div className="stat-number">{stat.icon}</div>
+                <div className="stat-label">
+                  {['practice', 'collaborate', 'quizz', '24/7'][index]}
+                </div>
               </div>
             ))}
           </div>

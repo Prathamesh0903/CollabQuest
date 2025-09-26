@@ -15,6 +15,7 @@ const roomRoutes = require('./routes/rooms');
 const quizRoutes = require('./routes/quizzes');
 const advancedQuizRoutes = require('./routes/quizzes-advanced');
 const leaderboardRoutes = require('./routes/leaderboards');
+const contestRoutes = require('./routes/contests');
 const messageRoutes = require('./routes/messages');
 const fileRoutes = require('./routes/files');
 const collaborativeSessionRoutes = require('./routes/collaborativeSessions');
@@ -22,6 +23,7 @@ const codeExecutionRoutes = require('./routes/execute');
 const codeExecutionPluginRoutes = require('./routes/execute-plugins');
 const dsaRoutes = require('./routes/dsa');
 const battleRoutes = require('./routes/battles');
+const discussRoutes = require('./routes/discuss');
 
 const { socketAuth } = require('./middleware/auth');
 const { handleSocketConnection } = require('./utils/socketHandler');
@@ -103,6 +105,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/advanced-quizzes', advancedQuizRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
+app.use('/api/contests', contestRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/collaborative-sessions', collaborativeSessionRoutes);
@@ -110,6 +113,9 @@ app.use('/api/execute', codeExecutionRoutes);
 app.use('/api/execute/plugin', codeExecutionPluginRoutes);
 app.use('/api/dsa', dsaRoutes);
 app.use('/api/battle', battleRoutes);
+app.use('/api/discuss', discussRoutes);
+// quick health for discuss router attachment
+app.get('/api/discuss/ping', (req, res) => res.json({ ok: true }));
 
 // Test utilities (only in development)
 if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
@@ -125,6 +131,32 @@ if (io) {
   io.use(socketAuth);
   io.on('connection', (socket) => {
     handleSocketConnection(socket, io);
+    // Weekly contest room join/leave
+    socket.on('contest:join', (contestId) => {
+      if (!contestId) return;
+      socket.join(`contest:${contestId}`);
+    });
+    socket.on('contest:leave', (contestId) => {
+      if (!contestId) return;
+      socket.leave(`contest:${contestId}`);
+    });
+  });
+
+  // Discuss namespace allowing anonymous connections
+  const discussNamespace = io.of('/discuss');
+  discussNamespace.on('connection', (socket) => {
+    const { threadId } = socket.handshake.query || {};
+    if (threadId) {
+      socket.join(`thread:${threadId}`);
+    }
+    socket.on('discuss:join', (tid) => {
+      if (!tid) return;
+      socket.join(`thread:${tid}`);
+    });
+    socket.on('discuss:leave', (tid) => {
+      if (!tid) return;
+      socket.leave(`thread:${tid}`);
+    });
   });
 }
 

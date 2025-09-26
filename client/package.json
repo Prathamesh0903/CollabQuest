@@ -14,7 +14,6 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@types/socket.io-client": "^1.4.36",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-search": "^0.15.0",
     "@xterm/addon-web-links": "^0.11.0",
@@ -35,6 +34,7 @@
     "react-simple-typewriter": "^5.0.1",
     "react-split": "^2.0.14",
     "react-toastify": "^11.0.5",
+    "remark-gfm": "^4.0.1",
     "socket.io-client": "^4.8.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"

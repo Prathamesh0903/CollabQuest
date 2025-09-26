@@ -3,12 +3,6 @@ import { motion } from 'framer-motion';
 import './EnhancedContent.css';
 
 const EnhancedContent: React.FC = () => {
-  const stats = [
-    { number: '10K+', label: 'Active Developers', icon: '👨‍💻' },
-    { number: '50K+', label: 'Coding Sessions', icon: '🚀' },
-    { number: '100+', label: 'Countries', icon: '🌍' },
-    { number: '1M+', label: 'Lines of Code', icon: '💻' }
-  ];
 
   const features = [
     {
@@ -33,58 +27,31 @@ const EnhancedContent: React.FC = () => {
 
   const testimonials = [
     {
-      name: 'Sarah Chen',
-      role: 'Senior Developer',
-      company: 'TechCorp',
-      content: 'Collab Quest transformed how our team codes together. The real-time collaboration is incredible!',
+      name: 'Pratik Patil',
+      role: 'Student',
+      company: 'DYPCET Kolhapur',
+      content: 'Collaborative coding on Collab Quest is a game changer. Real-time pair programming feels seamless and boosts productivity.',
       avatar: '👩‍💼'
     },
     {
-      name: 'Alex Rodriguez',
-      role: 'Full Stack Developer',
-      company: 'StartupXYZ',
-      content: 'The battle mode helped me improve my coding speed and problem-solving skills significantly.',
+      name: 'Vipul Raj',
+      role: 'Student',
+      company: 'DYPCET Kolhapur',
+      content: 'The quizzes are engaging and insightful. They helped me track progress and systematically improve week over week.',
       avatar: '👨‍💻'
     },
     {
-      name: 'Priya Patel',
-      role: 'Computer Science Student',
-      company: 'University',
-      content: 'Perfect platform for practicing DSA and preparing for technical interviews.',
+      name: 'Saurabh Karande',
+      role: 'Student',
+      company: 'DYPCET Kolhapur',
+      content: 'DSA Sheets are curated and practical. Great structure for interview prep with clear problem progression.',
       avatar: '👩‍🎓'
     }
   ];
 
   return (
     <div className="enhanced-content">
-      {/* Stats Section */}
-      <section className="stats-section">
-        <motion.div 
-          className="stats-container"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="section-title">Platform Statistics</h2>
-          <div className="stats-grid">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                className="stat-card"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <div className="stat-icon">{stat.icon}</div>
-                <div className="stat-number">{stat.number}</div>
-                <div className="stat-label">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+      
 
       {/* Features Deep Dive */}
       <section className="features-deep-dive">

@@ -286,7 +286,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           <div className="quiz-hero">
             <div>
               <h1 className="quiz-hero-title">
-                Advanced Quiz Mode
+                Quizz Mode
               </h1>
               <p className="quiz-hero-subtitle">
                 Challenge yourself with advanced questions, power-ups, and real-time feedback

@@ -15,6 +15,11 @@ import Battle from './components/Battle';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import AuthCallback from './components/AuthCallback';
+import ContestsPage from './components/contests/ContestsPage';
+import AdminContestsPage from './components/contests/AdminContestsPage';
+import DiscussList from './components/discuss/DiscussList';
+import DiscussDetail from './components/discuss/DiscussDetail';
+import DiscussNew from './components/discuss/DiscussNew';
 import './App.css';
 
 // Session-based editor component
@@ -155,8 +160,13 @@ const App: React.FC = () => {
 
         {/* Protected app routes */}
         <Route path="/about" element={<PrivateRoute><About /></PrivateRoute>} />
+        <Route path="/discuss" element={<DiscussList />} />
+        <Route path="/discuss/new" element={<DiscussNew />} />
+        <Route path="/discuss/:id" element={<DiscussDetail />} />
         <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditor /></PrivateRoute>} />
         <Route path="/battle" element={<PrivateRoute><Battle /></PrivateRoute>} />
+        <Route path="/contests" element={<PrivateRoute><ContestsPage /></PrivateRoute>} />
+        <Route path="/admin/contests" element={<PrivateRoute><AdminContestsPage /></PrivateRoute>} />
 
         <Route path="/advanced-quiz" element={<PrivateRoute><AdvancedQuizWrapper /></PrivateRoute>} />
         <Route path="/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />

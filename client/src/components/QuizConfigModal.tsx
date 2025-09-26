@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Clock, BookOpen, Target, Settings, ChevronLeft, ChevronRight, Play, Lightbulb, FileText } from 'lucide-react';
 import './QuizConfigModal.css';
 
-interface QuizCategory {  
+interface QuizCategory { 
   id: string;
   title: string;
   description: string;

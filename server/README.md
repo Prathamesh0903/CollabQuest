@@ -1,3 +1,30 @@
+## Discuss API
+
+Public discussion threads with replies, votes, tags, search, sort, and realtime updates.
+
+### Endpoints (`/api/discuss`)
+- `POST /threads` create thread `{ title, content, tags[] }`
+- `GET /threads?q=&tags=a,b&sort=new|top&page=1&limit=20` list threads
+- `GET /threads/:id` get thread
+- `PUT /threads/:id` update thread
+- `DELETE /threads/:id` delete thread
+- `POST /threads/:id/vote` body: `{ value: 1|-1 }`
+- `GET /threads/:id/replies?page=1&limit=20&sort=new|top` list replies
+- `POST /threads/:id/replies` create reply `{ content, parentReplyId? }`
+- `PUT /replies/:replyId` update reply
+- `DELETE /replies/:replyId` delete reply
+- `POST /replies/:replyId/vote` body: `{ value: 1|-1 }`
+
+Realtime namespace: `/discuss`
+- Join a thread room by connecting with query `threadId` or emit `discuss:join` with the id
+- Server emits `discuss:reply:new` with `{ threadId, reply }`
+
+### Seed
+
+```
+node scripts/seed-discuss.js
+```
+
 # CollabQuest Backend Server
 
 A robust Node.js backend server powering the CollabQuest platform with real-time collaboration, code execution, and comprehensive API services.
