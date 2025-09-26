@@ -58,9 +58,38 @@ class PluginManager {
     // Pre-process code
     const processedCode = plugin.preprocessCode(code);
 
-    // Execute using Docker (or other execution method)
-    const dockerConfig = plugin.getDockerConfig();
-    const result = await this.executeWithDocker(processedCode, input, dockerConfig, options);
+    // Execute without Docker: support JavaScript directly via VM sandbox
+    let result;
+    if (plugin.getConfig().id === 'javascript') {
+      const vm = require('vm');
+      let stdout = '';
+      let stderr = '';
+      try {
+        const sandbox = {
+          console: {
+            log: (...args) => { stdout += args.map(a => String(a)).join(' ') + '\n'; }
+          },
+          setTimeout: () => {},
+          setInterval: () => {},
+          clearTimeout: () => {},
+          clearInterval: () => {},
+          process: undefined,
+          require: undefined,
+          module: undefined,
+          __dirname: undefined,
+          __filename: undefined,
+          global: undefined,
+          Buffer: undefined
+        };
+        const context = vm.createContext(sandbox);
+        vm.runInContext(processedCode, context, { timeout: options.timeout || 5000 });
+      } catch (e) {
+        stderr = e.message + '\n';
+      }
+      result = { stdout, stderr, compile_output: '', status: 'success' };
+    } else {
+      throw new Error(`Execution disabled for language: ${plugin.getConfig().id}`);
+    }
 
     // Post-process result
     const processedResult = plugin.postprocessResult(result);
@@ -82,16 +111,8 @@ class PluginManager {
    * @param {Object} dockerConfig - Docker configuration
    * @param {Object} options - Execution options
    */
-  async executeWithDocker(code, input, dockerConfig, options = {}) {
-    const DockerExecutor = require('../../utils/dockerExecutor');
-    const dockerExecutor = new DockerExecutor();
-    // Execute using explicit Docker configuration from the language plugin
-    return await dockerExecutor.executeCodeWithConfig(
-      dockerConfig,
-      code,
-      input,
-      options.timeout || dockerConfig.timeout || 30000
-    );
+  async executeWithDocker() {
+    throw new Error('Docker execution disabled');
   }
 
   /**

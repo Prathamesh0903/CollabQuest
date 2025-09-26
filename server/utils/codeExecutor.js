@@ -1,5 +1,4 @@
 const axios = require('axios');
-const DockerExecutor = require('./dockerExecutor');
 
 // Configuration for code execution services
 const EXECUTOR_CONFIG = {
@@ -8,15 +7,7 @@ const EXECUTOR_CONFIG = {
     timeout: 5000, // 5 seconds for HTTP timeout
     fallback: 'docker'
   },
-  judge0: {
-    url: 'https://judge0-ce.p.rapidapi.com',
-    timeout: 10000,
-    apiKey: process.env.JUDGE0_API_KEY
-  },
-  docker: {
-    enabled: false, // Disabled for now due to Docker socket issues
-    timeout: 30000 // 30 seconds for Docker execution
-  }
+  judge0: null
 };
 
 // Map language to Judge0 language_id (fallback)
@@ -34,8 +25,8 @@ async function executeCode(language, sourceCode, input = '') {
     throw new Error('Language and source code are required');
   }
 
-  if (!['javascript', 'python', 'java', 'cpp', 'csharp', 'typescript', 'go', 'rust', 'php', 'ruby'].includes(language)) {
-    throw new Error('Unsupported language. Supported: javascript, python, java, cpp, csharp, typescript, go, rust, php, ruby');
+  if (!['javascript'].includes(language)) {
+    throw new Error('Unsupported language. Supported: javascript');
   }
 
   // Try plugin system first
@@ -45,9 +36,7 @@ async function executeCode(language, sourceCode, input = '') {
       console.log(`Using plugin system for ${language} code`);
       return await pluginManager.executeCode(language, sourceCode, input);
     }
-  } catch (error) {
-    console.log(`Plugin system not available for ${language}, falling back to mock execution:`, error.message);
-  }
+  } catch (error) {}
 
   // Use mock execution as fallback
   console.log(`Using mock execution for ${language} code`);
