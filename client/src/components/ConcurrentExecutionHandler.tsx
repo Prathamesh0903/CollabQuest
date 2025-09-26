@@ -239,30 +239,28 @@ const ConcurrentExecutionHandler: React.FC<ConcurrentExecutionHandlerProps> = ({
 
   return (
     <div className="concurrent-execution-handler">
-      {/* Execution Status Indicator */}
-      <div className="execution-status-indicator">
-        <button
-          className={`status-button ${showExecutionPanel ? 'active' : ''}`}
-          onClick={() => setShowExecutionPanel(!showExecutionPanel)}
-        >
-          <span className="status-icon">
-            {executionStatus.activeCount > 0 ? '⚡' : '⏳'}
-          </span>
-          <span className="status-text">
-            {executionStatus.activeCount > 0 
-              ? `${executionStatus.activeCount} executing`
-              : executionStatus.queueLength > 0 
-                ? `${executionStatus.queueLength} queued`
-                : 'Ready'
-            }
-          </span>
-          {(executionStatus.activeCount > 0 || executionStatus.queueLength > 0) && (
+      {/* Execution Status Indicator (hidden when idle) */}
+      {(executionStatus.activeCount > 0 || executionStatus.queueLength > 0) && (
+        <div className="execution-status-indicator">
+          <button
+            className={`status-button ${showExecutionPanel ? 'active' : ''}`}
+            onClick={() => setShowExecutionPanel(!showExecutionPanel)}
+          >
+            <span className="status-icon">
+              {executionStatus.activeCount > 0 ? '⚡' : '⏳'}
+            </span>
+            <span className="status-text">
+              {executionStatus.activeCount > 0 
+                ? `${executionStatus.activeCount} executing`
+                : `${executionStatus.queueLength} queued`
+              }
+            </span>
             <span className="status-badge">
               {executionStatus.activeCount + executionStatus.queueLength}
             </span>
-          )}
-        </button>
-      </div>
+          </button>
+        </div>
+      )}
 
       {/* Execution Panel */}
       {showExecutionPanel && (

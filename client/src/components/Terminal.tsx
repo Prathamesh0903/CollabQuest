@@ -18,6 +18,7 @@ interface TerminalProps {
   customInput: string;
   onCustomInputChange: (input: string) => void;
   onClear: () => void;
+  showCustomInput?: boolean;
 }
 
 const Terminal: React.FC<TerminalProps> = ({
@@ -27,7 +28,8 @@ const Terminal: React.FC<TerminalProps> = ({
   isLoading,
   customInput,
   onCustomInputChange,
-  onClear
+  onClear,
+  showCustomInput = true
 }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
 
@@ -182,6 +184,7 @@ const Terminal: React.FC<TerminalProps> = ({
         )}
       </div>
 
+      {showCustomInput && (
       <div className="terminal-input-section">
         <div className="input-label">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -197,6 +200,7 @@ const Terminal: React.FC<TerminalProps> = ({
           rows={3}
         />
       </div>
+      )}
     </div>
   );
 };

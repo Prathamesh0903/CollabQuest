@@ -15,19 +15,20 @@ interface ToastContainerProps {
 }
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }) => {
+  const lastToast = toasts.length > 0 ? toasts[toasts.length - 1] : null;
   return (
     <div className="toast-container">
-      {toasts.map((toast) => (
+      {lastToast && (
         <Toast
-          key={toast.id}
-          id={toast.id}
-          type={toast.type}
-          title={toast.title}
-          message={toast.message}
-          duration={toast.duration}
+          key={lastToast.id}
+          id={lastToast.id}
+          type={lastToast.type}
+          title={lastToast.title}
+          message={lastToast.message}
+          duration={lastToast.duration}
           onClose={onRemoveToast}
         />
-      ))}
+      )}
     </div>
   );
 };
@@ -39,7 +40,8 @@ export const useToast = () => {
   const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
     const newToast: ToastMessage = { ...toast, id };
-    setToasts(prev => [...prev, newToast]);
+    // Show only one toast at a time (replace any existing)
+    setToasts([newToast]);
   }, []);
 
   const removeToast = useCallback((id: string) => {

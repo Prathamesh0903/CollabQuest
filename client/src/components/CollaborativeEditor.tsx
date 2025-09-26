@@ -1138,7 +1138,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
           roomId: currentSessionId,
           language,
           code: editorValue,
-          input: customInput
+          input: ''
         });
       }
 
@@ -1152,7 +1152,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         body: JSON.stringify({
           language,
           code: editorValue,
-          input: customInput
+          input: ''
         })
       });
 
@@ -2041,7 +2041,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
       </div>
 
       {/* VS Code Style Terminal */}
-      <Terminal
+      <Terminal 
         isVisible={showTerminal}
         onClose={() => setShowTerminal(false)}
         output={terminalOutput}
@@ -2049,6 +2049,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         customInput={customInput}
         onCustomInputChange={setCustomInput}
         onClear={handleClearTerminal}
+        showCustomInput={false}
       />
 
       {/* New File Modal */}

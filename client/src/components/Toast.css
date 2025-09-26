@@ -1,19 +1,32 @@
 /* Toast Notification Styles */
-.toast {
+.toast-container {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  z-index: 1;
   min-width: 300px;
-  max-width: 400px;
+  max-width: 420px;
   padding: 16px 20px;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: none;
+  background: #181a1b;
+  color: #ececec;
+  border: 1px solid rgba(229, 229, 229, 0.08);
+  border-left: 4px solid transparent;
   transform: translateX(100%);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
 }
 
 .toast.show {
@@ -35,6 +48,17 @@
 .toast-icon {
   font-size: 18px;
   flex-shrink: 0;
+}
+
+.toast-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.toast-title {
+  font-weight: 600;
 }
 
 .toast-message {
@@ -61,45 +85,16 @@
 }
 
 .toast-close:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(229, 229, 229, 0.08);
 }
 
-/* Toast Types */
-.toast.success {
-  background: rgba(34, 197, 94, 0.95);
-  color: white;
-}
+/* Toast Type Accents (subtle left border) */
+.toast.success { border-left-color: #2ed573; }
+.toast.error { border-left-color: #ff4757; }
+.toast.warning { border-left-color: #ffa502; }
+.toast.info { border-left-color: #3742fa; }
 
-.toast.error {
-  background: rgba(239, 68, 68, 0.95);
-  color: white;
-}
-
-.toast.warning {
-  background: rgba(245, 158, 11, 0.95);
-  color: white;
-}
-
-.toast.info {
-  background: rgba(59, 130, 246, 0.95);
-  color: white;
-}
-
-.toast.success .toast-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.toast.error .toast-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.toast.warning .toast-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.toast.info .toast-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
+/* Close hover keeps same treatment across variants */
 
 /* Mobile Responsive */
 @media (max-width: 480px) {
