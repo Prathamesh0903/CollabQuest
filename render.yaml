@@ -2,8 +2,11 @@ services:
   - type: web
     name: collab-backend
     env: node
+    region: oregon
+    plan: free
     buildCommand: cd server && npm ci --omit=dev
     startCommand: cd server && npm run start:render
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -29,6 +32,8 @@ services:
   - type: web
     name: collab-frontend
     env: static
+    region: oregon
+    plan: free
     buildCommand: cd client && npm install && npm run build
     staticPublishPath: ./client/build
     envVars:
@@ -36,6 +41,10 @@ services:
         value: https://your-backend.onrender.com
       - key: REACT_APP_SOCKET_URL
         value: https://your-backend.onrender.com
+      - key: REACT_APP_SUPABASE_URL
+        sync: false
+      - key: REACT_APP_SUPABASE_ANON_KEY
+        sync: false
 
 databases:
   - name: collab-mongodb
