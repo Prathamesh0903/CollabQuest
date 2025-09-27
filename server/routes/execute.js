@@ -351,7 +351,7 @@ router.get('/health', async (req, res) => {
         status: health.local ? 'healthy' : 'unhealthy',
         services: {
           local: health.local,
-          docker: process.env.DOCKER_ENABLED !== 'false',
+          plugin: true,
           judge0: !!process.env.JUDGE0_API_KEY
         },
         uptime: process.uptime(),

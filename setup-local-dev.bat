@@ -23,8 +23,8 @@ echo. >> server\.env
 echo # Client Configuration >> server\.env
 echo CLIENT_URL=http://localhost:3000 >> server\.env
 echo. >> server\.env
-echo # Docker Configuration >> server\.env
-echo DOCKER_ENABLED=false >> server\.env
+echo # Code Execution Configuration >> server\.env
+echo EXECUTOR_URL=http://localhost:5001 >> server\.env
 
 echo ✅ Server .env file created
 
