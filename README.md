@@ -14,7 +14,6 @@ Production deployment guides and configuration instructions.
 - **[Supabase OAuth Setup](./deployment/SUPABASE_OAUTH_SETUP.md)** - Supabase-specific OAuth configuration
 - **[Environment Setup](./deployment/ENVIRONMENT_SETUP.md)** - Environment configuration guide
 - **[Environment Template](./deployment/env.example)** - Environment variables template
-- **[Docker Resource Limits](./deployment/docker-compose-resource-limits.yml)** - Docker configuration with resource limits
 
 ### 🔒 [Security](./security/)
 Security policies and incident documentation.

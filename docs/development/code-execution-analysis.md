@@ -48,9 +48,8 @@ async executeCode(language, code, input, options) {
   // 2. Pre-process code
   const processedCode = plugin.preprocessCode(code);
   
-  // 3. Execute using Docker
-  const dockerConfig = plugin.getDockerConfig();
-  const result = await this.executeWithDocker(processedCode, input, dockerConfig, options);
+  // 3. Execute using plugin system
+  const result = await plugin.executeCode(processedCode, input, options);
   
   // 4. Post-process result
   const processedResult = plugin.postprocessResult(result);
@@ -59,7 +58,7 @@ async executeCode(language, code, input, options) {
 }
 ```
 
-#### Docker Configuration for Each Language:
+#### Plugin Configuration for Each Language:
 
 **JavaScript**:
 ```javascript
@@ -146,37 +145,37 @@ if (!sourceCode.includes('public class')) {
 }
 ```
 
-### 3. Docker Executor (Disabled)
-**Location**: `server/utils/dockerExecutor.js`
+### 3. Plugin System (Active)
+**Location**: `server/plugins/languagePlugins/`
 
-#### Status: ❌ **DISABLED**
+#### Status: ✅ **ACTIVE**
 ```javascript
 const EXECUTOR_CONFIG = {
-  docker: {
-    enabled: false, // Disabled for now due to Docker socket issues
+  plugin: {
+    enabled: true, // Uses plugin system for code execution
     timeout: 30000
   }
 };
 ```
 
-#### Docker Configurations Available:
+#### Plugin Configurations Available:
 ```javascript
 const configs = {
   javascript: {
     filename: 'main.js',
-    dockerImage: 'node:18-alpine',
+    runtime: 'node:18-alpine',
     runCommand: ['node', 'main.js'],
     compileCommand: null
   },
   python: {
     filename: 'main.py',
-    dockerImage: 'python:3.11-alpine',
+    runtime: 'python:3.11-alpine',
     runCommand: ['python', 'main.py'],
     compileCommand: null
   },
   java: {
     filename: 'Main.java',
-    dockerImage: 'openjdk:17-alpine',
+    runtime: 'openjdk:17-alpine',
     runCommand: ['java', 'Main'],
     compileCommand: ['javac', 'Main.java']
   },
@@ -188,7 +187,7 @@ const configs = {
 **Location**: `executor/index.js`
 
 #### Status: ✅ **AVAILABLE** (but not integrated)
-- Standalone Docker-based executor service
+- Standalone executor service
 - Runs on port 5001
 - Has comprehensive language support
 - Not currently used by main application
@@ -221,71 +220,58 @@ const JUDGE0_LANGUAGES = {
 ## Current Execution Status by Language
 
 ### ✅ JavaScript
-- **Primary**: Plugin system with Docker config
+- **Primary**: Plugin system with Node.js execution
 - **Fallback**: Mock executor with VM sandboxing
-- **Docker**: Available but disabled
 - **External**: Available via executor service
 - **Status**: Fully functional
 
 ### ✅ Python
-- **Primary**: Plugin system with Docker config
+- **Primary**: Plugin system with Python execution
 - **Fallback**: Mock executor with print parsing
-- **Docker**: Available but disabled
 - **External**: Available via executor service
 - **Status**: Fully functional
 
 ### ✅ Java
-- **Primary**: Plugin system with Docker config
+- **Primary**: Plugin system with Java execution
 - **Fallback**: Mock executor with enhanced parsing
-- **Docker**: Available but disabled
 - **External**: Available via executor service
 - **Status**: Fully functional (recently fixed)
 
 ### ⚠️ Other Languages (C++, C#, Go, Rust, PHP, Ruby)
 - **Primary**: Plugin system (if plugin exists)
 - **Fallback**: Mock executor (basic)
-- **Docker**: Available but disabled
 - **External**: Available via executor service
 - **Status**: Limited functionality
 
 ## Key Findings
 
-### 1. **Docker is NOT Currently Used**
-Despite having comprehensive Docker configurations for all languages, the Docker executor is **disabled** in the main configuration:
-```javascript
-docker: {
-  enabled: false, // Disabled for now due to Docker socket issues
-}
-```
-
-### 2. **Plugin System is Primary**
-The plugin system is the primary execution method, but it tries to use Docker internally:
+### 1. **Plugin System is Primary**
+The plugin system is the primary execution method, providing language-specific execution capabilities:
 ```javascript
 // PluginManager.js
-async executeWithDocker(code, input, dockerConfig, options) {
-  const DockerExecutor = require('../../utils/dockerExecutor');
-  const dockerExecutor = new DockerExecutor();
-  return await dockerExecutor.executeCode(/* ... */);
+async executeCode(language, code, input, options) {
+  const plugin = this.getPlugin(language);
+  return await plugin.executeCode(code, input, options);
 }
 ```
 
-### 3. **Mock Executor is Active Fallback**
-Since Docker is disabled, the mock executor handles all language execution with varying levels of sophistication:
+### 2. **Mock Executor is Active Fallback**
+The mock executor handles execution for languages without plugins or as a fallback:
 - **JavaScript**: Full VM-based execution
 - **Python**: Basic print parsing
 - **Java**: Enhanced parsing with syntax validation
 
-### 4. **External Executor Service Exists**
-There's a fully functional Docker-based executor service in the `executor/` directory that's not being used by the main application.
+### 3. **External Executor Service Exists**
+There's a fully functional executor service in the `executor/` directory that's not being used by the main application.
 
 ## Recommendations
 
-### 1. **Enable Docker Execution**
-To get true Docker-based execution for all languages:
+### 1. **Enhance Plugin System**
+To improve execution capabilities:
 ```javascript
 // In server/utils/codeExecutor.js
-docker: {
-  enabled: true, // Enable Docker execution
+plugin: {
+  enabled: true, // Use plugin system for execution
   timeout: 30000
 }
 ```
@@ -294,8 +280,8 @@ docker: {
 The standalone executor service could be integrated as a fallback:
 ```javascript
 // Add to execution flow
-if (EXECUTOR_CONFIG.docker.enabled) {
-  return await executeWithDocker(language, sourceCode, input);
+if (EXECUTOR_CONFIG.plugin.enabled) {
+  return await executeWithPlugin(language, sourceCode, input);
 } else if (EXECUTOR_CONFIG.local.enabled) {
   return await executeWithLocalExecutor(language, sourceCode, input);
 }
@@ -306,9 +292,9 @@ Add plugins for C++, C#, Go, Rust, PHP, Ruby to get full language support.
 
 ## Conclusion
 
-**Current State**: All languages (JavaScript, Python, Java) are handled by the **mock executor** with varying levels of sophistication, NOT by Docker.
+**Current State**: All languages (JavaScript, Python, Java) are handled by the **plugin system** with fallback to mock executor.
 
-**Docker Status**: Docker configurations exist for all languages but are **disabled** due to socket issues.
+**Plugin Status**: Plugin system is active and provides language-specific execution capabilities.
 
-**Recommendation**: Enable Docker execution or integrate the external executor service to get true isolated execution for all languages.
+**Recommendation**: Continue using the plugin system or integrate the external executor service for enhanced execution capabilities.
 

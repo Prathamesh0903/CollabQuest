@@ -101,9 +101,8 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_JWKS_URL=https://your-project-id.supabase.co/auth/v1/keys
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# Docker Configuration
-DOCKER_ENABLED=false
-DOCKER_SOCKET=/var/run/docker.sock
+# Code Execution Configuration
+EXECUTOR_URL=http://localhost:5001
 
 # Redis Configuration (Optional)
 REDIS_URL=redis://localhost:6379

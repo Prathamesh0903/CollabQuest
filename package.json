@@ -34,9 +34,6 @@
     "seed": "cd server && npm run seed:dsa && npm run seed:quiz",
     "setup": "npm run install:all && npm run setup:env",
     "setup:env": "node scripts/setup-env.js",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:build": "docker-compose build",
     "deploy:render": "deploy-render.bat",
     "deploy:vercel": "deploy-vercel.bat"
   },

@@ -5,7 +5,7 @@ const EXECUTOR_CONFIG = {
   local: {
     url: process.env.EXECUTOR_URL || process.env.SIMPLE_EXECUTOR_URL || 'http://localhost:5001',
     timeout: 5000, // 5 seconds for HTTP timeout
-    fallback: 'docker'
+    fallback: 'mock'
   },
   judge0: null
 };

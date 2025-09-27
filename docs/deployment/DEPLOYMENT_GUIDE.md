@@ -7,7 +7,7 @@ Your backend is now **100% ready for Render deployment**! All critical issues ha
 ## ✅ What Was Fixed
 
 1. **Environment Variables**: Updated from Firebase to Supabase
-2. **Dockerfile**: Made compatible with Render's build environment
+2. **Build Configuration**: Optimized for Render's Node.js environment
 3. **Database Seeding**: Added automatic seeding on startup
 4. **Deployment Scripts**: Updated with correct environment variables
 
@@ -78,7 +78,6 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 SUPABASE_JWKS_URL=https://your-project.supabase.co/auth/v1/keys
 CLIENT_URL=https://your-frontend.onrender.com
-DOCKER_ENABLED=false
 ```
 
 ### Optional Variables
@@ -125,7 +124,7 @@ Test WebSocket connection using your frontend or a WebSocket client.
 
 #### 1. Build Failures
 - **Issue**: `node-pty` build errors
-- **Solution**: Already fixed by commenting out the rebuild in Dockerfile
+- **Solution**: Node.js dependencies are handled by Render's build system
 
 #### 2. Database Connection Issues
 - **Issue**: MongoDB connection timeout

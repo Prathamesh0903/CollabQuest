@@ -4,10 +4,9 @@ services:
     env: node
     region: oregon
     plan: free
-    dockerfilePath: ""
     buildCommand: cd server && npm ci --omit=dev
     startCommand: cd server && npm run start:render
-    healthCheckPath: /health
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -28,10 +27,6 @@ services:
         sync: false
       - key: CLIENT_URL
         value: https://your-frontend.onrender.com
-      - key: DOCKER_ENABLED
-        value: false
-      - key: RENDER_DOCKERFILE_PATH
-        value: ""
 
   - type: web
     name: collab-frontend

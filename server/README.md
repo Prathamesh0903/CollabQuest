@@ -34,7 +34,7 @@ A robust Node.js backend server powering the CollabQuest platform with real-time
 ### Core Services
 - **Authentication**: Supabase-based user authentication and authorization
 - **Real-time Communication**: WebSocket-based live collaboration
-- **Code Execution**: JavaScript-only execution via plugin/VM sandbox (no Docker)
+- **Code Execution**: JavaScript-only execution via plugin/VM sandbox
 - **Database Management**: MongoDB with Mongoose ODM
 - **File Management**: Secure file upload and storage
 - **API Gateway**: RESTful API with comprehensive endpoints
@@ -79,7 +79,6 @@ server/
 ├── services/               # Business logic services
 ├── utils/                  # Utility functions
 │   ├── codeExecutor.js    # Code execution utilities
-│   ├── dockerExecutor.js  # Docker execution wrapper
 │   └── socketHandler.js   # WebSocket handling
 ├── scripts/                # Database scripts
 │   ├── seed-dsa.js        # DSA data seeding
@@ -93,7 +92,6 @@ server/
 ### Prerequisites
 - Node.js 18+ 
 - MongoDB 5.0+
-- Docker (for code execution)
 - Supabase account
 
 ### Installation
@@ -124,7 +122,7 @@ JWT_SECRET=your-jwt-secret
 CLIENT_URL=http://localhost:3000
 
 # Code Execution
-DOCKER_ENABLED=false
+EXECUTOR_URL=http://localhost:5001
 ```
 
 ### Database Setup
@@ -261,45 +259,6 @@ const performanceMiddleware = require('./middleware/performance');
 app.use(performanceMiddleware);
 ```
 
-## 🐳 Docker Configuration
-
-### Dockerfile
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 5000
-CMD ["npm", "start"]
-```
-
-### Docker Compose
-```yaml
-version: '3.8'
-services:
-  server:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongo:27017/collabquest
-    depends_on:
-      - mongo
-    volumes:
-      # Docker socket not required
-  
-  mongo:
-    image: mongo:5.0
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
-```
 
 ## 🧪 Testing
 
@@ -372,7 +331,7 @@ describe('Battle API', () => {
 - **Rate Limiting**: API rate limiting to prevent abuse
 - **CORS**: Configured cross-origin resource sharing
 - **Helmet**: Security headers middleware
-- **Code Execution**: Sandboxed Docker containers
+- **Code Execution**: Plugin-based execution system
 
 ### Security Best Practices
 1. **Never log sensitive data**
@@ -438,7 +397,7 @@ app.get('/api/health', (req, res) => {
 ### Production Deployment
 1. **Set up environment variables**
 2. **Configure MongoDB connection**
-3. **Set up Docker for code execution**
+3. **Configure code execution system**
 4. **Configure reverse proxy (nginx)**
 5. **Set up SSL certificates**
 6. **Configure monitoring and logging**
@@ -481,12 +440,12 @@ const config = {
 - **Check server logs** for error details
 - **Verify environment variables** are set correctly
 - **Test database connectivity**
-- **Check Docker daemon** is running
+- **Check executor service** is running
 - **Verify Supabase configuration**
 
 ### Common Issues
 1. **MongoDB Connection**: Check connection string and network access
-2. **Docker Issues**: Ensure Docker daemon is running and accessible
+2. **Execution Issues**: Ensure executor service is running and accessible
 3. **Authentication**: Verify Supabase configuration and keys
 4. **CORS Errors**: Check CORS configuration and client URL
 5. **Performance**: Monitor memory usage and database queries

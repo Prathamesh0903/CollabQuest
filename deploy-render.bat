@@ -59,7 +59,6 @@ echo SUPABASE_URL=https://your-project.supabase.co >> server\.env.production
 echo SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key >> server\.env.production
 echo SUPABASE_JWKS_URL=https://your-project.supabase.co/auth/v1/keys >> server\.env.production
 echo CLIENT_URL=https://your-frontend.onrender.com >> server\.env.production
-echo DOCKER_ENABLED=false >> server\.env.production
 
 echo REACT_APP_API_URL=https://your-backend.onrender.com > client\.env.production
 echo REACT_APP_SOCKET_URL=https://your-backend.onrender.com >> client\.env.production
