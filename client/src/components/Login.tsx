@@ -119,6 +119,27 @@ const Login: React.FC = () => {
         </div>
         
         <div className="login-content">
+          {/* Demo Credentials Section */}
+          <div className="demo-credentials">
+            <h3>Demo Credentials</h3>
+            <div className="credentials-info">
+              <p><strong>Email:</strong> user@gmail.com</p>
+              <p><strong>Password:</strong> teamcollab</p>
+              <button
+                type="button"
+                className="demo-btn"
+                onClick={() => {
+                  setEmail('user@gmail.com');
+                  setPassword('teamcollab');
+                  setIsSignup(false);
+                }}
+                disabled={loading}
+              >
+                Use Demo Credentials
+              </button>
+            </div>
+          </div>
+          
           <form onSubmit={handleEmailAuth} className="login-form">
             <div className="input-group">
               <input
