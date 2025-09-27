@@ -8,6 +8,7 @@ services:
     startCommand: cd server && npm run start:render
     healthCheckPath: /api/health
     autoDeploy: true
+    dockerfilePath: ""
     envVars:
       - key: NODE_ENV
         value: production
