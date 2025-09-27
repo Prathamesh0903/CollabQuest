@@ -5,7 +5,46 @@ import io from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Navbar from '../Dashboard/Navbar';
 import './discuss.css';
+
+// Utility function for better date formatting
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInHours / 24);
+  
+  if (diffInHours < 1) {
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    return diffInMinutes < 1 ? 'Just now' : `${diffInMinutes}m ago`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else if (diffInDays < 7) {
+    return `${diffInDays}d ago`;
+  } else if (diffInDays < 30) {
+    const weeks = Math.floor(diffInDays / 7);
+    return `${weeks}w ago`;
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  }
+};
+
+const formatFullDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'long',
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 const socketUrl = (process.env.REACT_APP_API_URL || 'http://localhost:5001') + '/discuss';
 
@@ -23,11 +62,19 @@ const DiscussDetail: React.FC = () => {
   React.useEffect(() => {
     (async () => {
       if (!id) return;
-      const t = await getThread(id);
-      setThread(t);
-      const res = await listReplies(id, { page: 1, limit: 20 });
-      setReplies(res.items);
-      setHasMore(res.hasMore);
+      try {
+        setLoading(true);
+        const t = await getThread(id);
+        setThread(t);
+        const res = await listReplies(id, { page: 1, limit: 20 });
+        setReplies(res.items);
+        setHasMore(res.hasMore);
+      } catch (error) {
+        console.error('Error loading thread:', error);
+        // Handle error appropriately - could show error message to user
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [id]);
 
@@ -53,7 +100,12 @@ const DiscussDetail: React.FC = () => {
       setReplies(prev => [...prev, ...res.items]);
       setPage(next);
       setHasMore(res.hasMore);
-    } finally { setLoading(false); }
+    } catch (error) {
+      console.error('Error loading more replies:', error);
+      // Handle error appropriately
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const submitReply = async () => {
@@ -79,33 +131,39 @@ const DiscussDetail: React.FC = () => {
 
   return (
     <div className="discuss-detail">
-      <div className="discuss-header" style={{marginBottom:12}}>
-        <div style={{display:'inline-flex', gap:8}}>
-          <button className="secondary" onClick={() => window.history.back()}>← Back</button>
-          <button className="secondary" onClick={() => (window.location.href = '/')}>Dashboard</button>
+      <Navbar />
+      <div className="discuss-container">
+        <div className="discuss-header">
+          <h2>Discussion Thread</h2>
+          <div className="header-actions">
+            <button className="secondary" onClick={() => window.history.back()}>← Back</button>
+            <button className="secondary" onClick={() => (window.location.href = '/discuss')}>All Discussions</button>
+            <button className="secondary" onClick={() => (window.location.href = '/')}>Dashboard</button>
+          </div>
         </div>
-      </div>
       <div className="thread">
         <h2>{thread.title}</h2>
         <div className="thread-meta">
-          <span>{new Date(thread.createdAt).toLocaleString()}</span>
-          <span>• {thread.tags.join(', ')}</span>
+          <span title={formatFullDate(thread.createdAt)}>🕒 Posted {formatDate(thread.createdAt)}</span>
+          <span>💬 {thread.repliesCount} replies</span>
+          <span style={{display:'inline-flex', gap:6}}>
+            {thread.tags.map(tag => <span key={tag} className="dq-chip">#{tag}</span>)}
+          </span>
         </div>
         <div className="thread-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{thread.content}</ReactMarkdown>
         </div>
         <div className="thread-actions">
-          <button onClick={() => voteThreadAction(1)}>▲ {thread.upvotes}</button>
-          <button onClick={() => voteThreadAction(-1)}>▼ {thread.downvotes}</button>
+          <button onClick={() => voteThreadAction(1)}>👍 {thread.upvotes}</button>
+          <button onClick={() => voteThreadAction(-1)}>👎 {thread.downvotes}</button>
         </div>
       </div>
 
       <div className="reply-editor">
         <div className="editor">
           <div className="editor-toolbar">
-            <div className="bar">
-              <button onClick={() => setShowPreview(p => !p)}>{showPreview ? 'Edit' : 'Preview'}</button>
-            </div>
+            <span style={{fontWeight: 600, color: 'var(--dq-text)'}}>💬 Write a Reply</span>
+            <button onClick={() => setShowPreview(p => !p)}>{showPreview ? '✏️ Edit' : '👁️ Preview'}</button>
           </div>
           {showPreview ? (
             <div className="markdown-preview">
@@ -115,8 +173,11 @@ const DiscussDetail: React.FC = () => {
             <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write a reply (Markdown supported)" />
           )}
         </div>
-        <div style={{marginTop:8}}>
-          <button className="primary" onClick={submitReply}>Reply</button>
+        <div style={{marginTop:8, textAlign: 'right'}}>
+          <button className="primary" onClick={submitReply}>
+            <span style={{marginRight: '8px'}}>📝</span>
+            Post Reply
+          </button>
         </div>
       </div>
 
@@ -124,23 +185,26 @@ const DiscussDetail: React.FC = () => {
         {replies.map(r => (
           <div key={r._id} className="reply">
             <div className="reply-meta">
-              <span>{new Date(r.createdAt).toLocaleString()}</span>
+              <span title={formatFullDate(r.createdAt)}>🕒 Replied {formatDate(r.createdAt)}</span>
             </div>
             <div className="reply-content">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{r.content}</ReactMarkdown>
             </div>
             <div className="reply-actions">
-              <button onClick={() => voteReplyAction(r._id, 1)}>▲ {r.upvotes}</button>
-              <button onClick={() => voteReplyAction(r._id, -1)}>▼ {r.downvotes}</button>
+              <button onClick={() => voteReplyAction(r._id, 1)}>👍 {r.upvotes}</button>
+              <button onClick={() => voteReplyAction(r._id, -1)}>👎 {r.downvotes}</button>
             </div>
           </div>
         ))}
       </div>
-      {hasMore && (
-        <div className="load-more">
-          <button disabled={loading} onClick={loadMore}>{loading ? 'Loading…' : 'Load more'}</button>
-        </div>
-      )}
+        {hasMore && (
+          <div className="load-more">
+            <button disabled={loading} onClick={loadMore}>
+              {loading ? '⏳ Loading…' : '📄 Load More Replies'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

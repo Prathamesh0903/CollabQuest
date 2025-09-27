@@ -46,7 +46,7 @@ const DiscussThreadSchema = new mongoose.Schema(
 );
 
 DiscussThreadSchema.index({ createdAt: -1 });
-DiscussThreadSchema.index({ title: 'text', content: 'text', tags: 1 });
+DiscussThreadSchema.index({ title: 'text', content: 'text' });
 
 const DiscussVote = mongoose.model('DiscussVote', VoteSchema);
 const DiscussReply = mongoose.model('DiscussReply', ReplySchema);

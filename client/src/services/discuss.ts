@@ -88,4 +88,34 @@ export async function voteReply(replyId: string, value: 1 | -1) {
   return res.json() as Promise<{ upvotes: number; downvotes: number }>;
 }
 
+// New function to get discussion statistics (similar to DSA progress)
+export async function getDiscussionStats() {
+  const res = await fetch(`${API_URL}/stats`);
+  if (!res.ok) throw new Error('Failed to fetch discussion statistics');
+  return res.json() as Promise<{
+    success: boolean;
+    stats: {
+      threads: {
+        totalThreads: number;
+        totalUpvotes: number;
+        totalDownvotes: number;
+        avgRepliesPerThread: number;
+        mostActiveThread: number;
+      };
+      replies: {
+        totalReplies: number;
+        totalReplyUpvotes: number;
+        totalReplyDownvotes: number;
+      };
+      popularTags: Array<{ _id: string; count: number }>;
+      recentActivity: Array<{
+        _id: string;
+        title: string;
+        createdAt: string;
+        repliesCount: number;
+      }>;
+    };
+  }>;
+}
+
 
