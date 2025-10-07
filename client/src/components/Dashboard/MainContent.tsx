@@ -38,6 +38,14 @@ const featureCards = [
     animationClass: 'card-animate-results',
   },
   {
+    key: 'Weekly Contest',
+    icon: '🚀',
+    title: 'Weekly Contest',
+    desc: 'Join the weekly contest and climb the leaderboard.',
+    button: 'Explore Contest',
+    animationClass: 'card-animate-demo',
+  },
+  {
     key: 'Hackathons',
     icon: '👥',
     title: 'Hackathons',
@@ -55,14 +63,6 @@ const featureCards = [
     animationClass: 'card-animate-battle',
     isUpcoming: true,
   },
-  {
-    key: 'Weekly Contest',
-    icon: '🚀',
-    title: 'Weekly Contest',
-    desc: 'Join the weekly contest and climb the leaderboard.',
-    button: 'Explore Contest',
-    animationClass: 'card-animate-demo',
-  }
  
 ];
 
@@ -140,7 +140,7 @@ const MainContent: React.FC<MainContentProps> = ({ onStartDemo, onSessionSuccess
                 }
               }}
             >
-              {card.button}
+              {card.title === 'Hackathons' ? '🔒 ' : ''}{card.button}
             </button>
           </motion.div>
         ))}
