@@ -3,7 +3,7 @@ import { Typewriter } from 'react-simple-typewriter';
 import { motion } from 'framer-motion';
 import '../Dashboard.css';
 import { useNavigate } from 'react-router-dom';
-import Footer from './Footer';
+import Footer from '../common/Footer';
 import SpaceParticles from '../SpaceParticles';
 import EnhancedContent from './EnhancedContent';
 
