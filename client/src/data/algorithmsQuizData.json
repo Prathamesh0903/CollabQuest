@@ -13,7 +13,7 @@
       "showResults": true,
       "showCorrectAnswers": true,
       "randomizeQuestions": true,
-      "timeLimit": 0
+      "timeLimit": 50
     },
     "stats": {
       "totalAttempts": 0,
@@ -100,6 +100,392 @@
         "timeLimit": 60,
         "difficulty": "hard",
         "tags": ["graphs", "dijkstra", "priority-queue"]
+      },
+      {
+        "id": "algo-easy-2",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of linear search in an unsorted array of size n?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false },
+          { "text": "O(n)", "isCorrect": true },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Linear search checks each element sequentially, taking O(n) time in the worst case.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["search", "linear-search", "complexity"]
+      },
+      {
+        "id": "algo-easy-3",
+        "type": "multiple-choice",
+        "question": "Which sorting algorithm has the worst-case time complexity of O(n²)?",
+        "options": [
+          { "text": "Merge Sort", "isCorrect": false },
+          { "text": "Quick Sort", "isCorrect": false },
+          { "text": "Bubble Sort", "isCorrect": true },
+          { "text": "Heap Sort", "isCorrect": false }
+        ],
+        "explanation": "Bubble Sort has O(n²) time complexity in both average and worst cases.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["sorting", "bubble-sort", "complexity"]
+      },
+      {
+        "id": "algo-easy-4",
+        "type": "true-false",
+        "question": "Recursion always requires less memory than iteration.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "Recursion uses call stack memory, which can be higher than iteration for deep recursions.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["recursion", "memory", "stack"]
+      },
+      {
+        "id": "algo-easy-5",
+        "type": "multiple-choice",
+        "question": "What is the base case in a recursive function?",
+        "options": [
+          { "text": "The first function call", "isCorrect": false },
+          { "text": "The condition that stops recursion", "isCorrect": true },
+          { "text": "The recursive call", "isCorrect": false },
+          { "text": "The return statement", "isCorrect": false }
+        ],
+        "explanation": "The base case is the condition that stops the recursion and prevents infinite loops.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["recursion", "base-case", "termination"]
+      },
+      {
+        "id": "algo-easy-6",
+        "type": "multiple-choice",
+        "question": "Which algorithm is used to find the greatest common divisor (GCD) of two numbers?",
+        "options": [
+          { "text": "Bubble Sort", "isCorrect": false },
+          { "text": "Binary Search", "isCorrect": false },
+          { "text": "Euclidean Algorithm", "isCorrect": true },
+          { "text": "Linear Search", "isCorrect": false }
+        ],
+        "explanation": "The Euclidean Algorithm efficiently finds the GCD using the property that GCD(a,b) = GCD(b, a mod b).",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["gcd", "euclidean", "mathematical"]
+      },
+      {
+        "id": "algo-easy-7",
+        "type": "true-false",
+        "question": "A greedy algorithm makes the locally optimal choice at each step.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Greedy algorithms make the best choice at each step without considering future consequences.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["greedy", "local-optimal", "strategy"]
+      },
+      {
+        "id": "algo-easy-8",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of finding the maximum element in an unsorted array?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false },
+          { "text": "O(n)", "isCorrect": true },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Finding maximum requires examining each element once, taking O(n) time.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["array", "maximum", "complexity"]
+      },
+      {
+        "id": "algo-easy-9",
+        "type": "multiple-choice",
+        "question": "Which string matching algorithm has O(n + m) time complexity where n and m are string lengths?",
+        "options": [
+          { "text": "Naive String Matching", "isCorrect": false },
+          { "text": "KMP Algorithm", "isCorrect": true },
+          { "text": "Brute Force", "isCorrect": false },
+          { "text": "Bubble Sort", "isCorrect": false }
+        ],
+        "explanation": "The Knuth-Morris-Pratt (KMP) algorithm achieves O(n + m) time complexity for string matching.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["string-matching", "kmp", "complexity"]
+      },
+      {
+        "id": "algo-easy-10",
+        "type": "true-false",
+        "question": "Dynamic programming always requires more memory than greedy algorithms.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "While DP often uses more memory to store solutions, this isn't always true and depends on the specific implementation.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["dynamic-programming", "memory", "greedy"]
+      },
+      {
+        "id": "algo-medium-3",
+        "type": "multiple-choice",
+        "question": "What is the space complexity of merge sort?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false },
+          { "text": "O(n)", "isCorrect": true },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Merge sort requires O(n) extra space for the temporary arrays during the merge process.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["merge-sort", "space-complexity", "sorting"]
+      },
+      {
+        "id": "algo-medium-4",
+        "type": "multiple-choice",
+        "question": "In quicksort, what is the best-case time complexity?",
+        "options": [
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": true },
+          { "text": "O(n²)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false }
+        ],
+        "explanation": "Best-case occurs when pivot always divides array into equal halves, resulting in O(n log n).",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["quicksort", "best-case", "complexity"]
+      },
+      {
+        "id": "algo-medium-5",
+        "type": "true-false",
+        "question": "Backtracking algorithms use recursion to explore all possible solutions.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Backtracking systematically explores solution space using recursion and undoes choices when they don't lead to solutions.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["backtracking", "recursion", "exploration"]
+      },
+      {
+        "id": "algo-medium-6",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of the Floyd-Warshall algorithm for finding all-pairs shortest paths?",
+        "options": [
+          { "text": "O(V)", "isCorrect": false },
+          { "text": "O(V log V)", "isCorrect": false },
+          { "text": "O(V³)", "isCorrect": true },
+          { "text": "O(V⁴)", "isCorrect": false }
+        ],
+        "explanation": "Floyd-Warshall uses three nested loops over all vertices, resulting in O(V³) time complexity.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["floyd-warshall", "all-pairs", "complexity"]
+      },
+      {
+        "id": "algo-medium-7",
+        "type": "multiple-choice",
+        "question": "Which algorithm is used to find strongly connected components in a directed graph?",
+        "options": [
+          { "text": "BFS", "isCorrect": false },
+          { "text": "DFS", "isCorrect": false },
+          { "text": "Kosaraju's Algorithm", "isCorrect": true },
+          { "text": "Dijkstra's Algorithm", "isCorrect": false }
+        ],
+        "explanation": "Kosaraju's algorithm uses two DFS passes to find strongly connected components in O(V + E) time.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["scc", "kosaraju", "dfs", "graphs"]
+      },
+      {
+        "id": "algo-medium-8",
+        "type": "true-false",
+        "question": "The traveling salesman problem (TSP) can be solved optimally using dynamic programming in O(n²2ⁿ) time.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "TSP can be solved using dynamic programming with bitmasking, achieving O(n²2ⁿ) time complexity.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["tsp", "dynamic-programming", "bitmasking", "complexity"]
+      },
+      {
+        "id": "algo-medium-9",
+        "type": "multiple-choice",
+        "question": "What is the main advantage of using memoization in dynamic programming?",
+        "options": [
+          { "text": "Reduces time complexity", "isCorrect": true },
+          { "text": "Reduces space complexity", "isCorrect": false },
+          { "text": "Simplifies code", "isCorrect": false },
+          { "text": "Improves readability", "isCorrect": false }
+        ],
+        "explanation": "Memoization avoids recalculating the same subproblems, significantly reducing time complexity.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["memoization", "dynamic-programming", "optimization"]
+      },
+      {
+        "id": "algo-medium-10",
+        "type": "multiple-choice",
+        "question": "Which algorithm finds the minimum spanning tree of a weighted graph?",
+        "options": [
+          { "text": "Dijkstra's Algorithm", "isCorrect": false },
+          { "text": "Bellman-Ford Algorithm", "isCorrect": false },
+          { "text": "Kruskal's Algorithm", "isCorrect": true },
+          { "text": "Floyd-Warshall Algorithm", "isCorrect": false }
+        ],
+        "explanation": "Kruskal's algorithm finds MST by sorting edges and using Union-Find to avoid cycles.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["mst", "kruskal", "spanning-tree"]
+      },
+      {
+        "id": "algo-hard-3",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of the A* search algorithm in the worst case?",
+        "options": [
+          { "text": "O(b^d)", "isCorrect": true },
+          { "text": "O(b * d)", "isCorrect": false },
+          { "text": "O(d)", "isCorrect": false },
+          { "text": "O(log b)", "isCorrect": false }
+        ],
+        "explanation": "A* has exponential time complexity O(b^d) where b is branching factor and d is solution depth.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["a-star", "search", "complexity", "heuristics"]
+      },
+      {
+        "id": "algo-hard-4",
+        "type": "multiple-choice",
+        "question": "Which algorithm solves the maximum flow problem in a network?",
+        "options": [
+          { "text": "Dijkstra's Algorithm", "isCorrect": false },
+          { "text": "Ford-Fulkerson Algorithm", "isCorrect": true },
+          { "text": "Bellman-Ford Algorithm", "isCorrect": false },
+          { "text": "Kruskal's Algorithm", "isCorrect": false }
+        ],
+        "explanation": "Ford-Fulkerson algorithm finds maximum flow by repeatedly finding augmenting paths.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["max-flow", "ford-fulkerson", "network-flow"]
+      },
+      {
+        "id": "algo-hard-5",
+        "type": "true-false",
+        "question": "The Fast Fourier Transform (FFT) can multiply two n-degree polynomials in O(n log n) time.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "FFT converts polynomial multiplication from O(n²) to O(n log n) using complex number properties.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["fft", "polynomial", "complexity", "fourier"]
+      },
+      {
+        "id": "algo-hard-6",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of finding the longest increasing subsequence using dynamic programming?",
+        "options": [
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": true },
+          { "text": "O(n²)", "isCorrect": false },
+          { "text": "O(n³)", "isCorrect": false }
+        ],
+        "explanation": "LIS can be solved in O(n log n) using DP with binary search optimization.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["lis", "dynamic-programming", "binary-search", "optimization"]
+      },
+      {
+        "id": "algo-hard-7",
+        "type": "multiple-choice",
+        "question": "Which algorithm is used to solve the stable marriage problem?",
+        "options": [
+          { "text": "Gale-Shapley Algorithm", "isCorrect": true },
+          { "text": "Hungarian Algorithm", "isCorrect": false },
+          { "text": "Edmonds-Karp Algorithm", "isCorrect": false },
+          { "text": "Hopcroft-Karp Algorithm", "isCorrect": false }
+        ],
+        "explanation": "The Gale-Shapley algorithm guarantees a stable matching in O(n²) time.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["stable-marriage", "gale-shapley", "matching"]
+      },
+      {
+        "id": "algo-hard-8",
+        "type": "multiple-choice",
+        "question": "What is the space complexity of the Rabin-Karp string matching algorithm?",
+        "options": [
+          { "text": "O(1)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(m)", "isCorrect": false },
+          { "text": "O(n + m)", "isCorrect": false }
+        ],
+        "explanation": "Rabin-Karp uses constant extra space, with O(1) space complexity.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["rabin-karp", "string-matching", "space-complexity", "rolling-hash"]
+      },
+      {
+        "id": "algo-hard-9",
+        "type": "true-false",
+        "question": "The simplex algorithm for linear programming has polynomial time complexity.",
+        "options": [
+          { "text": "True", "isCorrect": false },
+          { "text": "False", "isCorrect": true }
+        ],
+        "explanation": "The simplex algorithm has exponential worst-case complexity, though it performs well in practice.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["simplex", "linear-programming", "complexity", "optimization"]
+      },
+      {
+        "id": "algo-hard-10",
+        "type": "multiple-choice",
+        "question": "Which algorithm solves the maximum bipartite matching problem?",
+        "options": [
+          { "text": "Ford-Fulkerson Algorithm", "isCorrect": false },
+          { "text": "Hopcroft-Karp Algorithm", "isCorrect": true },
+          { "text": "Dijkstra's Algorithm", "isCorrect": false },
+          { "text": "Bellman-Ford Algorithm", "isCorrect": false }
+        ],
+        "explanation": "Hopcroft-Karp algorithm finds maximum bipartite matching in O(E√V) time.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["bipartite-matching", "hopcroft-karp", "graphs", "matching"]
       }
     ]
   }

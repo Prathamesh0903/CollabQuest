@@ -156,7 +156,7 @@
 
 .progress-text {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: black;
   font-weight: 500;
 }
 
@@ -473,7 +473,30 @@
     background-position: -200px 0;
   }
   100% {
-    background-position: calc(200px + 100%) 0;
+    background-position: calc(200px + 100%) 0;  
+  }
+}
+
+/* DSA Badge for topic problem counts */
+.dsa-badge {
+  background: linear-gradient(135deg, #00FF94 0%, #00B2FF 100%);
+  color: #000;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 255, 148, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 255, 148, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(0, 255, 148, 0.5);
   }
 }
 

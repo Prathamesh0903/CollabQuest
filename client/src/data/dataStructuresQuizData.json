@@ -13,7 +13,7 @@
       "showResults": true,
       "showCorrectAnswers": true,
       "randomizeQuestions": true,
-      "timeLimit": 0
+      "timeLimit": 35
     },
     "stats": {
       "totalAttempts": 0,
@@ -114,6 +114,378 @@
         "timeLimit": 45,
         "difficulty": "hard",
         "tags": ["heap", "min-heap", "priority-queue"]
+      },
+      {
+        "id": "ds-easy-3",
+        "type": "multiple-choice",
+        "question": "Which data structure operates on a Last-In-First-Out (LIFO) principle?",
+        "options": [
+          { "text": "Queue", "isCorrect": false },
+          { "text": "Stack", "isCorrect": true },
+          { "text": "Array", "isCorrect": false },
+          { "text": "Hash Table", "isCorrect": false }
+        ],
+        "explanation": "Stacks follow LIFO: the last element added is the first one removed.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["stack", "lifo", "basics"]
+      },
+      {
+        "id": "ds-easy-4",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of accessing an element by index in an array?",
+        "options": [
+          { "text": "O(1)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Array access by index is O(1) because arrays use direct memory addressing.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["arrays", "time-complexity", "access"]
+      },
+      {
+        "id": "ds-easy-5",
+        "type": "true-false",
+        "question": "In a doubly linked list, each node has pointers to both the next and previous nodes.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Doubly linked lists have both next and previous pointers, enabling bidirectional traversal.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["linked-list", "doubly-linked", "pointers"]
+      },
+      {
+        "id": "ds-easy-6",
+        "type": "multiple-choice",
+        "question": "Which operation is NOT typically supported by a basic stack?",
+        "options": [
+          { "text": "push", "isCorrect": false },
+          { "text": "pop", "isCorrect": false },
+          { "text": "peek", "isCorrect": false },
+          { "text": "search", "isCorrect": true }
+        ],
+        "explanation": "Basic stacks only support push, pop, and peek operations. Search requires additional implementation.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["stack", "operations", "basics"]
+      },
+      {
+        "id": "ds-easy-7",
+        "type": "multiple-choice",
+        "question": "What is the maximum number of children a node can have in a binary tree?",
+        "options": [
+          { "text": "1", "isCorrect": false },
+          { "text": "2", "isCorrect": true },
+          { "text": "3", "isCorrect": false },
+          { "text": "Unlimited", "isCorrect": false }
+        ],
+        "explanation": "Binary trees are defined by having at most 2 children per node.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["binary-tree", "children", "definition"]
+      },
+      {
+        "id": "ds-easy-8",
+        "type": "true-false",
+        "question": "Hash tables provide O(1) average-case time complexity for search operations.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "With good hash functions and load factors, hash tables achieve O(1) average-case performance.",
+        "points": 10,
+        "timeLimit": 20,
+        "difficulty": "easy",
+        "tags": ["hash-table", "time-complexity", "search"]
+      },
+      {
+        "id": "ds-easy-9",
+        "type": "multiple-choice",
+        "question": "What is the space complexity of storing n elements in an array?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(n)", "isCorrect": true },
+          { "text": "O(n log n)", "isCorrect": false },
+          { "text": "O(n²)", "isCorrect": false }
+        ],
+        "explanation": "Arrays require O(n) space to store n elements.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["arrays", "space-complexity", "storage"]
+      },
+      {
+        "id": "ds-easy-10",
+        "type": "multiple-choice",
+        "question": "In a graph, what represents the connections between vertices?",
+        "options": [
+          { "text": "Nodes", "isCorrect": false },
+          { "text": "Vertices", "isCorrect": false },
+          { "text": "Edges", "isCorrect": true },
+          { "text": "Paths", "isCorrect": false }
+        ],
+        "explanation": "Edges represent the connections or relationships between vertices in a graph.",
+        "points": 10,
+        "timeLimit": 30,
+        "difficulty": "easy",
+        "tags": ["graphs", "edges", "vertices", "connections"]
+      },
+      {
+        "id": "ds-medium-3",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of inserting an element at the beginning of a singly linked list?",
+        "options": [
+          { "text": "O(1)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Inserting at the head of a linked list is O(1) if you maintain a reference to the head.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["linked-list", "insertion", "time-complexity"]
+      },
+      {
+        "id": "ds-medium-4",
+        "type": "multiple-choice",
+        "question": "Which traversal method visits the root node between visiting the left and right subtrees?",
+        "options": [
+          { "text": "Preorder", "isCorrect": false },
+          { "text": "Inorder", "isCorrect": true },
+          { "text": "Postorder", "isCorrect": false },
+          { "text": "Level-order", "isCorrect": false }
+        ],
+        "explanation": "Inorder traversal visits left subtree, then root, then right subtree.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["tree", "traversal", "inorder"]
+      },
+      {
+        "id": "ds-medium-5",
+        "type": "multiple-choice",
+        "question": "What happens when a hash table's load factor becomes too high?",
+        "options": [
+          { "text": "Better performance", "isCorrect": false },
+          { "text": "More collisions and worse performance", "isCorrect": true },
+          { "text": "Memory usage decreases", "isCorrect": false },
+          { "text": "No impact on performance", "isCorrect": false }
+        ],
+        "explanation": "High load factors increase collisions, leading to longer chains and worse performance.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["hash-table", "load-factor", "collisions", "performance"]
+      },
+      {
+        "id": "ds-medium-6",
+        "type": "true-false",
+        "question": "A complete binary tree can have missing nodes only at the last level, and they must be filled from left to right.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Complete binary trees are filled level by level from left to right, with gaps only at the last level.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["binary-tree", "complete", "structure"]
+      },
+      {
+        "id": "ds-medium-7",
+        "type": "multiple-choice",
+        "question": "What is the main advantage of using an adjacency list over an adjacency matrix for sparse graphs?",
+        "options": [
+          { "text": "Faster edge lookups", "isCorrect": false },
+          { "text": "Less memory usage", "isCorrect": true },
+          { "text": "Simpler implementation", "isCorrect": false },
+          { "text": "Better cache performance", "isCorrect": false }
+        ],
+        "explanation": "Adjacency lists use O(V + E) space vs O(V²) for matrices, making them more memory-efficient for sparse graphs.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["graphs", "adjacency-list", "sparse", "memory"]
+      },
+      {
+        "id": "ds-medium-8",
+        "type": "multiple-choice",
+        "question": "In a priority queue implemented with a min-heap, what operation has O(log n) time complexity?",
+        "options": [
+          { "text": "Finding minimum", "isCorrect": false },
+          { "text": "Inserting element", "isCorrect": true },
+          { "text": "Checking if empty", "isCorrect": false },
+          { "text": "Getting size", "isCorrect": false }
+        ],
+        "explanation": "Insertion requires bubbling up the element to maintain heap property, taking O(log n) time.",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["priority-queue", "min-heap", "insertion", "complexity"]
+      },
+      {
+        "id": "ds-medium-9",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of searching for an element in a balanced BST?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Balanced BSTs have height O(log n), making search operations O(log n).",
+        "points": 15,
+        "timeLimit": 45,
+        "difficulty": "medium",
+        "tags": ["bst", "balanced", "search", "complexity"]
+      },
+      {
+        "id": "ds-medium-10",
+        "type": "true-false",
+        "question": "A trie (prefix tree) can efficiently handle prefix-based searches.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Tries are specifically designed for efficient prefix matching and autocomplete functionality.",
+        "points": 15,
+        "timeLimit": 30,
+        "difficulty": "medium",
+        "tags": ["trie", "prefix-tree", "search", "autocomplete"]
+      },
+      {
+        "id": "ds-hard-3",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of the union operation in a Union-Find data structure with path compression?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": false },
+          { "text": "O(α(n))", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false }
+        ],
+        "explanation": "With path compression and union by rank, operations achieve nearly O(1) time, specifically O(α(n)) where α is the inverse Ackermann function.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["union-find", "path-compression", "complexity", "ackermann"]
+      },
+      {
+        "id": "ds-hard-4",
+        "type": "multiple-choice",
+        "question": "In a segment tree, what is the time complexity for range query operations?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(log n)", "isCorrect": true },
+          { "text": "O(n)", "isCorrect": false },
+          { "text": "O(n log n)", "isCorrect": false }
+        ],
+        "explanation": "Segment trees support range queries in O(log n) time by dividing the range into at most O(log n) segments.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["segment-tree", "range-query", "complexity"]
+      },
+      {
+        "id": "ds-hard-5",
+        "type": "true-false",
+        "question": "A suffix tree for a string of length n can be built in O(n) time using Ukkonen's algorithm.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "Ukkonen's algorithm constructs suffix trees in linear time, making it optimal for many string processing problems.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["suffix-tree", "ukkonen", "linear-time", "string-processing"]
+      },
+      {
+        "id": "ds-hard-6",
+        "type": "multiple-choice",
+        "question": "What is the main advantage of a persistent data structure?",
+        "options": [
+          { "text": "Better memory usage", "isCorrect": false },
+          { "text": "Faster updates", "isCorrect": false },
+          { "text": "Ability to access previous versions", "isCorrect": true },
+          { "text": "Simpler implementation", "isCorrect": false }
+        ],
+        "explanation": "Persistent data structures allow access to previous versions after modifications, useful in functional programming and version control.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["persistent", "data-structures", "versioning", "functional-programming"]
+      },
+      {
+        "id": "ds-hard-7",
+        "type": "multiple-choice",
+        "question": "In a red-black tree, what is the maximum height difference between any two paths from root to leaf?",
+        "options": [
+          { "text": "1", "isCorrect": false },
+          { "text": "2", "isCorrect": true },
+          { "text": "log n", "isCorrect": false },
+          { "text": "n", "isCorrect": false }
+        ],
+        "explanation": "Red-black trees maintain the property that no path is more than twice as long as any other path.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["red-black-tree", "height", "balance", "properties"]
+      },
+      {
+        "id": "ds-hard-8",
+        "type": "multiple-choice",
+        "question": "What is the time complexity of finding the longest common subsequence using dynamic programming?",
+        "options": [
+          { "text": "O(m + n)", "isCorrect": false },
+          { "text": "O(m * n)", "isCorrect": true },
+          { "text": "O(m log n)", "isCorrect": false },
+          { "text": "O(n²)", "isCorrect": false }
+        ],
+        "explanation": "LCS using DP has O(m*n) time complexity where m and n are the lengths of the input strings.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["lcs", "dynamic-programming", "complexity", "strings"]
+      },
+      {
+        "id": "ds-hard-9",
+        "type": "true-false",
+        "question": "A B-tree of order m can have at most m children per node and at most m-1 keys per node.",
+        "options": [
+          { "text": "True", "isCorrect": true },
+          { "text": "False", "isCorrect": false }
+        ],
+        "explanation": "B-trees of order m have at most m children and m-1 keys per node, maintaining the balance property.",
+        "points": 20,
+        "timeLimit": 45,
+        "difficulty": "hard",
+        "tags": ["b-tree", "order", "children", "keys", "balance"]
+      },
+      {
+        "id": "ds-hard-10",
+        "type": "multiple-choice",
+        "question": "What is the space complexity of a Fibonacci heap for n elements?",
+        "options": [
+          { "text": "O(1)", "isCorrect": false },
+          { "text": "O(n)", "isCorrect": true },
+          { "text": "O(n log n)", "isCorrect": false },
+          { "text": "O(n²)", "isCorrect": false }
+        ],
+        "explanation": "Fibonacci heaps use O(n) space to store n elements, but provide better amortized time complexities for many operations.",
+        "points": 20,
+        "timeLimit": 60,
+        "difficulty": "hard",
+        "tags": ["fibonacci-heap", "space-complexity", "amortized", "advanced"]
       }
     ]
   }

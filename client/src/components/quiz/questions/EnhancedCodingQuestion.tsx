@@ -166,7 +166,11 @@ const EnhancedCodingQuestion: React.FC<CodingQuestionProps> = ({
           ) : (
             <div className="success-output">
               <CheckCircle className="w-4 h-4" />
-              <pre>{executionResult.output || 'No output'}</pre>
+              <pre>
+                {executionResult.testResults && getTotalTests() > 0 && getPassedTests() === getTotalTests() 
+                  ? 'Submitted successfully' 
+                  : executionResult.output || 'No output'}
+              </pre>
             </div>
           )}
           

@@ -31,7 +31,7 @@ const EnhancedContent: React.FC = () => {
       role: 'Student',
       company: 'DYPCET Kolhapur',
       content: 'Collaborative coding on Collab Quest is a game changer. Real-time pair programming feels seamless and boosts productivity.',
-      avatar: '👩‍💼'
+      avatar: '👨‍💼'
     },
     {
       name: 'Vipul Raj',
@@ -45,7 +45,7 @@ const EnhancedContent: React.FC = () => {
       role: 'Student',
       company: 'DYPCET Kolhapur',
       content: 'DSA Sheets are curated and practical. Great structure for interview prep with clear problem progression.',
-      avatar: '👩‍🎓'
+      avatar: '👨‍🎓'
     }
   ];
 

@@ -4,6 +4,9 @@ import Dashboard from './components/Dashboard';
 // Removed Battle components; Battle Play now uses DSAProblemPage
 import About from './components/About';
 import CollaborativeEditor from './components/CollaborativeEditor';
+import DashboardPage from './pages/DashboardPage';
+import SessionEditorPage from './pages/SessionEditorPage';
+import AdvancedQuizPage from './pages/AdvancedQuizPage';
 import Quiz from './components/Quiz';
 import QuizPage from './components/QuizPage';
 
@@ -152,7 +155,7 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         {/* Original homepage - protected route */}
-        <Route path="/" element={<PrivateRoute><OnboardingRoute><DashboardWrapper /></OnboardingRoute></PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute><OnboardingRoute><DashboardPage /></OnboardingRoute></PrivateRoute>} />
         
         {/* Auth routes - public routes */}
         <Route path="/auth" element={<PublicRoute><Login /></PublicRoute>} />
@@ -163,12 +166,12 @@ const App: React.FC = () => {
         <Route path="/discuss" element={<DiscussList />} />
         <Route path="/discuss/new" element={<DiscussNew />} />
         <Route path="/discuss/:id" element={<DiscussDetail />} />
-        <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditor /></PrivateRoute>} />
+        <Route path="/collab/:sessionId" element={<PrivateRoute><SessionEditorPage /></PrivateRoute>} />
         <Route path="/battle" element={<PrivateRoute><Battle /></PrivateRoute>} />
         <Route path="/contests" element={<PrivateRoute><ContestsPage /></PrivateRoute>} />
         <Route path="/admin/contests" element={<PrivateRoute><AdminContestsPage /></PrivateRoute>} />
 
-        <Route path="/advanced-quiz" element={<PrivateRoute><AdvancedQuizWrapper /></PrivateRoute>} />
+        <Route path="/advanced-quiz" element={<PrivateRoute><AdvancedQuizPage /></PrivateRoute>} />
         <Route path="/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
         {/* Route Battle Play to DSA editor with host-chosen problem id */}
         <Route path="/battle/play/:id" element={<PrivateRoute><DSAProblemPage /></PrivateRoute>} />

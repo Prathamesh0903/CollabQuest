@@ -6,10 +6,16 @@ import ToastContainer, { useToast } from './ToastContainer';
 import Terminal, { TerminalOutput } from './Terminal';
 import LanguageSwitcher from './LanguageSwitcher';
 import VSCodeSidebar from './VSCodeSidebar';
+import EditorHeader from './collab/EditorHeader';
+import StatusBar from './collab/StatusBar';
+import { NewFileModal, NewFolderModal, LocalFolderModal } from './collab/Modals';
+import EditorPane from './collab/EditorPane';
 import UserAvatar from './UserAvatar';
 import ConcurrentExecutionHandler from './ConcurrentExecutionHandler';
 import { getLanguageFromExtension, getFileExtension, getDefaultCode } from '../utils/monacoConfig';
 import './CollaborativeEditor.css';
+import { CollaborativeEditorProps, EditorChange, UserInfo, CursorInfo, SelectionInfo, FileItem, FileEntity, SessionState } from './collab/types';
+import { generateSessionId } from './collab/utils';
 
 // Extend HTMLInputElement interface for webkitdirectory
 declare global {
@@ -25,76 +31,7 @@ declare module 'react' {
   }
 }
 
-interface EditorChange {
-  range: {
-    startLineNumber: number;
-    startColumn: number;
-    endLineNumber: number;
-    endColumn: number;
-  };
-  text: string;
-}
-
-interface CollaborativeEditorProps {
-  sessionId?: string;
-  language?: 'javascript' | 'python' | 'java' | 'cpp' | 'csharp' | 'typescript' | 'go' | 'rust' | 'php' | 'ruby';
-  initialCode?: string;
-}
-
-// Enhanced user info type
-interface UserInfo {
-  userId: string;
-  displayName: string;
-  avatar?: string;
-  isTyping?: boolean;
-  isEditing?: boolean;
-  lastSeen?: Date;
-}
-
-interface CursorInfo {
-  position: { lineNumber: number; column: number };
-  color: string;
-  displayName: string;
-  avatar?: string;
-}
-
-interface SelectionInfo {
-  range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number };
-  color: string;
-  displayName: string;
-  avatar?: string;
-}
-
-interface FileItem {
-  id: string;
-  name: string;
-  path: string;
-  type: 'file' | 'folder';
-  language?: string;
-  size?: number;
-  children?: FileItem[];
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-// Local file entity map used by the editor, keyed by a stable UUID
-interface FileEntity {
-  id: string;
-  name: string;
-  path: string;
-  language?: string;
-  content: string;
-  version: number;
-}
-
-interface SessionState {
-  code: string;
-  language: string;
-  version: number;
-  lastExecution?: any;
-  files: FileItem[];
-  currentFile?: string;
-}
+// types moved to ./collab/types
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
   sessionId,
@@ -148,11 +85,6 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
   // Generate or use session ID
   const currentSessionId = sessionId || generateSessionId();
-
-  // Generate a unique session ID
-  function generateSessionId(): string {
-    return 'session_' + Math.random().toString(36).substr(2, 9);
-  }
 
   // Generate shareable link
   useEffect(() => {
@@ -1784,160 +1716,30 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     <div className={`collaborative-editor vscode-layout ${theme === 'vs-dark' ? 'dark-theme' : 'light-theme'}`}>
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
-      {/* Professional VS Code Style Header */}
-      <div className="vscode-header">
-        <div className="header-section">
-          <div className="header-left">
-            <button  
-              className="back-btn" 
-              onClick={() => {
-                // Notify server we're leaving the session
-                if (socketRef.current && connectionStatus === 'connected') {
-                  socketRef.current.emit('leave-collab-room', { roomId: currentSessionId });
-                }
-                // Navigate back to dashboard
-                window.location.href = '/';
-              }} 
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              Dashboard
-            </button>
-            <div className="file-info">
-              <span className="file-name">{currentFile}</span>
-              <span className="file-path">Session: {currentSessionId}</span>
-            </div>
-          </div>
-          
-          <div className="header-center">
-            <div className="connection-status">
-              <span className={`connection-indicator ${connectionStatus}`}>
-                <span className="connection-dot"></span>
-                {connectionStatus === 'connected' ? 'Connected' :
-                 connectionStatus === 'reconnecting' ? 'Reconnecting...' :
-                 connectionStatus === 'error' ? 'Connection Error' : 'Disconnected'}
-              </span>
-              {connectionStatus === 'error' && (
-                <button 
-                  className="retry-btn"
-                  onClick={() => {
-                    setConnectionStatus('reconnecting');
-                    initializeSocket();
-                  }}
-                  title="Retry Connection"
-                >
-                  🔄
-                </button>
-              )}
-            </div>
-            
-            <div className="collaborators-info">
-              <div className="collaborators-header">
-                <span className="collaborators-count">{activeUsers.length} collaborator{activeUsers.length !== 1 ? 's' : ''}</span>
-                {activeUsers.length > 0 && (
-                  <div className="collaborators-tooltip">
-                    <div className="tooltip-content">
-                      <div className="tooltip-title">Active Collaborators</div>
-                      {activeUsers.map(user => (
-                        <div key={user.userId} className="tooltip-user">
-                          <UserAvatar
-                            user={user}
-                            size="small"
-                            showStatus={true}
-                            showName={false}
-                            onFollow={() => handleFollowUser(user.userId, user.displayName)}
-                            onUnfollow={() => handleUnfollowUser(user.userId, user.displayName)}
-                            isFollowing={followingUser === user.userId}
-                            canFollow={user.userId !== currentUser?.id}
-                          />
-                          <span className="tooltip-username">{user.displayName}</span>
-                          {user.isTyping && <span className="typing-indicator">✏️</span>}
-                          {user.isEditing && <span className="editing-indicator">📝</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="collaborators-list">
-                {activeUsers.slice(0, 3).map(user => (
-                  <UserAvatar
-                    key={user.userId}
-                    user={user}
-                    size="small"
-                    showStatus={true}
-                    showName={false}
-                    className="header-user-avatar"
-                  />
-                ))}
-                {activeUsers.length > 3 && (
-                  <span className="more-collaborators">+{activeUsers.length - 3}</span>
-                )}
-              </div>
-            </div>
-            
-            {isExecuting && (
-              <div className="execution-status executing">
-                <span className="execution-icon">⚡</span>
-                <span>Executing...</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="header-right">
-            <button 
-              className={`header-btn ${showSidebar ? 'active' : ''}`}
-              onClick={() => setShowSidebar(!showSidebar)}
-              title={`${showSidebar ? 'Hide' : 'Show'} Sidebar (Ctrl+B)`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <line x1="9" y1="3" x2="9" y2="21"/>
-              </svg>
-              {showSidebar ? 'Hide' : 'Show'} Sidebar
-            </button>
-            
-            <button 
-              className="header-btn save-btn" 
-              onClick={saveCurrentFile}
-              title="Save File (Ctrl+S)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17,21 17,13 7,13 7,21"/>
-                <polyline points="7,3 7,8 15,8"/>
-              </svg>
-              Save
-            </button>
-            
-            <button 
-              className="header-btn share-btn" 
-              onClick={copyShareableLink}
-              title="Copy Shareable Link"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
-              Share
-            </button>
-            
-            <button className="header-btn" onClick={toggleTheme}
-              title="Toggle Theme"
-            >
-              {theme === 'vs-dark' ? '☀️' : '🌙'}
-            </button>
-            
-            <button className="header-btn run-btn" onClick={handleRunCode} disabled={outputLoading} title="Run Code (Ctrl+Enter)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-              {outputLoading ? 'Running...' : 'Run'}
-            </button>
-          </div>
-        </div>
-      </div>
+      <EditorHeader
+        currentFile={currentFile}
+        sessionId={currentSessionId}
+        connectionStatus={connectionStatus}
+        activeUsers={activeUsers}
+        isExecuting={isExecuting}
+        showSidebar={showSidebar}
+        theme={theme}
+        onBackToDashboard={() => {
+          if (socketRef.current && connectionStatus === 'connected') {
+            socketRef.current.emit('leave-collab-room', { roomId: currentSessionId });
+          }
+          window.location.href = '/';
+        }}
+        onRetryConnection={() => { setConnectionStatus('reconnecting'); initializeSocket(); }}
+        onToggleSidebar={() => setShowSidebar(!showSidebar)}
+        onSave={saveCurrentFile}
+        onShare={copyShareableLink}
+        onToggleTheme={toggleTheme}
+        onRun={handleRunCode}
+        onFollowUser={handleFollowUser}
+        onUnfollowUser={handleUnfollowUser}
+        followingUserId={followingUser}
+      />
 
       {/* VS Code Layout with Sidebar */}
       <div className="vscode-main-area">
@@ -1959,86 +1761,23 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         />
         
         {/* VS Code Style Editor Area */}
-        <div className={`vscode-editor-container ${showSidebar ? 'with-sidebar' : ''}`}>
-          <Editor
-            height="100%"
-            defaultLanguage={currentFile ? getLanguageFromExtension(currentFile) : language}
-            defaultValue={code || getDefaultCode(language)}
-            theme={theme}
-            onMount={handleEditorDidMount}
-            value={activeFileId && filesById[activeFileId] ? filesById[activeFileId].content : code}
-            options={{
-              minimap: { enabled: true },
-              fontSize: 14,
-              fontFamily: "'Fira Code', 'Consolas', 'Courier New', monospace",
-              wordWrap: 'on',
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-              roundedSelection: false,
-              readOnly: false,
-              cursorStyle: 'line',
-              contextmenu: true,
-              mouseWheelZoom: true,
-              quickSuggestions: true,
-              renderWhitespace: 'selection',
-              tabSize: 2,
-              insertSpaces: true,
-              folding: true,
-              lineNumbers: 'on',
-              glyphMargin: true,
-              foldingStrategy: 'auto',
-              showFoldingControls: 'mouseover',
-              disableLayerHinting: true,
-              renderLineHighlight: 'all',
-              selectOnLineNumbers: true,
-              bracketPairColorization: { enabled: true },
-              guides: {
-                bracketPairs: true,
-                indentation: true
-              },
-              scrollbar: {
-                vertical: 'visible',
-                horizontal: 'visible',
-                verticalScrollbarSize: 14,
-                horizontalScrollbarSize: 14
-              }
-            }}
-          />
-        </div>
+        <EditorPane
+          showSidebar={showSidebar}
+          currentFile={currentFile}
+          language={currentFile ? getLanguageFromExtension(currentFile) : language}
+          code={code || getDefaultCode(language)}
+          activeFileContent={activeFileId && filesById[activeFileId] ? filesById[activeFileId].content : code}
+          onMount={handleEditorDidMount}
+          theme={theme}
+        />
       </div>
 
-      {/* VS Code Style Status Bar */}
-      <div className="vscode-status-bar">
-        <div className="status-left">
-          <span className="status-item">
-            Lines: {code.split('\n').length}
-          </span>
-          <span className="status-item">
-            Characters: {code.length}
-          </span>
-          {executionHistory.length > 0 && (
-            <span className="status-item">
-              Last run: {new Date(executionHistory[executionHistory.length - 1]?.timestamp).toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-        <div className="status-right">
-          <button 
-            className={`status-btn ${showTerminal ? 'active' : ''}`}
-            onClick={() => setShowTerminal(!showTerminal)}
-            title="Toggle Terminal (Ctrl+`)"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 17l6-6-6-6"/>
-              <path d="M12 19h8"/>
-            </svg>
-            Terminal
-          </button>
-          <span className="shortcuts-hint">
-            Ctrl+Enter: Run • Ctrl+`: Terminal • Ctrl+B: Sidebar • Esc: Close
-          </span>
-        </div>
-      </div>
+      <StatusBar
+        code={code}
+        executionHistory={executionHistory}
+        showTerminal={showTerminal}
+        onToggleTerminal={() => setShowTerminal(!showTerminal)}
+      />
 
       {/* VS Code Style Terminal */}
       <Terminal 
@@ -2052,109 +1791,28 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         showCustomInput={false}
       />
 
-      {/* New File Modal */}
-      <div className={`modal-overlay ${showNewFileModal ? 'active' : ''}`}>
-        <div className="modal-content">
-          <h2>New File</h2>
-          <input
-            type="text"
-            placeholder="File name (e.g., main.js)"
-            value={newFileName}
-            onChange={handleNewFileInputChange}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSaveNewFile();
-              }
-            }}
-          />
-          <select value={newFileLanguage} onChange={handleNewFileLanguageChange}>
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-            <option value="csharp">C#</option>
-            <option value="typescript">TypeScript</option>
-            <option value="go">Go</option>
-            <option value="rust">Rust</option>
-            <option value="php">PHP</option>
-            <option value="ruby">Ruby</option>
-          </select>
-          <button onClick={handleSaveNewFile}>Create File</button>
-          <button onClick={handleNewFileModalClose}>Cancel</button>
-        </div>
-      </div>
-
-      {/* New Folder Modal */}
-      <div className={`modal-overlay ${showNewFolderModal ? 'active' : ''}`}>
-        <div className="modal-content">
-          <h2>New Folder</h2>
-          <input
-            type="text"
-            placeholder="Folder name"
-            value={newFolderName}
-            onChange={handleNewFolderInputChange}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSaveNewFolder();
-              }
-            }}
-          />
-          <button onClick={handleSaveNewFolder}>Create Folder</button>
-          <button onClick={handleNewFolderModalClose}>Cancel</button>
-        </div>
-      </div>
-
-      {/* Local Folder Modal */}
-      <div className={`modal-overlay ${showLocalFolderModal ? 'active' : ''}`}>
-        <div className="modal-content">
-          <h2>Open Local Folder</h2>
-          <p style={{ marginBottom: '16px', color: 'var(--vscode-text-light)', fontSize: '14px' }}>
-            Select a folder or files to import into this session.
-          </p>
-          
-          <div className="file-picker-container">
-            <label htmlFor="folder-picker" className="file-picker-label">
-              <div className="file-picker-content">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-                <span>📁 Select a folder (includes all files)</span>
-              </div>
-            </label>
-            <input
-              id="folder-picker"
-              type="file"
-              webkitdirectory={true}
-              multiple
-              onChange={handleFileInputChange}
-              style={{ display: 'none' }}
-            />
-            
-            <div className="file-picker-options">
-              <label htmlFor="single-file-picker" className="file-picker-option">
-                <input
-                  id="single-file-picker"
-                  type="file"
-                  multiple
-                  onChange={handleFileInputChange}
-                  style={{ display: 'none' }}
-                />
-                <span>📄 Select individual files</span>
-              </label>
-            </div>
-          </div>
-          
-          {localFolderPath && (
-            <div className="selected-path">
-              <strong>Selected:</strong> {localFolderPath}
-            </div>
-          )}
-          
-          <div className="modal-actions">
-            <button onClick={handleLocalFolderModalClose}>Cancel</button>
-          </div>
-        </div>
-      </div>
+      <NewFileModal
+        visible={showNewFileModal}
+        newFileName={newFileName}
+        newFileLanguage={newFileLanguage}
+        onChangeName={(v) => handleNewFileInputChange({ target: { value: v } } as any)}
+        onChangeLanguage={(v) => handleNewFileLanguageChange({ target: { value: v } } as any)}
+        onSave={handleSaveNewFile}
+        onClose={handleNewFileModalClose}
+      />
+      <NewFolderModal
+        visible={showNewFolderModal}
+        newFolderName={newFolderName}
+        onChangeName={(v) => handleNewFolderInputChange({ target: { value: v } } as any)}
+        onSave={handleSaveNewFolder}
+        onClose={handleNewFolderModalClose}
+      />
+      <LocalFolderModal
+        visible={showLocalFolderModal}
+        localFolderPath={localFolderPath}
+        onFileInputChange={handleFileInputChange}
+        onClose={handleLocalFolderModalClose}
+      />
 
       {/* Concurrent Execution Handler */}
       <ConcurrentExecutionHandler

@@ -40,27 +40,30 @@ const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [config, setConfig] = useState<QuizConfig>({
     timeLimit: category?.timeLimit || 20,
-    questionCount: category?.questionCount || 10,
+    questionCount: 10, // Default to 10, don't use category.questionCount
     difficulty: category?.difficulty || 'Medium',
     enableHints: true,
     showExplanations: true
   });
 
-  // Reset config when category changes
+  // Reset config when category changes (but preserve user's questionCount selection)
   useEffect(() => {
     if (category) {
-      setConfig({
+      setConfig(prevConfig => ({
         timeLimit: category.timeLimit,
-        questionCount: category.questionCount,
+        questionCount: prevConfig.questionCount, // Keep user's selection
         difficulty: category.difficulty,
-        enableHints: true,
-        showExplanations: true
-      });
+        enableHints: prevConfig.enableHints,
+        showExplanations: prevConfig.showExplanations
+      }));
       setCurrentPage(1);
     }
   }, [category]);
 
   const handleStart = () => {
+    console.log('🎯 QuizConfigModal: Starting quiz with config:', config);
+    console.log('🎯 QuizConfigModal: Category:', category);
+    
     // Navigate to the dedicated quiz page with config
     // Remove React elements from category to avoid serialization issues
     const categoryForState = {

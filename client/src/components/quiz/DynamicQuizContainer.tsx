@@ -27,7 +27,9 @@ interface DynamicQuizContainerProps {
   questions?: Question[];
   quizId?: string;
   timeLimit: number;
-  onComplete: (score: number, totalQuestions: number, answers: UserAnswer[]) => void;
+  questionCount?: number;
+  difficulty?: 'Easy' | 'Medium' | 'Hard';
+  onComplete: (score: number, totalQuestions: number, answers?: UserAnswer[], questions?: Question[], finalStats?: QuizStats) => void;
   onClose: () => void;
 }
 
@@ -35,6 +37,8 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
   questions: propQuestions,
   quizId,
   timeLimit,
+  questionCount,
+  difficulty = 'Medium',
   onComplete,
   onClose
 }) => {
@@ -50,9 +54,9 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
   // User answers and stats
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [quizStats, setQuizStats] = useState<QuizStats>({
-    totalQuestions: questions.length,
+    totalQuestions: 0,
     correctAnswers: 0,
-    totalPoints: questions.reduce((sum, q) => sum + q.points, 0),
+    totalPoints: 0,
     earnedPoints: 0,
     accuracy: 0,
     averageTime: 0,
@@ -86,6 +90,88 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
   const questionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Update quiz stats when questions change
+  useEffect(() => {
+    if (questions.length > 0) {
+      const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+      setQuizStats(prev => ({
+        ...prev,
+        totalQuestions: questions.length,
+        totalPoints: totalPoints
+      }));
+    }
+  }, [questions]);
+
+  // Filter questions based on difficulty and question count
+  const filterQuestionsByConfig = (allQuestions: Question[]): Question[] => {
+    let filteredQuestions: Question[] = [];
+    
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        filteredQuestions = allQuestions.filter(q => 
+          q.difficulty === 'easy' && 
+          ['multiple-choice', 'true-false', 'predict-output'].includes(q.type)
+        );
+        break;
+        
+      case 'medium':
+        const mediumQuestions = allQuestions.filter(q => 
+          q.difficulty === 'medium' && 
+          ['multiple-choice', 'true-false', 'predict-output', 'coding'].includes(q.type)
+        );
+        
+        console.log('🔍 Medium filtering: Found', mediumQuestions.length, 'medium questions');
+        
+        // Ensure at least 2 coding questions per 5 questions
+        const codingQuestions = mediumQuestions.filter(q => q.type === 'coding');
+        const nonCodingQuestions = mediumQuestions.filter(q => q.type !== 'coding');
+        
+        console.log('🔍 Medium filtering: Coding questions:', codingQuestions.length, 'Non-coding:', nonCodingQuestions.length);
+        
+        const requiredCodingQuestions = Math.max(2, Math.ceil((questionCount || 10) * 0.4));
+        const selectedCodingQuestions = codingQuestions.slice(0, Math.min(requiredCodingQuestions, codingQuestions.length));
+        
+        console.log('🔍 Medium filtering: Required coding:', requiredCodingQuestions, 'Selected coding:', selectedCodingQuestions.length);
+        
+        const remainingSlots = (questionCount || 10) - selectedCodingQuestions.length;
+        const selectedNonCodingQuestions = nonCodingQuestions.slice(0, remainingSlots);
+        
+        console.log('🔍 Medium filtering: Remaining slots:', remainingSlots, 'Selected non-coding:', selectedNonCodingQuestions.length);
+        
+        filteredQuestions = [...selectedCodingQuestions, ...selectedNonCodingQuestions];
+        console.log('🔍 Medium filtering: Final count:', filteredQuestions.length);
+        break;
+        
+      case 'hard':
+        const hardQuestions = allQuestions.filter(q => 
+          q.difficulty === 'hard' && 
+          ['multiple-choice', 'true-false', 'predict-output', 'coding'].includes(q.type)
+        );
+        
+        const hardCodingQuestions = hardQuestions.filter(q => q.type === 'coding');
+        const hardNonCodingQuestions = hardQuestions.filter(q => q.type !== 'coding');
+        
+        const requiredHardCodingQuestions = Math.max(2, Math.ceil((questionCount || 10) * 0.4));
+        const selectedHardCodingQuestions = hardCodingQuestions.slice(0, Math.min(requiredHardCodingQuestions, hardCodingQuestions.length));
+        
+        const remainingHardSlots = (questionCount || 10) - selectedHardCodingQuestions.length;
+        const selectedHardNonCodingQuestions = hardNonCodingQuestions.slice(0, remainingHardSlots);
+        
+        filteredQuestions = [...selectedHardCodingQuestions, ...selectedHardNonCodingQuestions];
+        break;
+        
+      default:
+        filteredQuestions = allQuestions;
+    }
+    
+    // Shuffle and limit to questionCount
+    console.log('🔍 Final filtering: questionCount =', questionCount, 'filteredQuestions.length =', filteredQuestions.length);
+    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+    const finalCount = questionCount || 10; // Use 10 as default, not allQuestions.length
+    console.log('🔍 Final filtering: Final count will be', finalCount);
+    return shuffled.slice(0, finalCount);
+  };
+
   // Fetch quiz data if quizId is provided
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -105,7 +191,7 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
         console.log('📡 DynamicQuizContainer: Service response:', response);
         
         if (response.success && response.quiz) {
-          console.log('✅ DynamicQuizContainer: Setting questions:', response.quiz.questions.length);
+          console.log('✅ DynamicQuizContainer: Loaded questions:', response.quiz.questions.length);
           console.log('📝 DynamicQuizContainer: First question:', response.quiz.questions[0]?.question);
           
           // CRITICAL CHECK: Verify we're getting the right questions
@@ -114,7 +200,15 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
             console.log('🚨 Expected Python, got:', response.quiz.questions[0]?.question);
           }
           
-          setQuestions(response.quiz.questions);
+          // Filter questions based on configuration
+          const filteredQuestions = filterQuestionsByConfig(response.quiz.questions);
+          console.log('🎯 DynamicQuizContainer: Filtered questions:', filteredQuestions.length, 'from', response.quiz.questions.length);
+          console.log('🎯 DynamicQuizContainer: Config - difficulty:', difficulty, 'questionCount:', questionCount);
+          console.log('🎯 DynamicQuizContainer: Available medium questions:', response.quiz.questions.filter(q => q.difficulty === 'medium').length);
+          console.log('🎯 DynamicQuizContainer: Available medium coding questions:', response.quiz.questions.filter(q => q.difficulty === 'medium' && q.type === 'coding').length);
+          console.log('🎯 DynamicQuizContainer: Final filtered questions:', filteredQuestions.map(q => ({ id: q.id, type: q.type, difficulty: q.difficulty })));
+          
+          setQuestions(filteredQuestions);
         } else {
           console.error('❌ DynamicQuizContainer: Failed to load quiz:', response.error);
           throw new Error('Failed to load quiz');
@@ -284,16 +378,19 @@ const DynamicQuizContainer: React.FC<DynamicQuizContainerProps> = ({
     const averageTime = userAnswers.length > 0 ? totalTime / userAnswers.length : 0;
     const accuracy = questions.length > 0 ? (correctAnswers / questions.length) * 100 : 0;
 
-    setQuizStats(prev => ({
-      ...prev,
+    const finalStats = {
+      ...quizStats,
       correctAnswers,
       earnedPoints,
       accuracy,
       averageTime,
       timeRemaining: timeLeft
-    }));
+    };
 
-    onComplete(earnedPoints, questions.length, userAnswers);
+    setQuizStats(finalStats);
+
+    // Pass all the necessary data to the completion handler
+    onComplete(earnedPoints, questions.length, userAnswers, questions, finalStats);
   };
 
   const renderQuestionContent = () => {

@@ -391,7 +391,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
               </div>
               <div className="stat-content">
                 <div className="stat-value">{quizStats.earnedPoints}/{quizStats.totalPoints}</div>
-                <div className="stat-label">Score</div>
+                <div className="stat-label">Score ({Math.round((quizStats.earnedPoints / quizStats.totalPoints) * 100)}%)</div>
               </div>
             </div>
             
@@ -488,6 +488,44 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
             {currentTab === 'analysis' && (
               <div className="analysis-content">
+                {/* Question-by-Question Breakdown */}
+                {userAnswers.length > 0 && (
+                  <div className="question-breakdown">
+                    <h3>Question Breakdown</h3>
+                    <div className="breakdown-list">
+                      {userAnswers.map((answer, index) => {
+                        const question = questions.find(q => q.id === answer.questionId);
+                        return (
+                          <motion.div 
+                            key={answer.questionId}
+                            className={`breakdown-item ${answer.isCorrect ? 'correct' : 'incorrect'}`}
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.1 * index }}
+                          >
+                            <div className="breakdown-header">
+                              <span className="question-number">Q{index + 1}</span>
+                              <span className="question-difficulty">{question?.difficulty || 'unknown'}</span>
+                              <span className="question-points">{answer.points}/{question?.points || 0} pts</span>
+                              <span className="question-status">
+                                {answer.isCorrect ? '✓' : '✗'}
+                              </span>
+                            </div>
+                            <div className="breakdown-details">
+                              <div className="question-preview">
+                                {question?.question.substring(0, 60)}...
+                              </div>
+                              <div className="time-spent">
+                                Time: {answer.timeSpent}s
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {weakAreas.length > 0 ? (
                   <div className="weak-areas">
                     <h3>Areas for Improvement</h3>
@@ -536,6 +574,30 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                         <div className="insight-title">Performance Level</div>
                         <div className="insight-value" style={{ color: performance.color }}>
                           {performance.level}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="insight-item">
+                      <div className="insight-icon">
+                        <Award />
+                      </div>
+                      <div className="insight-content">
+                        <div className="insight-title">Points per Correct Answer</div>
+                        <div className="insight-value">
+                          {quizStats.correctAnswers > 0 ? Math.round(quizStats.earnedPoints / quizStats.correctAnswers) : 0} pts
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="insight-item">
+                      <div className="insight-icon">
+                        <Target />
+                      </div>
+                      <div className="insight-content">
+                        <div className="insight-title">Average Question Value</div>
+                        <div className="insight-value">
+                          {Math.round(quizStats.totalPoints / quizStats.totalQuestions)} pts
                         </div>
                       </div>
                     </div>

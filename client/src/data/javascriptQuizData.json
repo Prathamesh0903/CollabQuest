@@ -13,7 +13,7 @@
       "showResults": true,
       "showCorrectAnswers": true,
       "randomizeQuestions": true,
-      "timeLimit": 0
+      "timeLimit": 45
     },
     "stats": {
       "totalAttempts": 0,

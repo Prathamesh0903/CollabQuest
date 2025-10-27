@@ -1036,12 +1036,18 @@ const QuizPage: React.FC = () => {
       // For coding questions, check if there's code written
       isCorrect = codingAnswer.trim().length > 0;
     } else if (selectedAnswer !== null) {
-      if (currentQ.type === 'multiple-choice') {
-        // For multiple choice, check if selected answer index matches correct option
+      if (currentQ.type === 'multiple-choice' || currentQ.type === 'predict-output') {
+        // For multiple choice and predict-output, check if selected answer index matches correct option
         const correctOptionIndex = currentQ.options?.findIndex(opt => opt.isCorrect);
         isCorrect = selectedAnswer === correctOptionIndex;
       } else if (currentQ.type === 'true-false') {
-        isCorrect = selectedAnswer === currentQ.correctAnswer;
+        // Handle both old format (correctAnswer) and new format (options with isCorrect)
+        if (currentQ.correctAnswer !== undefined) {
+          isCorrect = selectedAnswer === currentQ.correctAnswer;
+        } else if (currentQ.options) {
+          const correctOptionIndex = currentQ.options.findIndex(opt => opt.isCorrect);
+          isCorrect = selectedAnswer === correctOptionIndex;
+        }
       } else {
         // For other types, use the correctAnswer directly
         isCorrect = selectedAnswer === currentQ.correctAnswer;
@@ -1242,14 +1248,15 @@ const QuizPage: React.FC = () => {
   }
 
   if (isQuizComplete) {
-    const accuracy = Math.round((userAnswers.filter(a => a.isCorrect).length / userAnswers.length) * 100);
-    const totalPossibleScore = totalQuestions * 10;
+    const correctAnswers = userAnswers.filter(a => a.isCorrect).length;
+    const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+    const totalPossibleScore = questions.reduce((sum, question) => sum + question.points, 0);
     const timeUsed = quizConfig.timeLimit * 60 - timeLeft;
     
     // Create QuizStats object for the enhanced results
     const quizStats = {
       totalQuestions: totalQuestions,
-      correctAnswers: userAnswers.filter(a => a.isCorrect).length,
+      correctAnswers: correctAnswers,
       totalPoints: totalPossibleScore,
       earnedPoints: score,
       accuracy: accuracy,

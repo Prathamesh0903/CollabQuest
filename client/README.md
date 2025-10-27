@@ -62,15 +62,35 @@ A real-time collaborative code editor built with React, Monaco Editor, and Socke
 
 ```
 src/
-├── components/
-│   ├── CollaborativeEditor.tsx    # Main editor component
-│   ├── CollaborativeEditor.css    # Editor styles
-│   ├── RoomSelector.tsx          # Room selection interface
-│   └── RoomSelector.css          # Room selector styles
-├── App.tsx                       # Main app component
-├── App.css                       # App styles
-└── index.tsx                     # Entry point
+├── pages/                       # Route-level pages (thin wrappers)
+│   ├── DashboardPage.tsx
+│   ├── SessionEditorPage.tsx
+│   └── AdvancedQuizPage.tsx
+├── components/                  # Reusable UI and features
+│   ├── CollaborativeEditor.tsx
+│   ├── collab/                  # Editor-specific modules
+│   │   ├── types.ts
+│   │   └── utils.ts
+│   ├── Dashboard/               # Dashboard UI pieces
+│   ├── discuss/                 # Discuss pages components
+│   ├── DSASheet/                # DSA sheet pages/components
+│   ├── contests/                # Contests UI
+│   └── common/                  # Shared UI (Footer, Navbar, etc.)
+├── styles/                      # Global and shared CSS (if any)
+├── App.tsx
+├── App.css
+└── index.tsx
 ```
+
+### Pages and their components
+- **DashboardPage**: wraps `components/Dashboard` and can show `DemoInstructions` or the in-app `CollaborativeEditor` when a session is active.
+- **SessionEditorPage**: loads `CollaborativeEditor` bound to `:sessionId` route param.
+- **AdvancedQuizPage**: renders `components/Quiz` with `isAdvanced` mode.
+
+### Notes on editor refactor
+- Extracted editor types/interfaces to `components/collab/types.ts`.
+- Extracted `generateSessionId` to `components/collab/utils.ts`.
+- `CollaborativeEditor.tsx` now imports these, reducing file size and improving readability.
 
 ## Features in Detail
 

@@ -21,7 +21,7 @@ const quizCategories: QuizCategory[] = [
     description: 'Master the basics of JavaScript programming',
     icon: <Code className="w-6 h-6" />,
     color: '#f7df1e',
-    questionCount: 30,
+    questionCount: 10, // Default value, user can override in config
     difficulty: 'Easy',
     timeLimit: 20
   },
@@ -31,7 +31,7 @@ const quizCategories: QuizCategory[] = [
     description: 'Learn Python programming fundamentals',
     icon: <Code className="w-6 h-6" />,
     color: '#3776ab',
-    questionCount: 30,
+    questionCount: 10, // Default value, user can override in config
     difficulty: 'Easy',
     timeLimit: 20
   },
@@ -173,6 +173,13 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     livesRemaining: 3
   });
   
+  // Store quiz completion data
+  const [completedQuizData, setCompletedQuizData] = useState<{
+    userAnswers: UserAnswer[];
+    questions: Question[];
+    finalStats: QuizStats;
+  } | null>(null);
+  
   // Quiz Configuration
   const [quizConfig, setQuizConfig] = useState<QuizConfig>(defaultQuizConfig);
 
@@ -202,10 +209,12 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
           console.log('✅ Quiz.tsx: Quiz loaded successfully:', response.quiz.title);
           console.log('📝 Quiz.tsx: First question:', response.quiz.questions[0]?.question);
           
+          // Note: We'll calculate totalPoints after questions are filtered in DynamicQuizContainer
+          // because we need to know which specific questions are selected
           setQuizStats(prev => ({
             ...prev,
-            totalQuestions: response.quiz!.questions.length,
-            totalPoints: response.quiz!.questions.reduce((sum, q) => sum + q.points, 0),
+            totalQuestions: Math.min(config.questionCount, response.quiz!.questions.length),
+            totalPoints: 0, // Will be calculated when questions are filtered
             timeRemaining: config.timeLimit * 60
           }));
         }
@@ -215,7 +224,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
         console.log('🔄 Quiz.tsx: Using fallback advancedQuestions (JavaScript)');
         setQuizStats(prev => ({
           ...prev,
-          totalQuestions: advancedQuestions.length,
+          totalQuestions: Math.min(config.questionCount, advancedQuestions.length),
           totalPoints: advancedQuestions.reduce((sum, q) => sum + q.points, 0),
           timeRemaining: config.timeLimit * 60
         }));
@@ -223,17 +232,35 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
     }
   };
 
-  const handleQuizComplete = (score: number, totalQuestions: number, answers?: UserAnswer[]) => {
+  const handleQuizComplete = (score: number, totalQuestions: number, answers?: UserAnswer[], questions?: Question[], finalStats?: QuizStats) => {
+    // Store the completed quiz data for results display
+    if (answers && questions && finalStats) {
+      setCompletedQuizData({
+        userAnswers: answers,
+        questions: questions,
+        finalStats: finalStats
+      });
+      setQuizStats(finalStats);
+    }
     setShowResults(true);
     onComplete?.(score, totalQuestions);
   };
 
 
   if (isAdvanced && selectedCategory) {
+    console.log('🎯 Quiz.tsx: Passing config to DynamicQuizContainer:', {
+      quizId: selectedCategory.id,
+      timeLimit: quizConfig.timeLimit,
+      questionCount: quizConfig.questionCount,
+      difficulty: quizConfig.difficulty
+    });
+    
     return (
       <DynamicQuizContainer
         quizId={selectedCategory.id}
         timeLimit={quizConfig.timeLimit}
+        questionCount={quizConfig.questionCount}
+        difficulty={quizConfig.difficulty}
         onComplete={handleQuizComplete}
         onClose={() => {
           setSelectedCategory(null);
@@ -249,20 +276,22 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onClose, isAdvanced = true }) =
   if (showResults) {
     return (
       <QuizResults
-        quizStats={quizStats}
+        quizStats={completedQuizData?.finalStats || quizStats}
         timeLimit={quizConfig.timeLimit}
         timeLeft={0}
         isAdvanced={isAdvanced}
         quizId={selectedCategory?.id}
-        userAnswers={[]}
-        questions={[]}
+        userAnswers={completedQuizData?.userAnswers || []}
+        questions={completedQuizData?.questions || []}
         onRetake={() => {
           setShowResults(false);
           setSelectedCategory(null);
+          setCompletedQuizData(null);
         }}
         onBackToDashboard={() => {
           setShowResults(false);
           setSelectedCategory(null);
+          setCompletedQuizData(null);
           if (onClose) {
             onClose();
           }

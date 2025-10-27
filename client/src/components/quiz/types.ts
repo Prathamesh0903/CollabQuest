@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface QuizProps {
-  onComplete?: (score: number, totalQuestions: number) => void;
+  onComplete?: (score: number, totalQuestions: number, answers?: UserAnswer[], questions?: Question[], finalStats?: QuizStats) => void;
   onClose?: () => void;
   isAdvanced?: boolean;
 }
